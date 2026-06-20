@@ -8,6 +8,12 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ## [Unreleased]
 
+### Added
+- Live **web demo** on GitHub Pages, auto-deployed from `main` via
+  `.github/workflows/pages.yml` (single-threaded HTML5 export so it runs on Pages
+  without cross-origin-isolation headers): <https://dd-ching.github.io/arthur-stone-weapon-system/>
+- `export_presets.cfg` with a Web preset.
+
 ### Planned
 - Phase 2 (Game Feel): hit-stop, impact particles, audio hooks, camera-shake shaping.
 

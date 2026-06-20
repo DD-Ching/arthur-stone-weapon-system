@@ -12,6 +12,17 @@ It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
 <p align="center"><em>Status: <strong>v0.1.0 — 2D Heavy Weapon Prototype</strong> · placeholder art · core mechanic playable</em></p>
 
+<p align="center">
+  <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/DD-Ching/arthur-stone-weapon-system/releases/tag/v0.1.0">Release notes</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/DD-Ching/arthur-stone-weapon-system/actions/workflows/validate.yml"><img alt="Validate" src="https://github.com/DD-Ching/arthur-stone-weapon-system/actions/workflows/validate.yml/badge.svg"></a>
+  <a href="https://github.com/DD-Ching/arthur-stone-weapon-system/actions/workflows/pages.yml"><img alt="Deploy web demo" src="https://github.com/DD-Ching/arthur-stone-weapon-system/actions/workflows/pages.yml/badge.svg"></a>
+</p>
+
 ---
 
 ## The core idea
@@ -70,7 +81,9 @@ Full notes and the design reasoning behind each control: [`docs/CONTROLS.md`](do
 
 ## How to run
 
-You need **Godot 4.3 or newer** (standard build — no C#/.NET required).
+**Fastest:** just [**play it in your browser**](https://dd-ching.github.io/arthur-stone-weapon-system/) — a single-threaded Web build auto-deployed to GitHub Pages on every `main` push. (Give it a few seconds to download the engine and boot.)
+
+**From source** (for tweaking) — you need **Godot 4.3 or newer** (standard build — no C#/.NET required):
 
 1. Install Godot from <https://godotengine.org/download> (or your package manager).
 2. Open the Godot **Project Manager** → **Import**.
@@ -80,8 +93,9 @@ You need **Godot 4.3 or newer** (standard build — no C#/.NET required).
 The first launch will import `icon.svg` and build the `.godot/` cache — that's
 normal and only happens once.
 
-> No build to download yet — a web/desktop export is planned for **Phase 4**
-> (see the roadmap). Export steps are documented in [`docs/BUILD.md`](docs/BUILD.md).
+> The web demo is built by [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
+> Export steps (web + desktop) are documented in [`docs/BUILD.md`](docs/BUILD.md).
+> A downloadable desktop build is still planned for **Phase 4**.
 
 ---
 
