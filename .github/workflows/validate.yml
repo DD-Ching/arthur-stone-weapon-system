@@ -1,0 +1,31 @@
+name: Validate Godot project
+
+# Smoke test: headlessly import the project with Godot 4. This catches broken
+# scene/resource references and surfaces GDScript parse errors in the build log,
+# without needing a display or export templates.
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  import:
+    name: Headless import
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Godot 4
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.3.0
+          use-dotnet: false
+
+      - name: Godot version
+        run: godot --version
+
+      - name: Import resources & parse scripts
+        run: godot --headless --path . --import
