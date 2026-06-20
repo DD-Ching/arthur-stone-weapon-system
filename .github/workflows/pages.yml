@@ -1,0 +1,65 @@
+name: Deploy web demo to Pages
+
+# Exports the prototype to a Web (HTML5) build on a clean runner (templates and
+# all) and publishes it to GitHub Pages — a one-click playable demo.
+#
+# The export uses thread support OFF (see export_presets.cfg) so it runs on
+# Pages without cross-origin-isolation headers.
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; don't cancel an in-progress release.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Export Web build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Godot 4 + export templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.3.0
+          use-dotnet: false
+          include-templates: true
+
+      - name: Import project (first headless pass builds the .godot cache)
+        run: godot --headless --path . --import || true
+
+      - name: Export "Web" preset
+        run: |
+          mkdir -p build/web
+          godot --headless --path . --export-release "Web" build/web/index.html
+          echo "--- build/web contents ---"
+          ls -la build/web
+          test -f build/web/index.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
