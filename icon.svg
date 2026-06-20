@@ -1,0 +1,14 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <rect width="128" height="128" rx="16" fill="#1f1d24"/>
+  <!-- blade still stuck in the stone -->
+  <rect x="59" y="14" width="10" height="56" rx="2" fill="#c9cdd8"/>
+  <rect x="59" y="14" width="4" height="56" fill="#eef1f7"/>
+  <!-- crossguard -->
+  <rect x="46" y="60" width="36" height="8" rx="3" fill="#e0c850"/>
+  <!-- the stone Arthur lifted along with the sword -->
+  <ellipse cx="64" cy="92" rx="40" ry="28" fill="#6b6873"/>
+  <ellipse cx="64" cy="88" rx="40" ry="26" fill="#7d7a86"/>
+  <ellipse cx="52" cy="84" rx="9" ry="6" fill="#8d8a96"/>
+  <ellipse cx="78" cy="90" rx="7" ry="5" fill="#605d68"/>
+  <path d="M30 92 q34 18 68 0" fill="none" stroke="#4d4a55" stroke-width="3"/>
+</svg>

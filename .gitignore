@@ -1,0 +1,35 @@
+# ----- Godot 4 -----
+# Per-project cache, imported assets, and editor state. Regenerated on open.
+.godot/
+
+# Mono / C# glue (unused here, but harmless to ignore)
+.mono/
+data_*/
+mono_crash.*.json
+
+# ----- Exports / build artifacts -----
+# Builds belong on a GitHub Release or Pages branch, not in source.
+/build/
+/builds/
+/export/
+/dist/
+*.pck
+*.zip
+*.wasm
+*.exe
+*.x86_64
+*.apk
+*.aab
+*.dmg
+
+# ----- Project-local notes (not part of the public game) -----
+# The original brief / prompt; kept locally, not shipped in the public repo.
+finishIt.txt
+
+# ----- OS / editor cruft -----
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
