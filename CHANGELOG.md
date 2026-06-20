@@ -8,14 +8,46 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ## [Unreleased]
 
-### Added
-- Live **web demo** on GitHub Pages, auto-deployed from `main` via
-  `.github/workflows/pages.yml` (single-threaded HTML5 export so it runs on Pages
-  without cross-origin-isolation headers): <https://dd-ching.github.io/arthur-stone-weapon-system/>
-- `export_presets.cfg` with a Web preset.
-
 ### Planned
-- Phase 2 (Game Feel): hit-stop, impact particles, audio hooks, camera-shake shaping.
+- Phase 3.5: spin/tornado attack and puzzle-combat interactions (switches, weak
+  walls, pressure plates). See [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.2.0] — 2026-06-21
+
+**Physical Stone Weapon.** The weapon now reads correctly *and* behaves like a
+heavy physical object, with a second attack and launchable props.
+
+### Added
+- **Passive physical presence**: the stone head is an `AnimatableBody2D` that
+  blocks and shoves enemies/props even while only aiming — it's a heavy object you
+  steer, not a cursor. Enemies and props are now `RigidBody2D` on named collision
+  layers, so they collide with walls, each other, and the stone.
+- **Overhead slam** (right mouse button): raise → hold → drop with a radial
+  **shockwave** (distance-falloff knockback + stun), cracks/dust, big shake +
+  hit-stop, and a **debris rock** dropped at the impact — closing the
+  slam → launch → hit loop.
+- **Launchable rock props** (`Rock.tscn`) that a swing or slam can fling into enemies.
+- **Hit-stop** on impact (scaled to hit strength) and a **swing trail** + **charge ring**.
+- Behaviour test (`tests/BehaviorTest.tscn`) covering passive presence, the slam
+  shockwave, knockback, and debris spawning.
+- Headless swing smoke test (`tests/SwingSmokeTest.tscn`), wired into CI.
+- Live **web demo** on GitHub Pages, auto-deployed from `main`
+  (`.github/workflows/pages.yml`): <https://dd-ching.github.io/arthur-stone-weapon-system/>
+- `export_presets.cfg` with a Web preset; named 2D physics layers in `project.godot`.
+
+### Changed
+- **Weapon visual corrected**: Arthur grips the **sword handle** (grip + pommel +
+  crossguard); the blade runs *through* the heavy **stone head** (drawn embedded),
+  reading as a sword-in-stone hammer instead of a separate wooden stick.
+- `TargetDummy` is now a `RigidBody2D` (with friction via `linear_damp`), gaining a
+  stun state; knockback is applied as a physics impulse.
+- Swing knockback strengthened and the swing now launches rocks as well as enemies.
+
+### Notes
+- Still placeholder shapes, still no audio / enemy AI / win condition. The web
+  build remains single-threaded so it runs on GitHub Pages.
 
 ---
 

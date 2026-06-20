@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/Arena.gd" id="1_arena"]
 [ext_resource type="PackedScene" path="res://scenes/Arthur.tscn" id="2_arthur"]
 [ext_resource type="PackedScene" path="res://scenes/TargetDummy.tscn" id="3_dummy"]
 [ext_resource type="PackedScene" path="res://scenes/Hud.tscn" id="4_hud"]
+[ext_resource type="PackedScene" path="res://scenes/Rock.tscn" id="5_rock"]
 
 [sub_resource type="RectangleShape2D" id="wall_h"]
 size = Vector2(1680, 40)
@@ -15,6 +16,8 @@ size = Vector2(40, 1040)
 script = ExtResource("1_arena")
 
 [node name="Walls" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 0
 
 [node name="Top" type="CollisionShape2D" parent="Walls"]
 position = Vector2(0, -500)
@@ -46,5 +49,11 @@ position = Vector2(-100, -60)
 
 [node name="TargetDummy4" parent="." instance=ExtResource("3_dummy")]
 position = Vector2(130, -40)
+
+[node name="Rock" parent="." instance=ExtResource("5_rock")]
+position = Vector2(-70, 50)
+
+[node name="Rock2" parent="." instance=ExtResource("5_rock")]
+position = Vector2(75, 45)
 
 [node name="Hud" parent="." instance=ExtResource("4_hud")]

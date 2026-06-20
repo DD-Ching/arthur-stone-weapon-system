@@ -54,4 +54,4 @@ offset_right = 1240.0
 offset_bottom = -18.0
 mouse_filter = 2
 theme_override_font_sizes/font_size = 16
-text = "WASD / Arrows: move    Mouse: aim    Space / Left-Click: heavy swing (hold to charge)    R: reset"
+text = "WASD/Arrows: move    Mouse: aim    Space/L-Click: heavy swing (hold = charge)    R-Click: overhead slam    R: reset"

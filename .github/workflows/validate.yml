@@ -29,3 +29,18 @@ jobs:
 
       - name: Import resources & parse scripts
         run: godot --headless --path . --import
+
+      - name: Run swing smoke test (core mechanic)
+        # Drives a real swing headlessly and asserts knockback + stamina cost +
+        # the hit signal. The test quits non-zero on failure; grep is a belt-and-
+        # braces check that the PASS line actually printed.
+        run: |
+          godot --headless --path . res://tests/SwingSmokeTest.tscn --quit-after 600 | tee smoke.log
+          grep -q "SMOKE_VERDICT PASS" smoke.log
+
+      - name: Run behaviour test (passive presence + slam)
+        # Asserts the resting stone shoves an overlapping enemy, and the slam
+        # spawns a shockwave, knocks back a nearby enemy, and drops debris.
+        run: |
+          godot --headless --path . res://tests/BehaviorTest.tscn --quit-after 600 | tee behavior.log
+          grep -q "BEHAVIOR_VERDICT PASS" behavior.log

@@ -38,6 +38,9 @@ release: prepare v0.1.0 prototype
 
 - Open the project in Godot 4.3+ and run `Arena.tscn` (F5). It should launch with
   no errors in the Output panel.
+- Run the headless smoke test (it's what CI runs):
+  `godot --headless --path . res://tests/SwingSmokeTest.tscn --quit-after 600`
+  — expect `SMOKE_VERDICT PASS`. See [`tests/`](tests/README.md).
 - Update `CHANGELOG.md` (under `[Unreleased]`) if you changed behaviour.
 - If you changed how something *feels*, jot a devlog entry (`devlog/TEMPLATE.md`).
 
