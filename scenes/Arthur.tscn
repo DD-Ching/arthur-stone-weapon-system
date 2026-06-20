@@ -1,0 +1,32 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/Arthur.gd" id="1_arthur"]
+[ext_resource type="Script" path="res://scripts/StoneWeapon.gd" id="2_weapon"]
+[ext_resource type="Script" path="res://scripts/GameCamera.gd" id="3_camera"]
+
+[sub_resource type="CircleShape2D" id="body_shape"]
+radius = 17.0
+
+[sub_resource type="CircleShape2D" id="hit_shape"]
+radius = 40.0
+
+[node name="Arthur" type="CharacterBody2D"]
+script = ExtResource("1_arthur")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("body_shape")
+
+[node name="StoneWeapon" type="Node2D" parent="."]
+script = ExtResource("2_weapon")
+
+[node name="Hitbox" type="Area2D" parent="StoneWeapon"]
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StoneWeapon/Hitbox"]
+position = Vector2(72, 0)
+shape = SubResource("hit_shape")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+script = ExtResource("3_camera")
