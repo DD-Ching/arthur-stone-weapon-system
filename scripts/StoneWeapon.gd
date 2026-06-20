@@ -141,13 +141,13 @@ func _physics_process(delta: float) -> void:
 		State.RECOVERY:
 			_process_recovery()
 		State.SLAM_RAISE:
-			_process_slam_raise()
+			_process_slam_raise(delta)
 		State.SLAM_HOLD:
 			_process_slam_hold()
 		State.SLAM_DROP:
 			_process_slam_drop()
 		State.SLAM_RECOVER:
-			_process_slam_recover()
+			_process_slam_recover(delta)
 
 	rotation = aim_angle + _swing_offset
 	# Drive the hit Area2D and the passive stone body to the visible head.
@@ -222,12 +222,12 @@ func _apply_swing_hits() -> void:
 
 # --- slam states ------------------------------------------------------------
 
-func _process_slam_raise() -> void:
+func _process_slam_raise(delta: float) -> void:
 	var t := clampf(_state_time / slam_raise_time, 0.0, 1.0)
 	# Drag back and heave the stone up over Arthur's head (top-down: it grows).
 	_head_dist = lerpf(arm_length, slam_pull, t)
 	_lift = ease_out(t)
-	_swing_offset = lerpf(_swing_offset, -0.5, clampf(6.0 * 0.016, 0.0, 1.0))
+	_swing_offset = lerpf(_swing_offset, -0.5, clampf(6.0 * delta, 0.0, 1.0))
 	if t >= 1.0:
 		_change_state(State.SLAM_HOLD)
 
@@ -248,10 +248,10 @@ func _process_slam_drop() -> void:
 	if t >= 1.0:
 		_change_state(State.SLAM_RECOVER)
 
-func _process_slam_recover() -> void:
+func _process_slam_recover(delta: float) -> void:
 	var t := clampf(_state_time / slam_recover_time, 0.0, 1.0)
 	_head_dist = lerpf(slam_reach, arm_length, ease_out(t))
-	_lift = lerpf(_lift, 0.0, clampf(8.0 * 0.016, 0.0, 1.0))
+	_lift = lerpf(_lift, 0.0, clampf(8.0 * delta, 0.0, 1.0))
 	if t >= 1.0:
 		_change_state(State.READY)
 
@@ -261,6 +261,7 @@ func _do_slam_impact() -> void:
 	var wave = SHOCKWAVE.instantiate()   # untyped: it's a Node2D, set its world position
 	scene.add_child(wave)
 	wave.global_position = point
+	wave.detonate()                      # impulse AFTER positioning (see Shockwave.detonate)
 	# Leave a chunk of debris the player can then launch with a normal swing.
 	var rock = ROCK.instantiate()
 	scene.add_child(rock)

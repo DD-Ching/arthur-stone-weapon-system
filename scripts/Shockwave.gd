@@ -14,6 +14,11 @@ var _t := 0.0
 
 func _ready() -> void:
 	add_to_group("shockwave")
+
+## Call this AFTER setting global_position. Kept out of _ready() on purpose:
+## add_child() runs _ready() synchronously, before the spawner can position us,
+## so computing the radial impulse there would measure from the wrong origin.
+func detonate() -> void:
 	for group in ["targets", "props"]:
 		for body in get_tree().get_nodes_in_group(group):
 			if not is_instance_valid(body):

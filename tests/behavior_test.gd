@@ -20,15 +20,23 @@ var _props_before := 0
 var _shock_seen := false
 
 func _ready() -> void:
+	# Deliberately OFF the world origin: if the slam shockwave ever computes its
+	# radial impulse from (0,0) instead of the impact point, the slam dummy (far
+	# from origin) won't be knocked and this test fails — guarding that regression.
+	var base := Vector2(400, 200)
 	arthur = load("res://scenes/Arthur.tscn").instantiate()
 	add_child(arthur)
-	arthur.global_position = Vector2.ZERO
+	arthur.global_position = base
 	dummy_passive = load("res://scenes/TargetDummy.tscn").instantiate()
 	add_child(dummy_passive)
-	dummy_passive.global_position = Vector2(92, 0)   # overlapping the resting stone
+	dummy_passive.global_position = base + Vector2(92, 0)   # overlapping the resting stone
 	dummy_slam = load("res://scenes/TargetDummy.tscn").instantiate()
 	add_child(dummy_slam)
-	dummy_slam.global_position = Vector2(150, 0)      # near the slam point, clear of the stone
+	dummy_slam.global_position = base + Vector2(150, 0)     # near the slam point, clear of the stone
+	# Stop Arthur from re-aiming at the (headless) mouse each frame; the weapon
+	# node processes independently, so we drive aim + slam directly and keep it
+	# pointing +X. (try_spend_stamina is a plain method call, unaffected.)
+	arthur.set_physics_process(false)
 	arthur.weapon.set_aim_target(0.0)
 	# Record baselines NOW, before the first physics step ejects the overlapping dummy.
 	_passive_start = dummy_passive.global_position
