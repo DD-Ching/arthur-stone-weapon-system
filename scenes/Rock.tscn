@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/Rock.gd" id="1_rock"]
+
+[sub_resource type="CircleShape2D" id="rock_shape"]
+radius = 14.0
+
+[node name="Rock" type="RigidBody2D"]
+collision_layer = 8
+collision_mask = 31
+mass = 0.9
+gravity_scale = 0.0
+linear_damp = 2.4
+angular_damp = 2.5
+script = ExtResource("1_rock")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("rock_shape")

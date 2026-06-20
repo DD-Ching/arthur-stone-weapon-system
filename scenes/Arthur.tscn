@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/Arthur.gd" id="1_arthur"]
 [ext_resource type="Script" path="res://scripts/StoneWeapon.gd" id="2_weapon"]
@@ -7,10 +7,15 @@
 [sub_resource type="CircleShape2D" id="body_shape"]
 radius = 17.0
 
+[sub_resource type="CircleShape2D" id="stone_shape"]
+radius = 31.0
+
 [sub_resource type="CircleShape2D" id="hit_shape"]
-radius = 40.0
+radius = 42.0
 
 [node name="Arthur" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 13
 script = ExtResource("1_arthur")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -19,11 +24,22 @@ shape = SubResource("body_shape")
 [node name="StoneWeapon" type="Node2D" parent="."]
 script = ExtResource("2_weapon")
 
+[node name="StoneBody" type="AnimatableBody2D" parent="StoneWeapon"]
+position = Vector2(82, 0)
+collision_layer = 16
+collision_mask = 12
+sync_to_physics = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StoneWeapon/StoneBody"]
+shape = SubResource("stone_shape")
+
 [node name="Hitbox" type="Area2D" parent="StoneWeapon"]
+position = Vector2(82, 0)
+collision_layer = 0
+collision_mask = 12
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StoneWeapon/Hitbox"]
-position = Vector2(72, 0)
 shape = SubResource("hit_shape")
 
 [node name="Camera2D" type="Camera2D" parent="."]

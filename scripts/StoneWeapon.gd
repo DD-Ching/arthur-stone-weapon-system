@@ -3,72 +3,92 @@ extends Node2D
 ## The stone-sword.
 ##
 ## Arthur could not pull the sword free, so he lifted the whole stone with it.
-## This node owns the swing state machine, the sweeping hitbox, and all of the
-## "this thing is far too heavy" game feel. It is deliberately self-contained:
-## it asks its parent (Arthur) for stamina and tells the camera to shake, but it
-## does not reach into anyone's internals.
+## He grips the SWORD HANDLE; the blade runs out of his hand and is buried in a
+## huge STONE that forms the heavy head — a sword stuck in a stone, swung like a
+## hammer.
 ##
-## The whole point of the design is the trade-off: a swing is a *commitment*.
-## You pay a slow wind-up and a long, exposed recovery for one heavy, high-impact
-## sweep. Missing should hurt. Connecting should feel great.
+## This node owns:
+##   - the visual (handle -> crossguard -> blade -> stone head, drawn so the
+##     blade reads as embedded in the stone),
+##   - the swing state machine (ready -> wind-up -> active -> recovery) with
+##     hold-to-charge,
+##   - an overhead SLAM (raise -> hold -> drop -> recover) with a shockwave,
+##   - and the geometry that drives both the attack hitbox (Area2D) and the
+##     stone's passive physical body (AnimatableBody2D), so the head is the same
+##     object you see, sweep, and shove things with.
+##
+## Passive presence: while you are merely aiming, the stone body still blocks and
+## nudges enemies/props. During the brief active swing (and slam drop) the solid
+## body steps aside and the designed impulse takes over, so hits stay controlled.
 
 signal state_changed(state: int)
 signal charge_changed(charge: float)
 signal hit_landed(shake_strength: float, hit_count: int)
 signal too_tired()
 
-enum State { READY, WINDUP, ACTIVE, RECOVERY }
+enum State { READY, WINDUP, ACTIVE, RECOVERY, SLAM_RAISE, SLAM_HOLD, SLAM_DROP, SLAM_RECOVER }
+
+const SHOCKWAVE := preload("res://scenes/Shockwave.tscn")
+const ROCK := preload("res://scenes/Rock.tscn")
 
 @export_group("Timing (seconds)")
-## Minimum wind-up, even for a quick tap. This is the commitment you can't skip.
-@export var windup_time_min := 0.28
-## Hold the attack this long during wind-up to reach a full charge.
-@export var charge_time := 0.9
-## The actual sweep is short and fast — the heaviness is in the wind-up/recovery.
-@export var active_time := 0.16
-## Vulnerable tail after a tap swing.
-@export var recovery_time_min := 0.45
-## Vulnerable tail after a full charge — the bigger the hit, the longer you pay.
-@export var recovery_time_max := 0.85
+@export var windup_time_min := 0.30
+@export var charge_time := 0.95
+@export var active_time := 0.15
+@export var recovery_time_min := 0.5
+@export var recovery_time_max := 0.95
+@export_subgroup("Slam")
+@export var slam_raise_time := 0.36
+@export var slam_hold_time := 0.13
+@export var slam_drop_time := 0.11
+@export var slam_recover_time := 0.6
 
-@export_group("Swing geometry")
-@export var arm_length := 72.0
-@export var stone_radius := 30.0
-## How far back (radians) the head is hauled during wind-up.
+@export_group("Geometry")
+@export var handle_len := 34.0    ## the grip Arthur actually holds (visible between hand and guard)
+@export var arm_length := 82.0    ## resting distance of the stone from his hand
+@export var stone_radius := 33.0
+@export var slam_reach := 98.0    ## how far out front the slam lands
+@export var slam_pull := 42.0     ## head distance while reared back for a slam
 @export var windup_angle := 2.5
-## How far through (radians) the head sweeps on the active swing.
-@export var followthrough_angle := 2.7
-## Aim tracks the mouse quickly when idle...
-@export var turn_speed_ready := 5.0
-## ...and sluggishly while mid-swing (the stone fights you).
-@export var turn_speed_busy := 1.3
+@export var followthrough_angle := 2.8
+@export var turn_speed_ready := 4.6   ## heavy: aim tracks the mouse, but lazily
+@export var turn_speed_busy := 1.2
 
 @export_group("Impact")
-@export var knockback_min := 360.0
-@export var knockback_max := 920.0
+@export var knockback_min := 440.0
+@export var knockback_max := 1240.0
 @export var stamina_cost_min := 16.0
-@export var stamina_cost_max := 44.0
-@export var shake_min := 4.0
-@export var shake_max := 15.0
+@export var stamina_cost_max := 46.0
+@export var slam_stamina_cost := 42.0
+@export var shake_min := 5.0
+@export var shake_max := 16.0
+@export var slam_shake := 24.0
 
 var state: int = State.READY
-var aim_angle := 0.0  ## the world-space direction Arthur is facing
+var aim_angle := 0.0
 
 var _target_aim := 0.0
 var _charge := 0.0
 var _active_charge := 0.0
-var _holding := false
 var _release_requested := false
 var _state_time := 0.0
-var _swing_offset := 0.0   ## added to aim_angle to produce the swing arc
+var _swing_offset := 0.0
 var _recovery_from := 0.0
-var _hit_ids := {}         ## instance ids already struck this swing (no double hits)
+var _head_dist := 0.0    ## current stone distance from Arthur (drives visual + bodies)
+var _lift := 0.0         ## 0..1 "raised overhead" amount, for the slam telegraph
+var _slam_struck := false
+var _hit_ids := {}
 var _hit_count := 0
+var _solid_now := true   ## is the passive stone body currently collidable
+var _trail: Array = []   ## recent head world positions for the swing trail
 
 @onready var hitbox: Area2D = $Hitbox
-@onready var _arthur = get_parent()  ## untyped on purpose — dynamic stamina calls
+@onready var stone_body: AnimatableBody2D = $StoneBody
+@onready var stone_shape: CollisionShape2D = $StoneBody/CollisionShape2D
+@onready var _arthur = get_parent()
 
 func _ready() -> void:
+	_head_dist = arm_length
 	state_changed.emit(state)
 
 func set_aim_target(angle: float) -> void:
@@ -77,23 +97,34 @@ func set_aim_target(angle: float) -> void:
 func is_ready() -> bool:
 	return state == State.READY
 
-## Attack button pressed: begin winding up if we are idle and not exhausted.
+# --- swing input ------------------------------------------------------------
+
 func press_attack() -> void:
 	if state != State.READY:
 		return
 	if _arthur.stamina < stamina_cost_min:
 		too_tired.emit()
 		return
-	_holding = true
 	_release_requested = false
 	_charge = 0.0
 	_change_state(State.WINDUP)
 
-## Attack button released: commit the swing (once the minimum wind-up is paid).
 func release_attack() -> void:
-	_holding = false
 	if state == State.WINDUP:
 		_release_requested = true
+
+# --- slam input -------------------------------------------------------------
+
+func start_slam() -> void:
+	if state != State.READY:
+		return
+	if not _arthur.try_spend_stamina(slam_stamina_cost):
+		too_tired.emit()
+		return
+	_slam_struck = false
+	_change_state(State.SLAM_RAISE)
+
+# --- per-frame --------------------------------------------------------------
 
 func _physics_process(delta: float) -> void:
 	_update_aim(delta)
@@ -101,33 +132,48 @@ func _physics_process(delta: float) -> void:
 	match state:
 		State.READY:
 			_swing_offset = lerpf(_swing_offset, 0.0, clampf(6.0 * delta, 0.0, 1.0))
+			_head_dist = lerpf(_head_dist, arm_length, clampf(8.0 * delta, 0.0, 1.0))
+			_lift = lerpf(_lift, 0.0, clampf(10.0 * delta, 0.0, 1.0))
 		State.WINDUP:
 			_process_windup(delta)
 		State.ACTIVE:
 			_process_active()
 		State.RECOVERY:
 			_process_recovery()
+		State.SLAM_RAISE:
+			_process_slam_raise()
+		State.SLAM_HOLD:
+			_process_slam_hold()
+		State.SLAM_DROP:
+			_process_slam_drop()
+		State.SLAM_RECOVER:
+			_process_slam_recover()
+
 	rotation = aim_angle + _swing_offset
+	# Drive the hit Area2D and the passive stone body to the visible head.
+	hitbox.position = Vector2(_head_dist, 0.0)
+	stone_body.position = Vector2(_head_dist, 0.0)
+	_set_solid(state != State.ACTIVE and state != State.SLAM_DROP)
+	_update_trail(delta)
 	queue_redraw()
 
 func _update_aim(delta: float) -> void:
 	var turn := turn_speed_ready if state == State.READY else turn_speed_busy
 	aim_angle = lerp_angle(aim_angle, _target_aim, clampf(turn * delta, 0.0, 1.0))
 
+# --- swing states -----------------------------------------------------------
+
 func _process_windup(delta: float) -> void:
 	_charge = clampf(_state_time / charge_time, 0.0, 1.0)
 	charge_changed.emit(_charge)
 	var pull := windup_angle * (0.45 + 0.55 * _charge)
 	_swing_offset = lerpf(_swing_offset, -pull, clampf(9.0 * delta, 0.0, 1.0))
-	var fully_charged := _state_time >= charge_time
-	var committed := _release_requested and _state_time >= windup_time_min
-	if fully_charged or committed:
+	if (_release_requested and _state_time >= windup_time_min) or _state_time >= charge_time:
 		_fire()
 
 func _fire() -> void:
 	var cost := lerpf(stamina_cost_min, stamina_cost_max, _charge)
 	if not _arthur.try_spend_stamina(cost):
-		# Too exhausted to follow through — stumble straight into recovery.
 		too_tired.emit()
 		_active_charge = 0.0
 		_recovery_from = _swing_offset
@@ -140,10 +186,10 @@ func _fire() -> void:
 
 func _process_active() -> void:
 	var t := clampf(_state_time / active_time, 0.0, 1.0)
-	var eased := 1.0 - pow(1.0 - t, 3.0)  # ease-out: the head snaps through the arc
+	var eased := 1.0 - pow(1.0 - t, 3.0)
 	var from_angle := -windup_angle * (0.45 + 0.55 * _active_charge)
 	_swing_offset = lerpf(from_angle, followthrough_angle, eased)
-	_apply_hits()
+	_apply_swing_hits()
 	if t >= 1.0:
 		_recovery_from = _swing_offset
 		_change_state(State.RECOVERY)
@@ -151,14 +197,13 @@ func _process_active() -> void:
 func _process_recovery() -> void:
 	var dur := lerpf(recovery_time_min, recovery_time_max, _active_charge)
 	var t := clampf(_state_time / dur, 0.0, 1.0)
-	var eased := 1.0 - pow(1.0 - t, 2.0)
-	_swing_offset = lerpf(_recovery_from, 0.0, eased)
+	_swing_offset = lerpf(_recovery_from, 0.0, 1.0 - pow(1.0 - t, 2.0))
 	if t >= 1.0:
 		_change_state(State.READY)
 
-func _apply_hits() -> void:
+func _apply_swing_hits() -> void:
 	for body in hitbox.get_overlapping_bodies():
-		if not body.is_in_group("targets"):
+		if not body.has_method("apply_knockback"):
 			continue
 		var id := body.get_instance_id()
 		if _hit_ids.has(id):
@@ -169,32 +214,129 @@ func _apply_hits() -> void:
 		if dir.length() < 1.0:
 			dir = Vector2.RIGHT.rotated(aim_angle)
 		dir = dir.normalized()
-		var force := lerpf(knockback_min, knockback_max, _active_charge)
-		if body.has_method("apply_knockback"):
-			body.call("apply_knockback", dir, force)
+		body.call("apply_knockback", dir, lerpf(knockback_min, knockback_max, _active_charge))
+		if body.has_method("stun"):
+			body.call("stun", 0.25 + 0.4 * _active_charge)
 		_hit_count += 1
 		hit_landed.emit(lerpf(shake_min, shake_max, _active_charge), _hit_count)
+
+# --- slam states ------------------------------------------------------------
+
+func _process_slam_raise() -> void:
+	var t := clampf(_state_time / slam_raise_time, 0.0, 1.0)
+	# Drag back and heave the stone up over Arthur's head (top-down: it grows).
+	_head_dist = lerpf(arm_length, slam_pull, t)
+	_lift = ease_out(t)
+	_swing_offset = lerpf(_swing_offset, -0.5, clampf(6.0 * 0.016, 0.0, 1.0))
+	if t >= 1.0:
+		_change_state(State.SLAM_HOLD)
+
+func _process_slam_hold() -> void:
+	_lift = 1.0
+	if _state_time >= slam_hold_time:
+		_change_state(State.SLAM_DROP)
+
+func _process_slam_drop() -> void:
+	var t := clampf(_state_time / slam_drop_time, 0.0, 1.0)
+	# Smash the head out in front and down.
+	_head_dist = lerpf(slam_pull, slam_reach, ease_out(t))
+	_lift = 1.0 - t
+	_swing_offset = lerpf(_swing_offset, 0.0, t)
+	if not _slam_struck and t >= 0.9:
+		_slam_struck = true
+		_do_slam_impact()
+	if t >= 1.0:
+		_change_state(State.SLAM_RECOVER)
+
+func _process_slam_recover() -> void:
+	var t := clampf(_state_time / slam_recover_time, 0.0, 1.0)
+	_head_dist = lerpf(slam_reach, arm_length, ease_out(t))
+	_lift = lerpf(_lift, 0.0, clampf(8.0 * 0.016, 0.0, 1.0))
+	if t >= 1.0:
+		_change_state(State.READY)
+
+func _do_slam_impact() -> void:
+	var point: Vector2 = _arthur.global_position + Vector2(slam_reach, 0.0).rotated(aim_angle)
+	var scene := get_tree().current_scene
+	var wave = SHOCKWAVE.instantiate()   # untyped: it's a Node2D, set its world position
+	scene.add_child(wave)
+	wave.global_position = point
+	# Leave a chunk of debris the player can then launch with a normal swing.
+	var rock = ROCK.instantiate()
+	scene.add_child(rock)
+	rock.global_position = point
+	hit_landed.emit(slam_shake, 0)   # one big shake + hit-stop
+
+func ease_out(t: float) -> float:
+	return 1.0 - pow(1.0 - t, 3.0)
 
 func _change_state(new_state: int) -> void:
 	state = new_state
 	_state_time = 0.0
 	state_changed.emit(state)
 
+# --- passive stone body + trail --------------------------------------------
+
+func _set_solid(solid: bool) -> void:
+	if solid == _solid_now:
+		return
+	_solid_now = solid
+	stone_shape.set_deferred("disabled", not solid)
+
+func _update_trail(delta: float) -> void:
+	var head := to_global(Vector2(_head_dist, 0.0))
+	if state == State.ACTIVE or state == State.SLAM_DROP:
+		_trail.push_back({"pos": head, "age": 0.0})
+	for p in _trail:
+		p.age += delta
+	while _trail.size() > 0 and _trail[0].age > 0.22:
+		_trail.pop_front()
+
+# --- drawing ----------------------------------------------------------------
+
 func _draw() -> void:
-	# Everything below is drawn in local space along +X; the node's rotation
-	# (set in _physics_process) is what actually sweeps the head through the arc.
-	var head := Vector2(arm_length, 0.0)
-	var stone_col := Color(0.42, 0.40, 0.45)
+	_draw_trail()
+	var head := Vector2(_head_dist, 0.0)
+	var r := stone_radius * (1.0 + 0.45 * _lift)
+
+	# Lift shadow (the stone is overhead): a dark ghost offset back toward Arthur.
+	if _lift > 0.01:
+		draw_circle(head - Vector2(18.0 * _lift, 0.0), r * 0.9, Color(0, 0, 0, 0.28 * _lift))
+
+	# Blade: runs from the crossguard THROUGH the stone (drawn first, so the
+	# stone covers its middle and it reads as embedded).
+	var guard := Vector2(handle_len, 0.0)
+	draw_line(guard, head + Vector2(r * 0.8, 0.0), Color(0.80, 0.82, 0.90), 6.0)
+	draw_line(guard, head, Color(0.62, 0.64, 0.72), 2.0)  # fuller line
+
+	# The stone: heavy mass with shading + cracks.
+	var stone_col := Color(0.45, 0.43, 0.49)
 	if state == State.WINDUP:
-		stone_col = stone_col.lerp(Color(1.0, 0.55, 0.2), _charge)  # glows as it charges
-	elif state == State.ACTIVE:
-		stone_col = stone_col.lerp(Color(1, 1, 1), 0.35)
-	# Haft / arm Arthur is dragging
-	draw_line(Vector2.ZERO, head, Color(0.30, 0.22, 0.16), 7.0)
-	# The blade poking out the far side of the stone (still stuck in it)
-	draw_line(head, head + Vector2(stone_radius + 34.0, 0.0), Color(0.78, 0.80, 0.88), 5.0)
-	# The stone itself
-	draw_circle(head, stone_radius, stone_col)
-	draw_arc(head, stone_radius, 0.0, TAU, 24, Color(0.18, 0.17, 0.20), 3.0)
-	# A little hilt cross where the blade meets the stone
-	draw_line(head + Vector2(stone_radius, -10.0), head + Vector2(stone_radius, 10.0), Color(0.9, 0.85, 0.5), 4.0)
+		stone_col = stone_col.lerp(Color(1.0, 0.55, 0.2), _charge)   # charge glow
+	draw_circle(head, r, stone_col)
+	draw_circle(head - Vector2(r * 0.3, r * 0.3), r * 0.45, stone_col.lightened(0.12))
+	draw_circle(head + Vector2(r * 0.35, r * 0.25), r * 0.25, stone_col.darkened(0.22))
+	draw_arc(head, r, 0.0, TAU, 28, Color(0.16, 0.15, 0.18), 3.0)
+	draw_line(head + Vector2(-r * 0.4, -r * 0.2), head + Vector2(r * 0.1, r * 0.5), Color(0.2, 0.19, 0.22), 2.0)
+
+	# Blade tip poking out the far side of the stone (on top).
+	draw_line(head + Vector2(r * 0.7, 0.0), head + Vector2(r + 12.0, 0.0), Color(0.85, 0.87, 0.95), 5.0)
+
+	# Charge ring around the stone while winding up.
+	if state == State.WINDUP and _charge > 0.02:
+		draw_arc(head, r + 6.0, -PI * 0.5, -PI * 0.5 + TAU * _charge, 32, Color(1.0, 0.7, 0.25, 0.9), 3.0)
+
+	# The HANDLE Arthur actually grips: grip + pommel at his hand, then crossguard.
+	draw_line(Vector2(3.0, 0.0), guard, Color(0.34, 0.26, 0.20), 9.0)   # leather grip
+	draw_line(Vector2(3.0, 0.0), guard, Color(0.55, 0.45, 0.33), 3.0)   # grip highlight
+	draw_circle(Vector2.ZERO, 6.0, Color(0.80, 0.72, 0.45))             # pommel in his hand
+	draw_line(guard + Vector2(0.0, -12.0), guard + Vector2(0.0, 12.0), Color(0.88, 0.80, 0.45), 5.0)  # crossguard
+
+func _draw_trail() -> void:
+	if _trail.size() < 2:
+		return
+	for i in range(_trail.size() - 1):
+		var a: float = 1.0 - _trail[i].age / 0.22
+		var p0: Vector2 = to_local(_trail[i].pos)
+		var p1: Vector2 = to_local(_trail[i + 1].pos)
+		draw_line(p0, p1, Color(0.95, 0.85, 0.6, clampf(a, 0.0, 1.0) * 0.5), 10.0 * clampf(a, 0.2, 1.0))

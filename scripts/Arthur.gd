@@ -26,6 +26,7 @@ signal exhausted()
 
 var stamina := 0.0
 var _regen_cooldown := 0.0
+var _hitstop_token := 0
 
 @onready var weapon: StoneWeapon = $StoneWeapon
 @onready var camera = $Camera2D  ## untyped: GameCamera adds add_shake() at runtime
@@ -55,6 +56,8 @@ func _handle_attack() -> void:
 		weapon.press_attack()
 	if Input.is_action_just_released("attack"):
 		weapon.release_attack()
+	if Input.is_action_just_pressed("slam"):
+		weapon.start_slam()
 
 func _handle_movement(delta: float) -> void:
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -74,6 +77,14 @@ func _speed_multiplier() -> float:
 			return 0.6    # dragged along by the swing's momentum
 		StoneWeapon.State.RECOVERY:
 			return 0.22   # fully committed, fully exposed
+		StoneWeapon.State.SLAM_RAISE:
+			return 0.24   # heaving the stone overhead
+		StoneWeapon.State.SLAM_HOLD:
+			return 0.14   # frozen at the top of the lift
+		StoneWeapon.State.SLAM_DROP:
+			return 0.3
+		StoneWeapon.State.SLAM_RECOVER:
+			return 0.2    # planted, wide open
 		_:
 			return 1.0
 
@@ -96,6 +107,18 @@ func try_spend_stamina(cost: float) -> bool:
 func _on_weapon_hit(shake_strength: float, _count: int) -> void:
 	if camera and camera.has_method("add_shake"):
 		camera.call("add_shake", shake_strength)
+	_do_hit_stop(clampf(shake_strength * 0.006, 0.02, 0.10))
+
+## A brief, real-time freeze on impact — the cheapest way to make a hit feel like
+## it connected with something heavy. Bigger hits freeze a touch longer. The
+## token guard means overlapping hits don't restore time early.
+func _do_hit_stop(duration: float) -> void:
+	Engine.time_scale = 0.06
+	_hitstop_token += 1
+	var token := _hitstop_token
+	await get_tree().create_timer(duration, true, false, true).timeout
+	if token == _hitstop_token:
+		Engine.time_scale = 1.0
 
 func _on_weapon_state_changed(state: int) -> void:
 	weapon_state_changed.emit(_state_name(state), 0.0)
@@ -113,6 +136,12 @@ func _state_name(state: int) -> String:
 		StoneWeapon.State.ACTIVE:
 			return "SWING!"
 		StoneWeapon.State.RECOVERY:
+			return "RECOVER"
+		StoneWeapon.State.SLAM_RAISE, StoneWeapon.State.SLAM_HOLD:
+			return "SLAM!"
+		StoneWeapon.State.SLAM_DROP:
+			return "SMASH!"
+		StoneWeapon.State.SLAM_RECOVER:
 			return "RECOVER"
 		_:
 			return "READY"
