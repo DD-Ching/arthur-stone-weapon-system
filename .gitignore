@@ -23,8 +23,13 @@ mono_crash.*.json
 *.dmg
 
 # ----- Project-local notes (not part of the public game) -----
-# The original brief / prompt; kept locally, not shipped in the public repo.
+# The original briefs / prompts; kept locally, not shipped in the public repo.
 finishIt.txt
+finishit2.txt
+
+# Throwaway local verification screenshots (underscore-prefixed).
+_*.png
+_*.png.import
 
 # ----- OS / editor cruft -----
 .DS_Store

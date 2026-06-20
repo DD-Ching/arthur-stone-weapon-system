@@ -25,6 +25,10 @@ func _ready() -> void:
 	add_child(dummy)
 	arthur.global_position = Vector2.ZERO
 	dummy.global_position = Vector2(72, 0)  # straight along aim, inside the head's path
+	# Isolate the swing: neutralise the passive stone body so it can't shove the
+	# dummy before the swing connects (we're testing the attack hit, not presence).
+	arthur.weapon.stone_body.collision_layer = 0
+	arthur.weapon.stone_body.collision_mask = 0
 	arthur.weapon.hit_landed.connect(func(_s, _n): _hit = true)
 	print("SMOKE_READY ok")
 
