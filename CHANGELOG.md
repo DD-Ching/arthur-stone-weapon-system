@@ -8,6 +8,10 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ## [Unreleased]
 
+### Added
+- Headless swing smoke test (`tests/SwingSmokeTest.tscn`), wired into CI, asserting
+  the core loop: knockback, stamina cost, and the `hit_landed` signal.
+
 ### Planned
 - Phase 2 (Game Feel): hit-stop, impact particles, audio hooks, camera-shake shaping.
 
