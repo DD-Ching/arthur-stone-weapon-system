@@ -33,18 +33,18 @@ position = Vector2(800, 0)
 shape = SubResource("wall_v")
 
 [node name="Arthur" parent="." instance=ExtResource("2_arthur")]
-position = Vector2(0, 220)
+position = Vector2(0, 110)
 
 [node name="TargetDummy" parent="." instance=ExtResource("3_dummy")]
-position = Vector2(-300, -160)
+position = Vector2(-250, 20)
 
 [node name="TargetDummy2" parent="." instance=ExtResource("3_dummy")]
-position = Vector2(320, -200)
+position = Vector2(250, 30)
 
 [node name="TargetDummy3" parent="." instance=ExtResource("3_dummy")]
-position = Vector2(0, -320)
+position = Vector2(-100, -60)
 
 [node name="TargetDummy4" parent="." instance=ExtResource("3_dummy")]
-position = Vector2(260, 120)
+position = Vector2(130, -40)
 
 [node name="Hud" parent="." instance=ExtResource("4_hud")]
