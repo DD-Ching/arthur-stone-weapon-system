@@ -36,31 +36,45 @@ The smallest thing that proves the mechanic.
 
 ---
 
-## Phase 2 — Game Feel ⬜  → targets **v0.2.0**
+## Phase 2 — Game Feel 🔶  → ships as **v0.2.0**
 
 Make the existing mechanic *feel* as good as it reads.
 
-- ⬜ Hit-stop / freeze-frame on impact
-- ⬜ Swing arc trail + impact particles (placeholder is fine)
-- ⬜ Tunable knockback curves; squash/stretch on dummies
-- ⬜ Better camera shake shaping (trauma curve, directional kick)
+- ✅ Hit-stop / freeze-frame on impact (scaled to hit strength)
+- ✅ Swing arc trail + a charge ring on the stone
+- ✅ Camera shake scaled to impact
+- 🔶 Tunable knockback curves; squash/stretch on enemies
 - ⬜ Recovery-timing pass: make the punish window *readable*
 - ⬜ Audio hooks (whoosh on wind-up, crunch on impact)
-- ⬜ Wind-up telegraph polish so misses feel fair
 
 ---
 
-## Phase 3 — Physics Depth ⬜  → targets **v0.3.0**
+## Phase 3 — Physics Depth 🔶  → ships as **v0.2.0**, continues toward **v0.3.0**
 
 Let the stone's mass become a real, exploitable system.
 
+- ✅ **Passive physical presence** — the stone blocks/shoves enemies and props
+  while aiming (AnimatableBody2D stone head + RigidBody2D enemies/props)
+- ✅ **Overhead slam** with a radial **shockwave** (knockback + stun + cracks/dust)
+- ✅ Launchable **rock props**, including **debris** dropped by a slam
+- 🔶 Light terrain damage / cracks (transient on slam; persistent decals pending)
 - ⬜ Rotational inertia — the swing actually drags Arthur's body
 - ⬜ Drag-based weapon movement (the head lags and overshoots)
-- ⬜ Ground-slam attack with a radial **shockwave**
-- ⬜ Destructible crates / walls
-- ⬜ Light terrain damage / cracks
-- ⬜ Heavy-weapon sliding on the ground after a big swing
+- ⬜ Destructible crates / walls; heavy-weapon sliding after a big swing
 - ⬜ Different **stone sizes** as a power ↔ mobility dial
+
+---
+
+## Phase 3.5 — Spin Attack & Puzzle Combat ⬜  → targets **v0.3.0**
+
+Build on the now-stable physics into a "weapon as tool" puzzle layer.
+
+- ⬜ **Spin / tornado** attack: whirl the stone, push everything outward, clear
+  dust/smoke — drains stamina fast, dangerous to overuse (Arthur loses control)
+- ⬜ Knock enemies into each other and into **switches / pressure plates**
+- ⬜ Launch rocks into **weak walls** and **bridge supports**
+- ⬜ Push boulders onto plates; dirt mounds as temporary barriers
+- ⬜ A small hand-built puzzle room that uses the weapon as both weapon and tool
 
 ---
 

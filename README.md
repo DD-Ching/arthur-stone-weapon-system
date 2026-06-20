@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.1.0 — 2D Heavy Weapon Prototype</strong> · placeholder art · core mechanic playable</em></p>
+<p align="center"><em>Status: <strong>v0.2.0 — Physical Stone Weapon</strong> · placeholder art · passive presence, slam, and physics props playable</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
@@ -45,24 +45,27 @@ A swing is a **commitment**. Missing should hurt. Connecting should feel great.
 
 ---
 
-## Current prototype status (v0.1.0)
+## Current prototype status (v0.2.0)
 
 What's actually in the build right now:
 
 - ✅ Controllable Arthur with **momentum-based movement** (slow to start, slides to stop)
-- ✅ The **stone-sword** weapon with a four-state swing: *ready → wind-up → active → recovery*
-- ✅ **Hold-to-charge**: tap for a quick heavy swing, hold to wind up a bigger one
-- ✅ **Stamina system** with spend-on-swing, a regen delay, and an exhaustion fizzle
-- ✅ **Knockback** that launches target dummies (and bounces them off walls)
-- ✅ Four **target dummies** with hit counters
-- ✅ A walled **test arena** with a reference grid and a follow camera
-- ✅ **Camera shake** scaled to hit strength
-- ✅ A minimal **HUD**: stamina bar + live weapon-state read-out + control hints
-- ✅ **Reset** hotkey to stand the dummies back up
+- ✅ The **stone-sword**, drawn correctly: Arthur grips the **sword handle**; the blade
+  runs *through* a heavy **stone head** that's swung like a hammer
+- ✅ A four-state heavy swing (*ready → wind-up → active → recovery*) with **hold-to-charge**,
+  a charge ring, and a swing trail
+- ✅ **Passive physical presence** — the stone *blocks and shoves* enemies and props even
+  while you're only aiming. It's a heavy object you steer, not a cursor
+- ✅ **Overhead slam** (right-click): raise → hold → drop with a **shockwave** (radial
+  knockback + stun), cracks/dust, and a **debris rock** you can then launch
+- ✅ Real physics objects: enemies and **rocks** are rigid bodies that collide with walls,
+  each other, and the stone — and launch when hit
+- ✅ **Stamina** (spend-on-swing/slam, regen delay, exhaustion fizzle), **knockback**,
+  **camera shake** + **hit-stop** scaled to impact
+- ✅ A walled **test arena**, a follow camera, and a minimal **HUD** (stamina + weapon state)
 
-What it is **not** yet: a real game. No enemies that fight back, no levels, no
-audio, no win condition, no final art. See [`ROADMAP.md`](ROADMAP.md) for where
-it's going.
+What it is **not** yet: a real game. No enemy AI, no levels/puzzles wired up, no audio,
+no win condition, no final art. See [`ROADMAP.md`](ROADMAP.md) for where it's going.
 
 ---
 
@@ -73,9 +76,12 @@ it's going.
 | `W` `A` `S` `D` / Arrow keys   | Move (with weight + momentum)                   |
 | Mouse                          | Aim — the weapon turns *slowly* toward the cursor |
 | `Space` / Left Mouse Button    | Heavy swing — **hold to charge**, release to commit |
+| **Right Mouse Button**         | **Overhead slam** — a committed smash with a shockwave |
 | `R`                            | Reset the arena                                 |
 
-Full notes and the design reasoning behind each control: [`docs/CONTROLS.md`](docs/CONTROLS.md).
+Even without attacking, sweeping the mouse drags the heavy stone *through* enemies
+and rocks, shoving them around. Full notes and the design reasoning behind each
+control: [`docs/CONTROLS.md`](docs/CONTROLS.md).
 
 ---
 
@@ -118,14 +124,15 @@ More detail: [`docs/DESIGN_GOALS.md`](docs/DESIGN_GOALS.md).
 
 Designed-for but intentionally **not** built yet, roughly in priority order:
 
-- Ground-slam attack with a radial **shockwave**
-- Real **rotational inertia** (the stone's mass actually swinging Arthur around)
-- Destructible **crates / walls** and light terrain damage
-- Enemies that move, threaten, and can be juggled by knockback
-- **Stamina exhaustion** states (stagger / drop the stone)
-- Different **stone sizes** as a power/mobility dial
-- A **weapon upgrade path** and the "failed chosen one" narrative thread
-- Physics-comedy moments (over-swinging into walls, sliding on the stone)
+- **Spin / tornado attack** — Arthur whirls the stone, clearing space and flinging
+  everything outward; drains stamina fast and is dangerous to overuse
+- **Puzzle interactions**: knock enemies into each other and into switches, launch
+  rocks into weak walls / bridge supports, push boulders onto pressure plates
+- Destructible **crates / walls** and persistent **cracked ground / dirt mounds**
+- Enemies that move and threaten (right now they're physics dummies)
+- Real **rotational inertia** (the stone's mass actually dragging Arthur around)
+- Different **stone sizes** as a power/mobility dial, and a **weapon upgrade path**
+- Audio + more physics-comedy moments (over-swinging into walls, sliding on the stone)
 
 The full breakdown lives in [`ROADMAP.md`](ROADMAP.md).
 
@@ -154,21 +161,26 @@ arthur-stone-weapon-system/
 ├── project.godot          # Godot 4 project entry point — open this folder in Godot
 ├── icon.svg               # project icon (a sword stuck in a liftable stone)
 ├── scenes/                # .tscn scene files
-│   ├── Arena.tscn         #   main scene: walls, Arthur, dummies, HUD
-│   ├── Arthur.tscn        #   player body + stone weapon + camera
-│   ├── TargetDummy.tscn   #   a single knockback target
+│   ├── Arena.tscn         #   main scene: walls, Arthur, enemies, rocks, HUD
+│   ├── Arthur.tscn        #   player body + stone weapon (hitbox + stone body) + camera
+│   ├── TargetDummy.tscn   #   a rigid-body enemy
+│   ├── Rock.tscn          #   a launchable rigid-body prop
+│   ├── Shockwave.tscn     #   slam burst (spawned at runtime)
 │   └── Hud.tscn           #   stamina bar + state read-out
 ├── scripts/               # GDScript — one responsibility per file
-│   ├── Arthur.gd          #   movement, stamina, signal routing
-│   ├── StoneWeapon.gd     #   the swing state machine + hitbox
-│   ├── TargetDummy.gd     #   knockback receiver
+│   ├── Arthur.gd          #   movement, stamina, slam input, hit-stop, signal routing
+│   ├── StoneWeapon.gd     #   visual + swing/slam state machine + hitbox + stone body
+│   ├── TargetDummy.gd     #   rigid-body enemy: impulse knockback + stun
+│   ├── Rock.gd            #   rigid-body prop/projectile
+│   ├── Shockwave.gd       #   slam radial impulse + fading visual
 │   ├── GameCamera.gd      #   follow + shake
 │   ├── Hud.gd             #   HUD wiring
 │   └── Arena.gd           #   floor/grid draw, HUD binding, reset
+├── tests/                 # headless verification scenes (run in CI)
 ├── assets/                # placeholder/imported art (shapes are drawn in code for now)
 ├── docs/                  # concept, controls, design goals, architecture, build
 ├── devlog/                # short, honest development notes
-├── .github/workflows/     # CI: a headless Godot import smoke test
+├── .github/workflows/     # CI: headless import + tests, and the Pages deploy
 ├── .gitignore  .gitattributes
 └── README.md  ROADMAP.md  CHANGELOG.md  CONTRIBUTING.md  LICENSE
 ```
