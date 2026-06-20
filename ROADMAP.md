@@ -64,17 +64,18 @@ Let the stone's mass become a real, exploitable system.
 
 ---
 
-## Phase 4 — Public Demo ⬜  → targets **v0.4.0**
+## Phase 4 — Public Demo 🔶  → targets **v0.4.0**
 
 Get it into other people's hands.
 
-- ⬜ Web (HTML5) export + a desktop build
-- ⬜ Publish a GitHub **Release** with the build attached
-- ⬜ GitHub **Pages** page hosting the web build + a short pitch
+- 🔶 Web (HTML5) export ✅ + a desktop build ⬜
+- ✅ Publish a GitHub **Release** (`v0.1.0`) — source milestone; desktop binary still to attach
+- ✅ GitHub **Pages** hosting the web build: <https://dd-ching.github.io/arthur-stone-weapon-system/>
+  (auto-deployed by [`.github/workflows/pages.yml`](.github/workflows/pages.yml))
 - ⬜ A capture (GIF/video) of the core loop
 - ⬜ Devlog write-up of what players actually felt
 
-Export steps are pre-documented in [`docs/BUILD.md`](docs/BUILD.md).
+Export steps are documented in [`docs/BUILD.md`](docs/BUILD.md).
 
 ---
 

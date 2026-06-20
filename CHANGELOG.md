@@ -11,6 +11,10 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 ### Added
 - Headless swing smoke test (`tests/SwingSmokeTest.tscn`), wired into CI, asserting
   the core loop: knockback, stamina cost, and the `hit_landed` signal.
+- Live **web demo** on GitHub Pages, auto-deployed from `main` via
+  `.github/workflows/pages.yml` (single-threaded HTML5 export so it runs on Pages
+  without cross-origin-isolation headers): <https://dd-ching.github.io/arthur-stone-weapon-system/>
+- `export_presets.cfg` with a Web preset.
 
 ### Planned
 - Phase 2 (Game Feel): hit-stop, impact particles, audio hooks, camera-shake shaping.
