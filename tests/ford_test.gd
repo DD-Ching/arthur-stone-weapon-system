@@ -22,8 +22,9 @@ var _events := {}
 func _ready() -> void:
 	bf = load("res://scenes/Battlefield.tscn").instantiate()
 	add_child(bf)
-	bf.horde_target = 0                       # no reinforcements during the test
-	for e in get_tree().get_nodes_in_group("targets"):
+	bf._wave = 99                             # no reinforcement waves during the test
+	bf.max_logs = 0                           # no drifting logs to interfere
+	for e in get_tree().get_nodes_in_group("targets") + get_tree().get_nodes_in_group("allies"):
 		e.ai_enabled = false                  # freeze the army so only terrain/wheel act
 	Audio.sfx.connect(_on_sfx)
 	drift_rock = ROCK.instantiate()

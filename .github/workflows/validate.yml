@@ -72,3 +72,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/FordTest.tscn --quit-after 600 | tee ford.log
           grep -q "FORD_VERDICT PASS" ford.log
+
+      - name: Run hold-the-ford test (v0.8 waves + allies + breaches)
+        # Asserts allies spawn, the structured waves advance when the field clears, and
+        # a raider crossing the defence line is counted as a breach that loses the ford.
+        run: |
+          godot --headless --path . res://tests/HoldFordTest.tscn --quit-after 600 | tee holdford.log
+          grep -q "HOLDFORD_VERDICT PASS" holdford.log

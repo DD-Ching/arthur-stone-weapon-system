@@ -9,9 +9,45 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 ## [Unreleased]
 
 ### Planned
-- A structured 5-wave escalation and a true "Hold the Ford" defend-the-banner lose
-  condition, a bigger crowd via cheaper enemy updates, and real audio behind the
-  event hooks. See [`ROADMAP.md`](ROADMAP.md).
+- A bigger crowd via cheaper enemy updates (pooling / coarser AI ticks), a KO + time
+  score screen, and the challenge rooms. See [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.8.0] — 2026-06-21
+
+**Hold the Ford.** The ford becomes a real "hold the line" battle: five escalating
+waves of raiders try to cross, allied footmen fight at your side, and letting too many
+across loses the ford. Completes the Ford roadmap (river/wheel/bridge/audio) and makes
+the army smarter.
+
+### Added
+- **Structured 5-wave assault** — reinforcements now arrive as five escalating waves
+  (Light Raiders → Shield Soldiers → Spears behind shields → Cavalry + war cart → the
+  Officer & escort), announced on the HUD, each launching once the field thins or a
+  timer expires. Repel all five and the ford holds.
+- **"Hold the Ford" lose condition** — a defence line + allied banner at your bank.
+  Raiders now *march toward the banner* (fighting through the line to cross), not just
+  at Arthur; a raider that walks past the line under its own power is a **BREACH**.
+  Twelve breaches and the ford falls.
+- **Allied footmen** — a team system on the one enemy script: allies spawn on your side,
+  hunt the nearest raider, fight and die alongside you. No friendly fire — Arthur's
+  stone shoves allies but never scores on them; a fallen ally costs no KO.
+- **Smarter enemy AI** — units separate instead of stacking, non-shield raiders **flank**
+  to surround rather than clump, spearmen keep their spacing, and everyone re-picks the
+  nearest threat a few times a second (so they switch between Arthur and allies).
+- **Bridge collapse** — the wooden bridge is now damageable: pound it with launched
+  props and it **collapses**, turning the dry crossing into open water (denying the
+  raiders their clean route).
+- **Floating logs** — drift down the current from upstream; a fast log bowls raiders
+  like a launched rock, and Arthur can swing them.
+- **Real audio** — a `SoundBank` autoload synthesises a short procedural sound per
+  event (thud, clank, splash, creak, rising chime…) and plays it, so the twelve audio
+  hooks now actually make noise in the browser. No asset files.
+- **Charger reach ×3** — cavalry and the war cart now commit to a charge three times
+  as long, a real cross-the-field dash.
+- A seventh headless test (`HoldFordTest`) covers allies, wave advance, and breaches.
+  All seven tests pass.
 
 ---
 
@@ -305,7 +341,8 @@ makes him slow, vulnerable, and hard to control.
 - All visuals are placeholder shapes drawn in code — game feel over polish, by design.
 - No audio, no enemy AI, no win condition yet. See [`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.3...v0.7.0
 [0.6.3]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.1...v0.6.2

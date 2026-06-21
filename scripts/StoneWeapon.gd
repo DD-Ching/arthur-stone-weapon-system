@@ -262,6 +262,8 @@ func _apply_swing_hits(delta: float) -> void:
 	for body in hitbox.get_overlapping_bodies():
 		if not (body.has_method("apply_hit") or body.has_method("apply_knockback")):
 			continue
+		if body.is_in_group("allies"):
+			continue   # no friendly fire — the stone only shoves allies, never scores on them
 		var id := body.get_instance_id()
 		if _hit_ids.has(id):
 			continue
@@ -320,6 +322,8 @@ func _apply_spin_hits() -> void:
 	for body in hitbox.get_overlapping_bodies():
 		if not (body.has_method("apply_hit") or body.has_method("apply_knockback")):
 			continue
+		if body.is_in_group("allies"):
+			continue   # no friendly fire — the stone only shoves allies, never scores on them
 		var id := body.get_instance_id()
 		if _hit_ids.has(id):
 			continue
