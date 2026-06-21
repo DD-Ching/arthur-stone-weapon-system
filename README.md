@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.6.0 — Musou</strong> · placeholder art · a physics flail + a tornado whirlwind vs an endless army of soldiers, cavalry, and war carts — KO counter and all</em></p>
+<p align="center"><em>Status: <strong>v0.6.1 — Drag-to-Swing</strong> · placeholder art · physically drag the heavy stone vs an endless army of soldiers, cavalry, and war carts — KO counter and all</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
@@ -45,7 +45,7 @@ A swing is a **commitment**. Missing should hurt. Connecting should feel great.
 
 ---
 
-## Current prototype status (v0.6.0)
+## Current prototype status (v0.6.1)
 
 What's actually in the build right now:
 
@@ -56,11 +56,11 @@ What's actually in the build right now:
   debris** — all chargers can be broken mid-charge with a timed hit
 - ✅ Controllable Arthur with **momentum-based movement** + **health** and i-frames
 - ✅ The **stone-sword**, drawn correctly: Arthur grips the **sword handle**; the blade
-  runs *through* a heavy **stone head** that hangs behind him and is swung like a hammer
-- ✅ **Momentum swing** (the big change): the head is a spring-damped **pendulum** you
-  **fling** with left-click/Space — no charge bar, *apply force*. Damage comes from the
-  head's real speed, so whipping your aim and moving build a harder hit. Each swing
-  **lunges Arthur forward** (chain to sprint). Plus an **overhead slam** (right-click)
+  runs *through* a heavy **stone head** swung like a hammer
+- ✅ **Drag-to-swing control** (physics-sandbox feel): the head **follows the cursor with
+  lag**, and to attack you **hold + drag** the mouse around Arthur — drag clockwise → swing
+  clockwise. No attack button, no charge bar; damage comes purely from the head's **real
+  speed** (slow drag pushes, hard whip launches). Plus an **overhead slam** (right-click)
 - ✅ **Passive physical presence** — the resting stone *blocks and shoves* enemies/props
 - ✅ **Enemy AI**: soldiers approach, keep shields toward you, land **telegraphed** attacks,
   and **stagger** — but go limp the instant they're launched, so your strength always wins
@@ -85,15 +85,16 @@ but not built; the battlefield wants a real balance pass; no audio, no final art
 | Input                          | Action                                          |
 | ------------------------------ | ----------------------------------------------- |
 | `W` `A` `S` `D` / Arrow keys   | Move (with weight + momentum)                   |
-| Mouse                          | Aim — Arthur faces the cursor; the stone hangs *behind* him |
-| `Space` / Left Mouse Button    | **Swing** — flings the heavy head from behind to the front *and lunges you forward*. Chain swings to dash; whip your aim / build speed first to hit harder |
+| Mouse                          | The heavy head **follows the cursor with lag** — it never snaps. Slow contact just pushes/blocks |
+| **Hold** `Space` / Left Mouse **+ drag** | **Swing** — drag the mouse *around* Arthur to whip the head: drag **clockwise → swing clockwise**, counter-clockwise the other way. Faster drag = more speed = more damage |
 | **Right Mouse Button**         | **Overhead slam** — a committed smash with a shockwave |
 | **`Shift`** / **Middle Mouse** (hold) | **Spin / tornado** — whirl the stone, launching the whole crowd outward. Drains stamina fast |
 | `R`                            | Reset                                           |
 
-There's no charge bar — the swing's power is **momentum**. The faster the head is
-moving when it lands (from your movement and how you whip your aim), the harder it
-hits. Full notes and the design reasoning: [`docs/CONTROLS.md`](docs/CONTROLS.md).
+There's no attack button and no charge bar — you **physically drag and swing** the
+heavy stone, and damage comes straight from how fast it's actually moving (a plain
+click does nothing; a real whip launches). Full notes and the design reasoning:
+[`docs/CONTROLS.md`](docs/CONTROLS.md).
 
 ---
 
