@@ -14,6 +14,26 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.6.3] — 2026-06-21
+
+### Changed
+- **Code-review + simplify pass** (no gameplay change) — removed leftovers from the
+  v0.6.1 drag-to-swing rework, surfaced by an adversarially-verified review:
+  - deleted the orphaned `StoneWeapon.press_attack()` / `release_attack()` wrappers
+    (Arthur and the tests drive the weapon via `set_swinging()` directly),
+  - deleted the unused `StoneWeapon.is_ready()` and the dead `swing_cost` export
+    (stamina now drains continuously via `swing_stamina_rate`),
+  - deleted the never-called `Impact.recovery_mult()` (and corrected the architecture
+    doc that still listed it),
+  - rewrote the `StoneWeapon` class docstring, which still described the removed
+    "hangs behind / angular kick that flings the head" model, to match the actual
+    spring-toward-cursor + drag-torque control.
+- The review also *rejected* several tempting merges (unifying the swing/spin hit
+  loops would have silently changed spin's Stone Flow economy; `note_miss()` is still
+  used by the impact test) — left as-is on purpose. All five headless tests still pass.
+
+---
+
 ## [0.6.2] — 2026-06-21
 
 ### Changed
@@ -254,7 +274,8 @@ makes him slow, vulnerable, and hard to control.
 - All visuals are placeholder shapes drawn in code — game feel over polish, by design.
 - No audio, no enemy AI, no win condition yet. See [`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.2...HEAD
+[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.3...HEAD
+[0.6.3]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.5.0...v0.6.0

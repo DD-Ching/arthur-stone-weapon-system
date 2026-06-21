@@ -157,8 +157,6 @@ func charge_speed_mult() -> float:    # stack 1+: wind up a touch faster
 	return 1.0 + 0.07 * stacks
 func move_mult() -> float:            # stack 2+: a little more mobile
 	return 1.0 + 0.04 * maxi(0, stacks - 1)
-func recovery_mult() -> float:        # stack 3+: shorter recovery (multiplies the time)
-	return 1.0 - 0.06 * maxi(0, stacks - 2)
 func force_mult() -> float:           # the combo factor in the formula; stack 4 + mode add punch
 	var m := 1.0 + 0.08 * stacks
 	if stacks >= 4:

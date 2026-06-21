@@ -1,17 +1,18 @@
 class_name StoneWeapon
 extends Node2D
-## The stone-sword — now swung by momentum, not charged.
+## The stone-sword — a heavy stone you drag and whip, not an attack you trigger.
 ##
 ## Arthur grips the SWORD HANDLE; the blade runs out of his hand and is buried in
 ## a huge STONE that forms the heavy head. Because it is heavy, the head behaves
 ## like a weight on the end of his arm:
 ##
-##   - it HANGS BEHIND him and sloshes around with real inertia as he moves and as
-##     he turns to aim (a spring-damped pendulum, not a cursor),
-##   - pressing attack does not "charge" — it APPLIES FORCE: an angular kick that
-##     flings the head from behind, around, to the front,
-##   - the kick stacks on whatever momentum you already built by moving and whipping
-##     your aim, so a clever sweep hits far harder than a flat-footed poke,
+##   - it FOLLOWS THE CURSOR with weight and lag — a spring-damped pendulum that
+##     springs toward where you aim, never snapping to it,
+##   - holding attack does not "charge" — while held, DRAGGING the mouse around
+##     Arthur applies torque (drag clockwise → swing clockwise) that whips the head
+##     and builds real angular speed,
+##   - that drag-built speed stacks on the momentum you get from moving and whipping
+##     your aim, so a fast sweep hits far harder than a flat-footed poke,
 ##   - how hard a hit lands is read straight off the head's real speed at contact
 ##     (Impact.resolve_hit's relative_speed) — slow drag pushes, fast whip launches.
 ##
@@ -69,7 +70,6 @@ const ROCK := preload("res://scenes/Rock.tscn")
 @export_group("Cost")
 # Knockback / shake magnitudes live in Impact.gd (the one tuning hub). What stays
 # here is weapon-specific stamina cost.
-@export var swing_cost := 20.0
 @export var slam_stamina_cost := 42.0
 @export var slam_shake := 24.0
 
@@ -112,9 +112,6 @@ func _ready() -> void:
 func set_aim_target(angle: float) -> void:
 	_target_aim = angle
 
-func is_ready() -> bool:
-	return state == State.IDLE
-
 ## True while locked into the slam sequence (NOT spin) — you can't swing/slam/spin
 ## out of a committed slam. Explicit so reordering the enum can't break the guards.
 func _slam_committed() -> bool:
@@ -128,14 +125,6 @@ func _slam_committed() -> bool:
 ## motion. set_swinging() is called every frame with the button's held state.
 func set_swinging(on: bool) -> void:
 	_swinging = on
-
-# Kept so existing callers/tests keep working: a "press" just enters swing mode,
-# a "release" leaves it. The actual swing comes from the drag, not the press.
-func press_attack() -> void:
-	set_swinging(true)
-
-func release_attack() -> void:
-	set_swinging(false)
 
 func start_slam() -> void:
 	if _slam_committed() or state == State.SPIN:

@@ -85,7 +85,7 @@ target, pops the label, feeds Stone Flow, and requests a shake.
 `Impact` also holds the combo state: `flow` (0–100) → `stacks` (0–5). `add_flow()`
 on good hits; it **decays** after a grace period and **breaks** on `note_miss()`
 (a whiffed swing) or `note_exhausted()` (stamina ran dry). Stacks return *small*
-multipliers — `charge_speed_mult / move_mult / recovery_mult / force_mult` — read
+multipliers — `charge_speed_mult / move_mult / force_mult` — read
 by `StoneWeapon` and `Arthur`. They're deliberately tiny: buffed Arthur is still
 hauling a rock. The HUD listens to `flow_changed`.
 
