@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.5.0 — Musou</strong> · placeholder art · a physics flail + a tornado whirlwind vs an endless army — KO counter and all</em></p>
+<p align="center"><em>Status: <strong>v0.6.0 — Musou</strong> · placeholder art · a physics flail + a tornado whirlwind vs an endless army of soldiers, cavalry, and war carts — KO counter and all</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
@@ -45,14 +45,15 @@ A swing is a **commitment**. Missing should hurt. Connecting should feel great.
 
 ---
 
-## Current prototype status (v0.5.0)
+## Current prototype status (v0.6.0)
 
 What's actually in the build right now:
 
 - ✅ **Musou crowd combat**: a **spin / tornado** attack (hold Shift / middle-mouse) that
   whirls the stone and launches the whole crowd outward, a **KO counter** with milestones
-  (`RAMPAGE!` … `ONE-MAN ARMY!`), an endless **reinforcement horde**, and telegraphed
-  **cavalry charges** that plough the army and can be broken mid-charge
+  (`RAMPAGE!` … `ONE-MAN ARMY!`), an endless **reinforcement horde**, telegraphed
+  **cavalry charges**, and a **war cart** that plows the field and **flips into launchable
+  debris** — all chargers can be broken mid-charge with a timed hit
 - ✅ Controllable Arthur with **momentum-based movement** + **health** and i-frames
 - ✅ The **stone-sword**, drawn correctly: Arthur grips the **sword handle**; the blade
   runs *through* a heavy **stone head** that hangs behind him and is swung like a hammer
@@ -182,6 +183,7 @@ arthur-stone-weapon-system/
 │   ├── HeavyGuard.tscn    #   slow, high-mass, hard to stagger — moving anchor
 │   ├── BannerBearer.tscn  #   support; on death nearby enemies panic
 │   ├── Cavalry.tscn       #   telegraphed mounted charger (Cavalry.gd extends Enemy)
+│   ├── WarCart.tscn       #   heavy charging mass; flips into debris (WarCart.gd extends Cavalry)
 │   ├── Rock.tscn / Crate.tscn      #   launchable props (same script)
 │   ├── PressurePlate.tscn #   puzzle plate + gate (Arena)
 │   ├── Shockwave.tscn / FloatingText.tscn   #   spawned at runtime

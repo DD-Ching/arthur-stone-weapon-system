@@ -1,0 +1,36 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/WarCart.gd" id="1_cart"]
+
+[sub_resource type="RectangleShape2D" id="cart_shape"]
+size = Vector2(56, 40)
+
+[node name="WarCart" type="RigidBody2D"]
+collision_layer = 4
+collision_mask = 31
+mass = 4.5
+gravity_scale = 0.0
+linear_damp = 2.0
+angular_damp = 8.0
+lock_rotation = true
+contact_monitor = true
+max_contacts_reported = 8
+script = ExtResource("1_cart")
+enemy_name = "War Cart"
+look = "cart"
+radius = 26.0
+base_color = Color(0.5, 0.36, 0.22, 1)
+max_health = 90.0
+stagger_threshold = 720.0
+shield_break_threshold = 9999.0
+charge_speed = 380.0
+charge_damage = 24.0
+telegraph_time = 1.0
+charge_dur = 1.3
+recover_dur = 1.6
+trigger_range = 640.0
+charge_lane = 320.0
+debris_count = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("cart_shape")
