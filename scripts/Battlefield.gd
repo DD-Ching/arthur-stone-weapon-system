@@ -32,6 +32,8 @@ const MUD := [
 var _won := false
 var _lost := false
 var _wall_total := 1
+var _scan_cd := 0.0          ## throttles the (rare-to-change) objective scan
+var _mud_bodies: Array = []  ## cached enemy+prop list, refreshed periodically
 
 func _ready() -> void:
 	Impact.reset()
@@ -56,17 +58,25 @@ func _build_fences() -> void:
 		cs.position = r.position + r.size * 0.5
 		walls.add_child(cs)
 
-func _physics_process(_delta: float) -> void:
-	# Mud drag on physics bodies (enemies + props). Cheap point-in-rect test.
-	for grp in ["targets", "props"]:
-		for b in get_tree().get_nodes_in_group(grp):
-			if b is RigidBody2D and _in_mud(b.global_position):
-				b.linear_velocity *= MUD_DRAG
+func _physics_process(delta: float) -> void:
+	# Refresh the body list + check the objective a few times a second — they change
+	# only on a defeat, so scanning groups every frame is wasted work on the web build.
+	_scan_cd -= delta
+	if _scan_cd <= 0.0:
+		_scan_cd = 0.15
+		_mud_bodies = get_tree().get_nodes_in_group("targets") + get_tree().get_nodes_in_group("props")
+		_check_objective()
+	# Mud drag on the cached bodies (point-in-rect). Applied every frame so charges
+	# actually bog down; is_instance_valid guards bodies freed since the last refresh.
+	for b in _mud_bodies:
+		if is_instance_valid(b) and b is RigidBody2D and _in_mud(b.global_position):
+			b.linear_velocity *= MUD_DRAG
+
+func _check_objective() -> void:
 	if _won or _lost:
 		return
 	var remaining := get_tree().get_nodes_in_group("shieldwall").size()
-	var broken := _wall_total - remaining
-	hud.set_objective("BREAK THE SHIELD WALL   %d / %d" % [broken, _wall_total])
+	hud.set_objective("BREAK THE SHIELD WALL   %d / %d" % [_wall_total - remaining, _wall_total])
 	if remaining == 0:
 		_won = true
 		hud.show_banner("SHIELD WALL BROKEN!", Color(0.5, 0.95, 0.55))

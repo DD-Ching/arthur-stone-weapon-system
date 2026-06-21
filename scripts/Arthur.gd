@@ -40,6 +40,7 @@ var _hurt := 0.0               ## red hit-flash, seconds remaining
 var _invuln := 0.0
 var _steer := Vector2.ZERO     ## input-driven velocity (carries momentum)
 var _dash_vel := Vector2.ZERO  ## swing-lunge burst, decays on its own
+var _last_aim := 0.0           ## last drawn facing — redraw only when it changes
 
 @onready var weapon: StoneWeapon = $StoneWeapon
 @onready var camera = $Camera2D  ## untyped: GameCamera adds add_shake() at runtime
@@ -65,7 +66,11 @@ func _physics_process(delta: float) -> void:
 	_handle_attack()
 	_handle_movement(delta)
 	_handle_stamina(delta)
-	queue_redraw()
+	# Only redraw when something visible changes (hurt flash, i-frame blink, or the
+	# facing dot turning) — moving is a transform, not a redraw.
+	if _hurt > 0.0 or _invuln > 0.0 or absf(weapon.aim_angle - _last_aim) > 0.001:
+		_last_aim = weapon.aim_angle
+		queue_redraw()
 
 ## An enemy attack connected. Brief i-frames, a knock away from the source, a
 ## hurt flash, and the combo breaks. Returns true if the hit actually landed.
@@ -109,7 +114,8 @@ func _handle_movement(delta: float) -> void:
 	# The swing-lunge is a separate burst that bleeds off on its own, so it reads as
 	# a dash you can chain rather than something your steering eats.
 	_dash_vel = _dash_vel.move_toward(Vector2.ZERO, dash_friction * delta)
-	velocity = _steer + _dash_vel
+	# Hard cap so stacked lunges + buffs can never turn the heavy man into a rocket.
+	velocity = (_steer + _dash_vel).limit_length(max_speed + max_dash_speed)
 	move_and_slide()
 
 ## A forward burst from a swing — displacement that stacks (chain swings to sprint
