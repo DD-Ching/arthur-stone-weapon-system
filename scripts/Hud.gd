@@ -44,7 +44,7 @@ func _on_kills_changed(k: int, milestone: String) -> void:
 		return
 	if milestone != "":
 		_milestone = milestone
-		_ko_flash = 1.6
+		_ko_flash = 1.0
 	elif _ko_flash <= 0.0:
 		ko_label.text = "KO  %d" % k
 

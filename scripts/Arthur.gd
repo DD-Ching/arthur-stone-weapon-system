@@ -97,6 +97,8 @@ func _handle_aim() -> void:
 
 func _handle_attack() -> void:
 	# Hold to whirl (the musou tornado); takes priority over swing/slam while held.
+	# The early return is load-bearing: holding spin must not also fire a swing/slam
+	# in the same frame. stop_spin() is idempotent — safe to call every frame.
 	if Input.is_action_pressed("spin"):
 		weapon.start_spin()
 		return

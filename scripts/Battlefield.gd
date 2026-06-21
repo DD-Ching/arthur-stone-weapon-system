@@ -27,7 +27,7 @@ const MUD := [
 
 ## Reinforcements — the musou horde. Keep this many enemies alive by trickling in
 ## fresh fodder from the back of the field, so you always have an army to mow.
-@export var horde_target := 26
+@export var horde_target := 22   ## kept conservative for the single-threaded web build
 @export var spawn_interval := 1.0
 const LIGHT := preload("res://scenes/LightSoldier.tscn")
 const SHIELD := preload("res://scenes/ShieldSoldier.tscn")

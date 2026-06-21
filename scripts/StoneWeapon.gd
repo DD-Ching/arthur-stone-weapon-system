@@ -109,6 +109,11 @@ func set_aim_target(angle: float) -> void:
 func is_ready() -> bool:
 	return state == State.IDLE
 
+## True while locked into the slam sequence (NOT spin) — you can't swing/slam/spin
+## out of a committed slam. Explicit so reordering the enum can't break the guards.
+func _slam_committed() -> bool:
+	return state >= State.SLAM_RAISE and state <= State.SLAM_RECOVER
+
 # --- input ------------------------------------------------------------------
 
 ## Apply force: fling the head from where it is, around, to the front. The kick
@@ -116,8 +121,8 @@ func is_ready() -> bool:
 ## the aim), so building a sweep first makes the hit harder. You can press again
 ## mid-swing to re-kick (rhythmic back-and-forth) — each press costs stamina.
 func press_attack() -> void:
-	if state >= State.SLAM_RAISE:
-		return   # committed to a slam
+	if _slam_committed() or state == State.SPIN:
+		return   # committed to a slam, or spinning
 	if not _arthur.try_spend_stamina(swing_cost):
 		too_tired.emit()
 		return
@@ -138,7 +143,7 @@ func release_attack() -> void:
 	pass   # no charge to release — kept so existing callers/tests stay valid
 
 func start_slam() -> void:
-	if state >= State.SLAM_RAISE:
+	if _slam_committed() or state == State.SPIN:
 		return
 	if not _arthur.try_spend_stamina(slam_stamina_cost):
 		too_tired.emit()
@@ -153,9 +158,9 @@ func start_slam() -> void:
 ## rooted). Called every frame the spin key is held; idempotent once spinning.
 func start_spin() -> void:
 	if state == State.SPIN:
-		return
-	if state >= State.SLAM_RAISE:
-		return   # busy committing to a slam
+		return                  # already whirling — idempotent
+	if _slam_committed():
+		return                  # can't spin out of a committed slam
 	if _arthur.stamina < spin_min_stamina:
 		too_tired.emit()
 		return
@@ -163,10 +168,13 @@ func start_spin() -> void:
 	_spin_clear = 0.0
 	_change_state(State.SPIN)
 
+## Idempotent + safe to call every frame: a no-op unless we're actually spinning,
+## so releasing the spin key mid-slam can never cancel the slam.
 func stop_spin() -> void:
-	if state == State.SPIN:
-		_avel = clampf(_avel, -max_avel, max_avel)
-		_change_state(State.IDLE)
+	if state != State.SPIN:
+		return
+	_avel = clampf(_avel, -max_avel, max_avel)
+	_change_state(State.IDLE)
 
 # --- per-frame --------------------------------------------------------------
 
@@ -315,14 +323,17 @@ func _apply_spin_hits() -> void:
 			"angle_quality": 1.0, "pin": pin,
 		})
 		if body.has_method("apply_hit"):
-			var res: Dictionary = body.apply_hit(dir, r["knockback"], r["stun"], r["damage"], pin)
-			if not res["blocked"]:
-				Impact.popup(r["label"], body.global_position + Vector2(0, -26), r["color"])
-			Impact.add_flow(r["flow_gain"] * (0.4 if res["blocked"] else 1.0))
+			# No per-hit BONK popup here — the whirl pummels a whole crowd; the
+			# defeats, SHIELD BREAKs, and the KO count carry the feedback without
+			# burying the screen in labels (and without the node churn).
+			body.apply_hit(dir, r["knockback"], r["stun"], r["damage"], pin)
+			Impact.add_flow(r["flow_gain"])
 		else:
 			body.apply_knockback(dir, r["knockback"])
 		_hit_count += 1
-		hit_landed.emit(r["shake"] * 0.5, _hit_count)   # steady rumble, no per-hit freeze (see Arthur)
+		# Steady rumble (half power); the per-hit FREEZE is suppressed by the
+		# state == SPIN check in Arthur._on_weapon_hit, not by this scale.
+		hit_landed.emit(r["shake"] * 0.5, _hit_count)
 
 # --- slam states ------------------------------------------------------------
 
