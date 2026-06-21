@@ -15,9 +15,12 @@ extends CanvasLayer
 @onready var health_label: Label = $Root/HealthLabel
 @onready var objective_label: Label = $Root/ObjectiveLabel
 @onready var banner_label: Label = $Root/BannerLabel
+@onready var ko_label: Label = $Root/KoLabel
 
 const FILL_WIDTH := 312.0
 var _flash := 0.0       ## white flash on the stamina bar when a swing fizzles
+var _ko_flash := 0.0    ## milestone flash on the KO counter
+var _milestone := ""
 var _flow_ratio := 0.0  ## smoothed flow bar fill
 var _flow_target := 0.0
 var _stacks := 0
@@ -30,9 +33,20 @@ func bind(arthur) -> void:
 	arthur.exhausted.connect(_on_exhausted)
 	arthur.health_changed.connect(_on_health_changed)
 	Impact.flow_changed.connect(_on_flow_changed)
+	Impact.kills_changed.connect(_on_kills_changed)
 	_on_stamina_changed(arthur.stamina, arthur.max_stamina)
 	_on_health_changed(arthur.health, arthur.max_health)
 	_on_flow_changed(Impact.flow, Impact.stacks, Impact.flow_mode)
+	_on_kills_changed(Impact.kills, "")
+
+func _on_kills_changed(k: int, milestone: String) -> void:
+	if not ko_label:
+		return
+	if milestone != "":
+		_milestone = milestone
+		_ko_flash = 1.6
+	elif _ko_flash <= 0.0:
+		ko_label.text = "KO  %d" % k
 
 ## Objective + win/lose banner — only present on the battlefield, so guard the nodes.
 func set_objective(text: String) -> void:
@@ -57,6 +71,15 @@ func _process(delta: float) -> void:
 	_t += delta
 	if _flash > 0.0:
 		_flash = maxf(0.0, _flash - delta * 3.0)
+	# KO milestone flash: shout RAMPAGE! etc. in gold, then fall back to the count.
+	if _ko_flash > 0.0 and ko_label:
+		_ko_flash = maxf(0.0, _ko_flash - delta)
+		var pulse := 0.6 + 0.4 * sin(_t * 18.0)
+		ko_label.text = _milestone
+		ko_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.25, pulse))
+		if _ko_flash <= 0.0:
+			ko_label.text = "KO  %d" % Impact.kills
+			ko_label.add_theme_color_override("font_color", Color(1, 1, 1))
 	# Ease the flow bar so chains feel like a meter filling, not snapping.
 	_flow_ratio = move_toward(_flow_ratio, _flow_target, delta * 2.5)
 	flow_fill.size.x = FILL_WIDTH * _flow_ratio

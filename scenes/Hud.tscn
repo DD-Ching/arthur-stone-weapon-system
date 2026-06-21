@@ -132,6 +132,18 @@ vertical_alignment = 1
 theme_override_font_sizes/font_size = 44
 text = ""
 
+[node name="KoLabel" type="Label" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -300.0
+offset_top = 22.0
+offset_right = -24.0
+offset_bottom = 62.0
+mouse_filter = 2
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 30
+text = "KO  0"
+
 [node name="Hints" type="Label" parent="Root"]
 anchor_top = 1.0
 anchor_bottom = 1.0
@@ -141,4 +153,4 @@ offset_right = 1240.0
 offset_bottom = -18.0
 mouse_filter = 2
 theme_override_font_sizes/font_size = 16
-text = "WASD/Arrows: move    Mouse: aim    Space/L-Click: swing (flings the head + lunges you forward — chain to dash)    R-Click: overhead slam    R: reset"
+text = "WASD/Arrows: move    Mouse: aim    L-Click/Space: swing (lunges you)    R-Click: slam    Shift/Mid-Mouse: SPIN    R: reset"

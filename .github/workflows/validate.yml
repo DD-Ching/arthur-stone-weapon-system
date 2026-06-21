@@ -58,3 +58,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/BattleTest.tscn --quit-after 600 | tee battle.log
           grep -q "BATTLE_VERDICT PASS" battle.log
+
+      - name: Run spin + KO test (v0.5 musou systems)
+        # Asserts the spin whirlwind launches a ring of enemies outward + drains
+        # stamina, and the KO counter increments with a milestone on round numbers.
+        run: |
+          godot --headless --path . res://tests/SpinTest.tscn --quit-after 600 | tee spin.log
+          grep -q "SPIN_VERDICT PASS" spin.log

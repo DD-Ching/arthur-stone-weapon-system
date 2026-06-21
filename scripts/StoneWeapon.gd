@@ -25,7 +25,7 @@ signal charge_changed(power: float)   ## live swing power 0..1 (head momentum) f
 signal hit_landed(shake_strength: float, hit_count: int)
 signal too_tired()
 
-enum State { IDLE, SWING, SLAM_RAISE, SLAM_HOLD, SLAM_DROP, SLAM_RECOVER }
+enum State { IDLE, SWING, SLAM_RAISE, SLAM_HOLD, SLAM_DROP, SLAM_RECOVER, SPIN }
 
 const SHOCKWAVE := preload("res://scenes/Shockwave.tscn")
 const ROCK := preload("res://scenes/Rock.tscn")
@@ -56,6 +56,15 @@ const ROCK := preload("res://scenes/Rock.tscn")
 @export var slam_drop_time := 0.11
 @export var slam_recover_time := 0.6
 
+@export_group("Spin (musou whirlwind)")
+@export var spin_rate := 17.0          ## angular speed of the whirl (rad/s) — a few turns a second
+@export var spin_accel := 42.0         ## how fast it winds up to spin_rate
+@export var spin_cost := 40.0          ## stamina drained PER SECOND while spinning
+@export var spin_min_stamina := 12.0   ## won't start below this
+@export var spin_hit_interval := 0.26  ## how often each enemy can be re-hit by the whirl
+@export var spin_stretch := 12.0       ## extra head reach while spinning
+@export var spin_speed_ref := 1300.0   ## relative_speed fed to the impact formula during spin
+
 @export_group("Cost")
 # Knockback / shake magnitudes live in Impact.gd (the one tuning hub). What stays
 # here is weapon-specific stamina cost.
@@ -80,6 +89,7 @@ var _trail: Array = []
 var _head_world := Vector2.ZERO
 var _head_speed := 0.0    ## measured head speed in px/s — the swing's "relative_speed"
 var _arthur_vel_prev := Vector2.ZERO
+var _spin_clear := 0.0    ## countdown to clear spin hit-dedup so the whirl re-hits
 
 @onready var hitbox: Area2D = $Hitbox
 @onready var stone_body: AnimatableBody2D = $StoneBody
@@ -136,6 +146,28 @@ func start_slam() -> void:
 	_slam_struck = false
 	_change_state(State.SLAM_RAISE)
 
+# --- spin / tornado (held) --------------------------------------------------
+
+## The musou whirlwind: hold to whirl the stone around Arthur, launching the whole
+## crowd outward. Drains stamina fast; you keep some mobility (you're a tornado, not
+## rooted). Called every frame the spin key is held; idempotent once spinning.
+func start_spin() -> void:
+	if state == State.SPIN:
+		return
+	if state >= State.SLAM_RAISE:
+		return   # busy committing to a slam
+	if _arthur.stamina < spin_min_stamina:
+		too_tired.emit()
+		return
+	_hit_ids.clear()
+	_spin_clear = 0.0
+	_change_state(State.SPIN)
+
+func stop_spin() -> void:
+	if state == State.SPIN:
+		_avel = clampf(_avel, -max_avel, max_avel)
+		_change_state(State.IDLE)
+
 # --- per-frame --------------------------------------------------------------
 
 func _physics_process(delta: float) -> void:
@@ -166,14 +198,17 @@ func _physics_process(delta: float) -> void:
 			_process_slam_drop()
 		State.SLAM_RECOVER:
 			_process_slam_recover(delta)
+		State.SPIN:
+			_process_spin(delta)
 
 	rotation = _angle
 	hitbox.position = Vector2(_head_dist, 0.0)
 	stone_body.position = Vector2(_head_dist, 0.0)
-	var hot := (state == State.SWING and _head_speed > solid_off_speed) or state == State.SLAM_DROP
+	var hot := (state == State.SWING and _head_speed > solid_off_speed) or state == State.SLAM_DROP or state == State.SPIN
 	_set_solid(not hot)
 	_update_trail(delta)
-	charge_changed.emit(clampf(_head_speed / 1500.0, 0.0, 1.0) if state == State.SWING else 0.0)
+	var power := 1.0 if state == State.SPIN else (clampf(_head_speed / 1500.0, 0.0, 1.0) if state == State.SWING else 0.0)
+	charge_changed.emit(power)
 	queue_redraw()
 
 func _update_facing(delta: float) -> void:
@@ -237,6 +272,57 @@ func _apply_swing_hits() -> void:
 
 		_hit_count += 1
 		hit_landed.emit(r["shake"], _hit_count)
+
+# --- spin / tornado ---------------------------------------------------------
+
+func _process_spin(delta: float) -> void:
+	# Bleed stamina; the whirl ends the moment you run dry.
+	if not _arthur.try_spend_stamina(spin_cost * delta):
+		too_tired.emit()
+		_change_state(State.IDLE)
+		return
+	# Wind the head up to a fast steady whirl (keep whichever way it's already going).
+	var target_avel := spin_rate * (1.0 if _avel >= 0.0 else -1.0)
+	_avel = move_toward(_avel, target_avel, spin_accel * delta)
+	_angle = wrapf(_angle + _avel * delta, -PI, PI)
+	_head_dist = lerpf(_head_dist, arm_length + spin_stretch, clampf(8.0 * delta, 0.0, 1.0))
+	_lift = lerpf(_lift, 0.25, clampf(6.0 * delta, 0.0, 1.0))
+	_apply_spin_hits()
+	# Clear the per-target dedup every interval so the whirl keeps catching the crowd.
+	_spin_clear -= delta
+	if _spin_clear <= 0.0:
+		_hit_ids.clear()
+		_spin_clear = spin_hit_interval
+
+func _apply_spin_hits() -> void:
+	var origin: Vector2 = _arthur.global_position
+	for body in hitbox.get_overlapping_bodies():
+		if not (body.has_method("apply_hit") or body.has_method("apply_knockback")):
+			continue
+		var id := body.get_instance_id()
+		if _hit_ids.has(id):
+			continue
+		_hit_ids[id] = true
+		# Launch radially OUTWARD from Arthur — the crowd flies off in a ring.
+		var to: Vector2 = body.global_position - origin
+		var dir := to.normalized() if to.length() > 1.0 else Vector2.RIGHT.rotated(_angle)
+		var pin := 0.0
+		if body.has_method("apply_hit"):
+			pin = Impact.cushion(self, body.global_position, dir)
+		var r := Impact.resolve_hit({
+			"kind": "swing", "attacker_mass": Impact.MASS_STONE,
+			"relative_speed": maxf(_head_speed, spin_speed_ref), "charge": 0.0,
+			"angle_quality": 1.0, "pin": pin,
+		})
+		if body.has_method("apply_hit"):
+			var res: Dictionary = body.apply_hit(dir, r["knockback"], r["stun"], r["damage"], pin)
+			if not res["blocked"]:
+				Impact.popup(r["label"], body.global_position + Vector2(0, -26), r["color"])
+			Impact.add_flow(r["flow_gain"] * (0.4 if res["blocked"] else 1.0))
+		else:
+			body.apply_knockback(dir, r["knockback"])
+		_hit_count += 1
+		hit_landed.emit(r["shake"] * 0.5, _hit_count)   # steady rumble, no per-hit freeze (see Arthur)
 
 # --- slam states ------------------------------------------------------------
 
@@ -308,7 +394,7 @@ func _update_trail(delta: float) -> void:
 	var head := to_global(Vector2(_head_dist, 0.0))
 	_head_speed = minf(head.distance_to(_head_world) / maxf(delta, 0.0001), 3200.0)
 	_head_world = head
-	if (state == State.SWING and _head_speed > swing_end_speed) or state == State.SLAM_DROP:
+	if (state == State.SWING and _head_speed > swing_end_speed) or state == State.SLAM_DROP or state == State.SPIN:
 		_trail.push_back({"pos": head, "age": 0.0})
 	for p in _trail:
 		p.age += delta
@@ -335,8 +421,12 @@ func _draw() -> void:
 
 	# The stone: heavy mass that glows hotter the faster it's moving (its momentum
 	# is its power) — the only feedback you need to learn "wind up a bigger sweep".
+	# A spin radius ring (drawn in the rotating frame, so it appears as a full circle
+	# around Arthur) telegraphs the whirlwind's reach.
+	if state == State.SPIN:
+		draw_arc(Vector2.ZERO, _head_dist, 0.0, TAU, 40, Color(1.0, 0.7, 0.3, 0.35), 4.0)
 	var stone_col := Color(0.45, 0.43, 0.49)
-	if state == State.SWING:
+	if state == State.SWING or state == State.SPIN:
 		stone_col = stone_col.lerp(Color(1.0, 0.5, 0.2), speed_t)
 	draw_circle(head, r, stone_col)
 	draw_circle(head - Vector2(r * 0.3, r * 0.3), r * 0.45, stone_col.lightened(0.12))
@@ -348,7 +438,7 @@ func _draw() -> void:
 	draw_line(head + Vector2(r * 0.7, 0.0), head + Vector2(r + 12.0, 0.0), Color(0.85, 0.87, 0.95), 5.0)
 
 	# A heat ring when the head is really moving — reads the momentum at a glance.
-	if speed_t > 0.25 and state == State.SWING:
+	if speed_t > 0.25 and (state == State.SWING or state == State.SPIN):
 		draw_arc(head, r + 6.0, 0.0, TAU, 32, Color(1.0, 0.7, 0.25, speed_t * 0.9), 3.0)
 
 	# The HANDLE Arthur grips: grip + pommel at his hand, then crossguard.

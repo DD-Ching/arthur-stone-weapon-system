@@ -96,6 +96,11 @@ func _handle_aim() -> void:
 		weapon.set_aim_target(to_mouse.angle())
 
 func _handle_attack() -> void:
+	# Hold to whirl (the musou tornado); takes priority over swing/slam while held.
+	if Input.is_action_pressed("spin"):
+		weapon.start_spin()
+		return
+	weapon.stop_spin()
 	if Input.is_action_just_pressed("attack"):
 		weapon.press_attack()
 	if Input.is_action_just_released("attack"):
@@ -126,6 +131,8 @@ func lunge(impulse: Vector2) -> void:
 ## While the weapon is busy you are far less mobile — that is the cost of power.
 func _speed_multiplier() -> float:
 	match weapon.state:
+		StoneWeapon.State.SPIN:
+			return 0.7    # a moving tornado — slower, but you're not rooted
 		StoneWeapon.State.SWING:
 			return 0.6    # committed mid-swing — but the lunge is carrying you forward
 		StoneWeapon.State.SLAM_RAISE:
@@ -161,7 +168,10 @@ func try_spend_stamina(cost: float) -> bool:
 func _on_weapon_hit(shake_strength: float, _count: int) -> void:
 	if camera and camera.has_method("add_shake"):
 		camera.call("add_shake", shake_strength)
-	_do_hit_stop(clampf(shake_strength * 0.006, 0.02, 0.10))
+	# The whirlwind hits constantly — a freeze per hit would stutter it to a crawl,
+	# so spin gets only the rumble, not the hit-stop.
+	if weapon.state != StoneWeapon.State.SPIN:
+		_do_hit_stop(clampf(shake_strength * 0.006, 0.02, 0.10))
 
 ## A brief, real-time freeze on impact — the cheapest way to make a hit feel like
 ## it connected with something heavy. Bigger hits freeze a touch longer. The
@@ -196,6 +206,8 @@ func _on_weapon_too_tired() -> void:
 
 func _state_name(state: int) -> String:
 	match state:
+		StoneWeapon.State.SPIN:
+			return "SPIN!"
 		StoneWeapon.State.SWING:
 			return "SWING!"
 		StoneWeapon.State.SLAM_RAISE, StoneWeapon.State.SLAM_HOLD:

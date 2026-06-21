@@ -133,6 +133,7 @@ func _defeat() -> void:
 	remove_from_group("shieldwall")      # objective counts this immediately, not after the fade
 	Impact.popup("DOWN!", global_position + Vector2(0, -28), Color(1.0, 0.9, 0.4), 1.1)
 	Impact.add_flow(10.0)
+	Impact.add_kill()                    # the musou KO counter
 	if is_support:
 		# A banner bearer falling rattles the line.
 		Impact.popup("MORALE BROKEN", global_position + Vector2(0, -48), Color(1.0, 0.5, 0.3), 1.2)
