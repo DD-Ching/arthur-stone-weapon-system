@@ -44,3 +44,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/BehaviorTest.tscn --quit-after 600 | tee behavior.log
           grep -q "BEHAVIOR_VERDICT PASS" behavior.log
+
+      - name: Run impact + Stone Flow test (v0.3 combo system)
+        # Asserts a pinned (wall-crush) hit scores/damages more than an open hit,
+        # charging raises the score, and Stone Flow gains on hits / loses on a miss.
+        run: |
+          godot --headless --path . res://tests/ImpactTest.tscn --quit-after 600 | tee impact.log
+          grep -q "IMPACT_VERDICT PASS" impact.log

@@ -1,14 +1,18 @@
 # Architecture
 
-A guided tour of how the prototype is wired. It's still small — eight short
-scripts and a handful of scenes — but it now models real top-down physics.
+A guided tour of how the prototype is wired. It's still small — a dozen short
+scripts and a handful of scenes — but it now models real top-down physics with a
+single impact + combo brain.
 
 ## Scene tree
 
 ```
+(autoload) Impact (Node, Impact.gd)                      ← impact tuning + scoring + Stone Flow + feedback
+
 Arena (Node2D, Arena.gd)
 ├── Walls (StaticBody2D, layer "world")
-│   ├── Top / Bottom / Left / Right (CollisionShape2D)   ← arena boundary
+│   ├── Top / Bottom / Left / Right (CollisionShape2D)   ← boundary
+│   └── (interior walls added at runtime from Arena.WALLS) ← pillar + corner pocket
 ├── Arthur (CharacterBody2D, Arthur.gd, layer "arthur")  ← instance of Arthur.tscn
 │   ├── CollisionShape2D
 │   ├── StoneWeapon (Node2D, StoneWeapon.gd)             ← swing + slam, drives the head
@@ -17,134 +21,152 @@ Arena (Node2D, Arena.gd)
 │   │   └── Hitbox (Area2D)                              ← attack detection, follows the head
 │   │       └── CollisionShape2D
 │   └── Camera2D (GameCamera.gd)                          ← follow + shake
-├── TargetDummy ×4 (RigidBody2D, TargetDummy.gd, "enemies")
-├── Rock ×2 (RigidBody2D, Rock.gd, "props")              ← launchable
+├── Enemies (RigidBody2D, Enemy.gd, "enemies")           ← Dummy / Light / Shield / Heavy scenes
+├── Props (RigidBody2D, Rock.gd, "props")                ← Rock + Crate, launchable
+├── PressurePlate (Node2D, PressurePlate.gd)             ← plate (Area2D) + gate (StaticBody2D)
 └── Hud (CanvasLayer, Hud.gd)
 
-spawned at runtime by a slam:
-  Shockwave (Node2D, Shockwave.gd)  ← radial impulse + visual, frees itself
-  Rock (debris)                     ← dropped at the impact point
+spawned at runtime:
+  Shockwave   (Node2D, Shockwave.gd)   ← slam radial impulse + visual, frees itself
+  Rock        (debris)                 ← dropped at a slam impact
+  FloatingText(Node2D, FloatingText.gd)← a hit label, rises + fades, frees itself
 ```
 
-`Arena.tscn` is the **main scene** (set in `project.godot`). Spawned nodes are
-added to `get_tree().current_scene`.
+`Arena.tscn` is the **main scene**; `Impact` is an **autoload** (see
+`project.godot` `[autoload]`), so any node can reach it as `Impact`. Spawned
+nodes are added to `get_tree().current_scene`.
 
 ## Responsibilities (one job per script)
 
-| Script           | Owns                                                                 |
-| ---------------- | ------------------------------------------------------------------- |
-| `Arthur.gd`      | Body: momentum movement, stamina, slam input, hit-stop, routing weapon → camera/HUD |
-| `StoneWeapon.gd` | The visual, the swing + slam state machine, charge, the hitbox + the passive stone body, dealing impulses |
-| `TargetDummy.gd` | A `RigidBody2D` enemy: impulse knockback, stun state, hit counter   |
-| `Rock.gd`        | A `RigidBody2D` prop/projectile: launches when hit, tumbles         |
-| `Shockwave.gd`   | The slam burst: radial impulse + stun on spawn, then a fading ring/cracks/dust |
-| `GameCamera.gd`  | Decaying screen shake (follows Arthur via parenting + the Camera2D's position smoothing) |
-| `Hud.gd`         | Drawing the stamina bar + weapon-state text from signals            |
-| `Arena.gd`       | Floor/grid visuals, binding the HUD to Arthur, the reset hotkey     |
+| Script             | Owns                                                                 |
+| ------------------ | ------------------------------------------------------------------- |
+| `Impact.gd`        | **The one tuning hub**: all impact numbers, the scoring formula, the Stone Flow combo, the wall-crush raycast, and the floating-label / shake feedback |
+| `Arthur.gd`        | Body: momentum movement, stamina, slam input, hit-stop, Stone-Flow mobility, routing weapon → camera/HUD |
+| `StoneWeapon.gd`   | The visual, the swing + slam state machine, charge, the hitbox + the passive stone body; runs each swing hit through `Impact` |
+| `Enemy.gd`         | A configurable `RigidBody2D` enemy: take-hit / knockback / shield block / stun / defeat, and **bowling** (scores when flung into another enemy) |
+| `Rock.gd`          | A `RigidBody2D` prop/projectile (rock or crate): launches when hit, and scores when it hits an enemy |
+| `Shockwave.gd`     | The slam burst: radial impulse + damage + stun on `detonate()`, then a fading ring/cracks/dust |
+| `PressurePlate.gd` | A weight-it-to-open-the-gate puzzle (plate Area2D + gate StaticBody2D) |
+| `FloatingText.gd`  | A rising, fading hit label (drawn in code)                          |
+| `GameCamera.gd`    | Decaying screen shake                                                |
+| `Hud.gd`           | Stamina bar + weapon-state text + the Stone Flow meter, from signals |
+| `Arena.gd`         | Floor/grid visuals, interior walls, HUD binding, `Impact.reset()`, reset hotkey |
 
-## The weapon state machine (`StoneWeapon.gd`)
+## The impact pipeline (`Impact.gd`)
 
-The heart of the prototype. One enum, eight states, driven in `_physics_process`.
-Every state ultimately sets two values — the head's **angle** (`aim + swing_offset`)
-and its **distance** (`_head_dist`) — and the hitbox + stone body are moved to that
-head each frame, so what you see is exactly what hits and shoves.
+Every hit in the game — a swing, a slam, a thrown rock/crate, an enemy bowled
+into another — resolves through **one** function so the whole game speaks one
+language of force:
 
-Swing branch:
 ```
-READY ──press_attack()──► WINDUP ──(min wind-up paid + release, or full charge)──► ACTIVE
-  ▲                                                                                  │
-  └──────────────────────────── RECOVERY ◄───────────────────────────(active_time)──┘
-```
-Slam branch:
-```
-READY ──start_slam()──► SLAM_RAISE ──► SLAM_HOLD ──► SLAM_DROP ──(impact)──► SLAM_RECOVER ──► READY
+score = speed_factor × mass_factor × charge × angle × collision_bonus × combo
 ```
 
-- **WINDUP** — head hauls back, `charge` ramps `0 → 1`. Release after the minimum
-  wind-up (or full charge) fires. Movement throttled to 35%.
-- **ACTIVE** — head snaps through the arc over `active_time`; the hitbox is live and
-  each overlapping body is struck **once**. The solid stone body steps aside here so
-  the designed impulse (not the sweep) does the work.
-- **RECOVERY** — head eases home over a charge-scaled duration. Movement 22% — the
-  punish window.
-- **SLAM_RAISE → HOLD → DROP** — the head rears back and "lifts" (it grows + casts a
-  shadow), pauses, then smashes out to `slam_reach`. At impact it spawns a
-  `Shockwave` + a debris `Rock`. Movement is throttled hard throughout (14–30%).
-- **SLAM_RECOVER** — long, exposed return to **READY**.
+- **speed** — the swing's *measured* head speed (px/s), or a projectile's / bowled
+  enemy's collision speed. Slow touch → low; fast sweep → high.
+- **mass** — the attacker's effective mass (the stone is huge, a rock less, a
+  flung enemy little). Note: knockback is applied as an **impulse**, so the
+  *receiver's* `mass` decides how far it actually flies — a light soldier sails, a
+  heavy guard barely moves.
+- **charge** — 0→1 for a held swing; 0 for collisions.
+- **angle** — how head-on the hit is.
+- **collision_bonus** — kind-specific (bowling/rock/slam) **plus a wall-crush
+  term**: a short raycast (`cushion()`) checks for a wall right behind the target;
+  if it can't fly away, the bonus spikes.
+- **combo** — `Impact.force_mult()`, driven by the current Stone Flow stacks.
 
-If stamina can't cover a swing at fire time, the weapon emits `too_tired` and
-stumbles **straight into recovery** without enabling the hit. A slam checks stamina
-up front. Overcommitting is its own punishment.
+`resolve_hit(ctx)` returns a Dictionary — `knockback, damage, stun, shake, label,
+color, flow_gain` — that the caller applies and displays. `collide()` is the
+one-call version for non-weapon hits (props, bowling): it resolves, applies to the
+target, pops the label, feeds Stone Flow, and requests a shake.
+
+### Stone Flow (the combo)
+
+`Impact` also holds the combo state: `flow` (0–100) → `stacks` (0–5). `add_flow()`
+on good hits; it **decays** after a grace period and **breaks** on `note_miss()`
+(a whiffed swing) or `note_exhausted()` (stamina ran dry). Stacks return *small*
+multipliers — `charge_speed_mult / move_mult / recovery_mult / force_mult` — read
+by `StoneWeapon` and `Arthur`. They're deliberately tiny: buffed Arthur is still
+hauling a rock. The HUD listens to `flow_changed`.
 
 ## Physics & collision layers
 
 Everything pushable is a `RigidBody2D` with `gravity_scale = 0` and `linear_damp`
-for top-down friction, so they collide with walls, each other, and the stone for
-free. Named layers (in `project.godot`) keep the interactions legible:
+for top-down friction. Named layers (in `project.godot`) keep it legible:
 
 | Body            | Type             | layer    | collides with                |
 | --------------- | ---------------- | -------- | ---------------------------- |
 | Walls           | StaticBody2D     | world    | (scanned by others)          |
 | Arthur          | CharacterBody2D  | arthur   | world, enemies, props        |
 | Stone head      | AnimatableBody2D | weapon   | enemies, props (not Arthur)  |
-| Enemy (dummy)   | RigidBody2D      | enemies  | everything                   |
-| Rock (prop)     | RigidBody2D      | props    | everything                   |
+| Enemy           | RigidBody2D      | enemies  | everything                   |
+| Rock / Crate    | RigidBody2D      | props    | everything                   |
 
-**Passive presence.** The stone head is an `AnimatableBody2D`. Each physics frame
-the weapon moves it (and the Area2D hitbox) to the visible head position; because
-it's a solid kinematic body it blocks rigid bodies and shoves them as it sweeps —
-so the weapon has weight even when you're only aiming. During the **ACTIVE** swing
-and **SLAM_DROP** its collision shape is disabled (`_set_solid`) so the chaotic
-fast-sweep push gives way to a clean, designed impulse.
+**Passive presence.** The stone head is an `AnimatableBody2D`; each physics frame
+the weapon moves it (and the hitbox) to the visible head, so it blocks and shoves
+rigid bodies as it sweeps. During the **ACTIVE** swing and **SLAM_DROP** its
+collider is disabled (`_set_solid`) so the chaotic fast-sweep push gives way to a
+clean, designed impulse.
+
+**Bowling** uses `contact_monitor`: enemies and props report `body_entered`, and a
+fast collision with another enemy is scored through `Impact.collide()`. A
+per-target debounce + a "only the faster body initiates" rule keeps one touch =
+one hit.
 
 ## How an attack lands
 
 ```
 StoneWeapon (ACTIVE)
-  └─ hitbox.get_overlapping_bodies()           # detects enemies + props (mask)
-       └─ for each body with apply_knockback(), not already hit this swing:
-            body.apply_knockback(dir, impulse)  # apply_central_impulse; scales with charge
-            body.stun(t)
-            emit hit_landed(shake, count) ─► Arthur ─► camera shake + hit-stop
+  └─ hitbox.get_overlapping_bodies()              # enemies + props (by mask)
+       └─ for each body not already hit this swing:
+            r = Impact.resolve_hit(speed, charge, angle, wall-crush pin, shield)
+            enemy.apply_hit(dir, r.knockback, r.stun, r.damage)  # or prop.apply_knockback
+            Impact.popup(r.label) ; Impact.add_flow(r.flow_gain)
+            emit hit_landed(r.shake) ─► Arthur ─► camera shake + hit-stop
+  └─ a swing that hits nothing → Impact.note_miss()  # the combo bleeds
 
 StoneWeapon (slam impact)
-  └─ spawn Shockwave at the slam point
-       └─ for each nearby target/prop: apply_knockback(out, impulse·falloff) + stun
-  └─ spawn a debris Rock
-  └─ emit hit_landed(big_shake) ─► strong shake + hit-stop
+  └─ spawn Shockwave.detonate() → radial Impact-scored hits + stun + flow
+  └─ spawn a debris Rock ; big shake + hit-stop
+
+Enemy / Rock (flung into an enemy)
+  └─ body_entered → Impact.collide(...) → score + apply + label + flow + shake
 ```
 
-Bodies opt in by implementing `apply_knockback(dir, strength)` (enemies and rocks
-both do), so the weapon never needs to know what it hit — that's the seam future
-enemies, destructibles, and switches plug into.
+Bodies opt in by implementing `apply_hit` / `apply_knockback`, so neither the
+weapon nor `Impact` needs to know concrete classes — that seam is where future
+enemies, destructibles, and switches plug in.
 
 ## Signals (no polling, loose coupling)
 
-`StoneWeapon` announces what it's doing; nobody reaches into it.
+`StoneWeapon` announces what it's doing; `Impact` announces combo + ambient hits.
 
-| Signal (`StoneWeapon`) | Carries                | Consumed by                          |
-| ---------------------- | ---------------------- | ------------------------------------ |
-| `state_changed(state)` | new state enum         | `Arthur` → re-emits a human label    |
-| `charge_changed(c)`    | charge `0..1`          | `Arthur` → HUD wind-up %             |
-| `hit_landed(shake, n)` | shake strength, count  | `Arthur` → camera shake              |
-| `too_tired()`          | —                      | `Arthur` → `exhausted` → HUD flash   |
+| Signal                          | Carries               | Consumed by                       |
+| ------------------------------- | --------------------- | --------------------------------- |
+| `StoneWeapon.state_changed`     | new state enum        | `Arthur` → human label            |
+| `StoneWeapon.charge_changed`    | charge `0..1`         | `Arthur` → HUD wind-up %          |
+| `StoneWeapon.hit_landed`        | shake, count          | `Arthur` → camera shake + hit-stop |
+| `StoneWeapon.too_tired`         | —                     | `Arthur` → `exhausted` + `Impact.note_exhausted` |
+| `Impact.flow_changed`           | flow, stacks, mode    | `Hud` → Stone Flow meter          |
+| `Impact.impact_fx`              | shake strength        | `Arthur` → shake + hit-stop for prop/bowling hits |
 
-`Arthur` re-broadcasts to the HUD (`stamina_changed`, `weapon_state_changed`,
-`exhausted`). `Arena._ready()` calls `hud.bind(arthur)` to connect them, so the
-HUD has no hard path into gameplay nodes.
+`Arena._ready()` calls `hud.bind(arthur)` to connect the HUD, so it has no hard
+path into gameplay nodes.
 
-## Why a few references are deliberately untyped
+## Why a few references are deliberately untyped / dynamic
 
-`StoneWeapon` talks to its parent Arthur and to target bodies through *dynamic*
-calls (`_arthur.try_spend_stamina(...)`, `body.call("apply_knockback", …)`).
-That's intentional: it keeps the weapon decoupled from concrete classes and
-sidesteps GDScript cyclic-type issues, at the cost of a little static checking.
-For a prototype this seam is a feature — it's exactly where new content slots in.
+`StoneWeapon` and `Impact` talk to bodies through duck-typed calls
+(`body.apply_hit(...)`, `body.has_method("block_factor")`). That's intentional: it
+keeps them decoupled from concrete classes, so new content slots in without
+touching the core. (GDScript's `:=` can't infer through these dynamic calls, so
+those locals are explicitly typed — see the `var dir: Vector2 = …` spots.)
 
 ## Coordinate / drawing notes
 
-- All character art is drawn in code (`_draw`) with placeholder shapes — no image
-  assets to import, nothing to go stale.
-- `StoneWeapon` draws its head along local **+X**; the node's `rotation`
-  (`aim_angle + swing_offset`) is what sweeps it. The hitbox is parented to the
-  same node, so it sweeps in lockstep with the visual — what you see is what hits.
+- All art is drawn in code (`_draw`) with placeholder shapes — nothing to import,
+  nothing to go stale.
+- `StoneWeapon` draws its head along local **+X**; the node's `rotation` sweeps it,
+  and the hitbox + stone body are parented to the same node — what you see is what
+  hits and shoves.
+- Interior walls live as `Rect2`s in `Arena.WALLS`: the same data becomes both the
+  collision shapes and the drawn rectangles, so they can't drift apart.
