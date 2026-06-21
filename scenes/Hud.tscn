@@ -45,6 +45,40 @@ mouse_filter = 2
 theme_override_font_sizes/font_size = 18
 text = "WEAPON: READY"
 
+[node name="FlowLabel" type="Label" parent="Root"]
+offset_left = 24.0
+offset_top = 116.0
+offset_right = 420.0
+offset_bottom = 142.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+text = "STONE FLOW  x0"
+
+[node name="FlowBg" type="ColorRect" parent="Root"]
+offset_left = 24.0
+offset_top = 146.0
+offset_right = 344.0
+offset_bottom = 170.0
+mouse_filter = 2
+color = Color(0.08, 0.08, 0.1, 0.85)
+
+[node name="FlowFill" type="ColorRect" parent="Root/FlowBg"]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 4.0
+offset_bottom = 20.0
+mouse_filter = 2
+color = Color(0.45, 0.7, 1.0, 1)
+
+[node name="StateLabelHint" type="Label" parent="Root"]
+offset_left = 352.0
+offset_top = 146.0
+offset_right = 760.0
+offset_bottom = 170.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 14
+text = "build combo: keep landing heavy hits"
+
 [node name="Hints" type="Label" parent="Root"]
 anchor_top = 1.0
 anchor_bottom = 1.0

@@ -1,10 +1,15 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/Arena.gd" id="1_arena"]
 [ext_resource type="PackedScene" path="res://scenes/Arthur.tscn" id="2_arthur"]
 [ext_resource type="PackedScene" path="res://scenes/TargetDummy.tscn" id="3_dummy"]
 [ext_resource type="PackedScene" path="res://scenes/Hud.tscn" id="4_hud"]
 [ext_resource type="PackedScene" path="res://scenes/Rock.tscn" id="5_rock"]
+[ext_resource type="PackedScene" path="res://scenes/LightSoldier.tscn" id="6_light"]
+[ext_resource type="PackedScene" path="res://scenes/ShieldSoldier.tscn" id="7_shield"]
+[ext_resource type="PackedScene" path="res://scenes/HeavyGuard.tscn" id="8_heavy"]
+[ext_resource type="PackedScene" path="res://scenes/Crate.tscn" id="9_crate"]
+[ext_resource type="PackedScene" path="res://scenes/PressurePlate.tscn" id="10_plate"]
 
 [sub_resource type="RectangleShape2D" id="wall_h"]
 size = Vector2(1680, 40)
@@ -39,21 +44,39 @@ shape = SubResource("wall_v")
 position = Vector2(0, 110)
 
 [node name="TargetDummy" parent="." instance=ExtResource("3_dummy")]
-position = Vector2(-250, 20)
+position = Vector2(160, 40)
 
 [node name="TargetDummy2" parent="." instance=ExtResource("3_dummy")]
-position = Vector2(250, 30)
+position = Vector2(-170, 200)
 
-[node name="TargetDummy3" parent="." instance=ExtResource("3_dummy")]
-position = Vector2(-100, -60)
+[node name="LightSoldier" parent="." instance=ExtResource("6_light")]
+position = Vector2(400, 90)
 
-[node name="TargetDummy4" parent="." instance=ExtResource("3_dummy")]
-position = Vector2(130, -40)
+[node name="LightSoldier2" parent="." instance=ExtResource("6_light")]
+position = Vector2(452, 40)
+
+[node name="LightSoldier3" parent="." instance=ExtResource("6_light")]
+position = Vector2(470, 132)
+
+[node name="ShieldSoldier" parent="." instance=ExtResource("7_shield")]
+position = Vector2(-250, 70)
+
+[node name="HeavyGuard" parent="." instance=ExtResource("8_heavy")]
+position = Vector2(220, -40)
 
 [node name="Rock" parent="." instance=ExtResource("5_rock")]
-position = Vector2(-70, 50)
+position = Vector2(-50, 70)
 
 [node name="Rock2" parent="." instance=ExtResource("5_rock")]
-position = Vector2(75, 45)
+position = Vector2(60, 60)
+
+[node name="Rock3" parent="." instance=ExtResource("5_rock")]
+position = Vector2(300, 150)
+
+[node name="Crate" parent="." instance=ExtResource("9_crate")]
+position = Vector2(-300, -240)
+
+[node name="PressurePlate" parent="." instance=ExtResource("10_plate")]
+position = Vector2(-300, -360)
 
 [node name="Hud" parent="." instance=ExtResource("4_hud")]
