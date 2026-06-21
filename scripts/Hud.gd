@@ -56,9 +56,9 @@ func _on_stamina_changed(current: float, maximum: float) -> void:
 	stamina_fill.color = col
 	stamina_label.text = "STAMINA  %d / %d" % [round(current), round(maximum)]
 
-func _on_state_changed(state_name: String, charge: float) -> void:
-	if charge > 0.01:
-		state_label.text = "WEAPON: WINDING  [%d%%]" % round(charge * 100.0)
+func _on_state_changed(state_name: String, power: float) -> void:
+	if power > 0.01:
+		state_label.text = "WEAPON: POWER  [%d%%]" % round(power * 100.0)
 	else:
 		state_label.text = "WEAPON: %s" % state_name
 

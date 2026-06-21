@@ -18,6 +18,8 @@ signal exhausted()
 @export var max_speed := 158.0
 @export var accel := 620.0     ## low → slow to reach top speed (he is hauling a rock)
 @export var friction := 480.0  ## modest → he keeps drifting when you stop steering
+@export var dash_friction := 520.0   ## how fast a swing-lunge bleeds off
+@export var max_dash_speed := 340.0  ## cap on stacked lunges — heavy, not a rocket
 
 @export_group("Stamina")
 @export var max_stamina := 100.0
@@ -27,6 +29,8 @@ signal exhausted()
 var stamina := 0.0
 var _regen_cooldown := 0.0
 var _hitstop_token := 0
+var _steer := Vector2.ZERO     ## input-driven velocity (carries momentum)
+var _dash_vel := Vector2.ZERO  ## swing-lunge burst, decays on its own
 
 @onready var weapon: StoneWeapon = $StoneWeapon
 @onready var camera = $Camera2D  ## untyped: GameCamera adds add_shake() at runtime
@@ -65,20 +69,25 @@ func _handle_movement(delta: float) -> void:
 	# Stone Flow (stack 2+) grants a little extra mobility — still hauling a rock.
 	var mult := _speed_multiplier() * Impact.move_mult()
 	if dir != Vector2.ZERO:
-		velocity = velocity.move_toward(dir * max_speed * mult, accel * delta)
+		_steer = _steer.move_toward(dir * max_speed * mult, accel * delta)
 	else:
-		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+		_steer = _steer.move_toward(Vector2.ZERO, friction * delta)
+	# The swing-lunge is a separate burst that bleeds off on its own, so it reads as
+	# a dash you can chain rather than something your steering eats.
+	_dash_vel = _dash_vel.move_toward(Vector2.ZERO, dash_friction * delta)
+	velocity = _steer + _dash_vel
 	move_and_slide()
+
+## A forward burst from a swing — displacement that stacks (chain swings to sprint
+## across the field), capped so Arthur stays heavy rather than turning into a rocket.
+func lunge(impulse: Vector2) -> void:
+	_dash_vel = (_dash_vel + impulse).limit_length(max_dash_speed)
 
 ## While the weapon is busy you are far less mobile — that is the cost of power.
 func _speed_multiplier() -> float:
 	match weapon.state:
-		StoneWeapon.State.WINDUP:
-			return 0.35   # bracing — barely shuffling
-		StoneWeapon.State.ACTIVE:
-			return 0.6    # dragged along by the swing's momentum
-		StoneWeapon.State.RECOVERY:
-			return 0.22   # fully committed, fully exposed
+		StoneWeapon.State.SWING:
+			return 0.6    # committed mid-swing — but the lunge is carrying you forward
 		StoneWeapon.State.SLAM_RAISE:
 			return 0.24   # heaving the stone overhead
 		StoneWeapon.State.SLAM_HOLD:
@@ -88,7 +97,7 @@ func _speed_multiplier() -> float:
 		StoneWeapon.State.SLAM_RECOVER:
 			return 0.2    # planted, wide open
 		_:
-			return 1.0
+			return 1.0   # IDLE
 
 func _handle_stamina(delta: float) -> void:
 	if _regen_cooldown > 0.0:
@@ -138,8 +147,8 @@ func _on_impact_fx(strength: float) -> void:
 func _on_weapon_state_changed(state: int) -> void:
 	weapon_state_changed.emit(_state_name(state), 0.0)
 
-func _on_weapon_charge_changed(charge: float) -> void:
-	weapon_state_changed.emit("WINDING", charge)
+func _on_weapon_charge_changed(power: float) -> void:
+	weapon_state_changed.emit("POWER", power)
 
 func _on_weapon_too_tired() -> void:
 	Impact.note_exhausted()   # running dry mid-combo breaks Stone Flow
@@ -147,12 +156,8 @@ func _on_weapon_too_tired() -> void:
 
 func _state_name(state: int) -> String:
 	match state:
-		StoneWeapon.State.WINDUP:
-			return "WINDING"
-		StoneWeapon.State.ACTIVE:
+		StoneWeapon.State.SWING:
 			return "SWING!"
-		StoneWeapon.State.RECOVERY:
-			return "RECOVER"
 		StoneWeapon.State.SLAM_RAISE, StoneWeapon.State.SLAM_HOLD:
 			return "SLAM!"
 		StoneWeapon.State.SLAM_DROP:
