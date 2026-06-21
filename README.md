@@ -10,12 +10,12 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.2.0 — Physical Stone Weapon</strong> · placeholder art · passive presence, slam, and physics props playable</em></p>
+<p align="center"><em>Status: <strong>v0.3.0 — Impact &amp; Combo</strong> · placeholder art · momentum-based hits, wall crush, bowling, and the Stone Flow combo playable</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://github.com/DD-Ching/arthur-stone-weapon-system/releases/tag/v0.1.0">Release notes</a>
+  <a href="https://github.com/DD-Ching/arthur-stone-weapon-system/releases">Release notes</a>
 </p>
 
 <p align="center">
@@ -45,7 +45,7 @@ A swing is a **commitment**. Missing should hurt. Connecting should feel great.
 
 ---
 
-## Current prototype status (v0.2.0)
+## Current prototype status (v0.3.0)
 
 What's actually in the build right now:
 
@@ -53,19 +53,24 @@ What's actually in the build right now:
 - ✅ The **stone-sword**, drawn correctly: Arthur grips the **sword handle**; the blade
   runs *through* a heavy **stone head** that's swung like a hammer
 - ✅ A four-state heavy swing (*ready → wind-up → active → recovery*) with **hold-to-charge**,
-  a charge ring, and a swing trail
+  a charge ring, and a swing trail — plus an **overhead slam** (right-click) with a shockwave
 - ✅ **Passive physical presence** — the stone *blocks and shoves* enemies and props even
   while you're only aiming. It's a heavy object you steer, not a cursor
-- ✅ **Overhead slam** (right-click): raise → hold → drop with a **shockwave** (radial
-  knockback + stun), cracks/dust, and a **debris rock** you can then launch
-- ✅ Real physics objects: enemies and **rocks** are rigid bodies that collide with walls,
-  each other, and the stone — and launch when hit
-- ✅ **Stamina** (spend-on-swing/slam, regen delay, exhaustion fizzle), **knockback**,
-  **camera shake** + **hit-stop** scaled to impact
-- ✅ A walled **test arena**, a follow camera, and a minimal **HUD** (stamina + weapon state)
+- ✅ **Momentum-based impact** — one formula (`speed × mass × charge × angle × collision × combo`)
+  decides every hit, so a slow touch pushes, a fast swing launches, a charged swing smashes
+- ✅ **Wall crush** — pin an enemy against a wall and the hit hurts *much* more (`WALL CRUSH` /
+  `STONE PRESS`), even through a shield
+- ✅ **Bowling** — rigid-body enemies collide with each other for chain hits (`BOWLING HIT` →
+  `CHAIN IMPACT` → `DOUBLE BONK`); **rocks and crates** launch into enemies too
+- ✅ **Stone Flow combo** — a HUD meter that builds on good hits, decays, and breaks on a whiff
+  or exhaustion; stacks grant *small* buffs so Arthur never feels weightless
+- ✅ **Enemy types** (one configurable script): Dummy, Light Soldier, Shield Soldier, Heavy Guard
+- ✅ Floating **hit labels**, defeat fades, **camera shake** + **hit-stop** scaled to the impact
+- ✅ A redesigned **arena** (pinning pillar, corner pocket, soldier formation) with a
+  **pressure-plate puzzle**, a follow camera, and a HUD (stamina + weapon state + Stone Flow)
 
-What it is **not** yet: a real game. No enemy AI, no levels/puzzles wired up, no audio,
-no win condition, no final art. See [`ROADMAP.md`](ROADMAP.md) for where it's going.
+What it is **not** yet: a real game. Enemies don't fight back, no full levels/challenge rooms,
+no audio, no win condition, no final art. See [`ROADMAP.md`](ROADMAP.md) for where it's going.
 
 ---
 
@@ -161,21 +166,30 @@ arthur-stone-weapon-system/
 ├── project.godot          # Godot 4 project entry point — open this folder in Godot
 ├── icon.svg               # project icon (a sword stuck in a liftable stone)
 ├── scenes/                # .tscn scene files
-│   ├── Arena.tscn         #   main scene: walls, Arthur, enemies, rocks, HUD
+│   ├── Arena.tscn         #   main scene: walls, Arthur, enemies, props, plate, HUD
 │   ├── Arthur.tscn        #   player body + stone weapon (hitbox + stone body) + camera
-│   ├── TargetDummy.tscn   #   a rigid-body enemy
+│   ├── TargetDummy.tscn   #   Dummy enemy (the Enemy script, dummy config)
+│   ├── LightSoldier.tscn  #   low-mass enemy — the bowling ball
+│   ├── ShieldSoldier.tscn #   blocks frontal hits; crush or flank it
+│   ├── HeavyGuard.tscn    #   high-mass enemy — moving cover
 │   ├── Rock.tscn          #   a launchable rigid-body prop
+│   ├── Crate.tscn         #   a launchable box (same prop script)
+│   ├── PressurePlate.tscn #   puzzle plate + gate
 │   ├── Shockwave.tscn     #   slam burst (spawned at runtime)
-│   └── Hud.tscn           #   stamina bar + state read-out
+│   ├── FloatingText.tscn  #   hit label (spawned at runtime)
+│   └── Hud.tscn           #   stamina + weapon state + Stone Flow
 ├── scripts/               # GDScript — one responsibility per file
+│   ├── Impact.gd          #   AUTOLOAD: impact tuning + scoring formula + Stone Flow + feedback
 │   ├── Arthur.gd          #   movement, stamina, slam input, hit-stop, signal routing
 │   ├── StoneWeapon.gd     #   visual + swing/slam state machine + hitbox + stone body
-│   ├── TargetDummy.gd     #   rigid-body enemy: impulse knockback + stun
-│   ├── Rock.gd            #   rigid-body prop/projectile
+│   ├── Enemy.gd           #   rigid-body enemy base: hit/knockback/block/stun, bowling, defeat
+│   ├── Rock.gd            #   rigid-body prop/projectile (rock or crate)
 │   ├── Shockwave.gd       #   slam radial impulse + fading visual
+│   ├── PressurePlate.gd   #   plate → gate puzzle
+│   ├── FloatingText.gd    #   rising/fading hit label
 │   ├── GameCamera.gd      #   follow + shake
 │   ├── Hud.gd             #   HUD wiring
-│   └── Arena.gd           #   floor/grid draw, HUD binding, reset
+│   └── Arena.gd           #   floor/grid + interior walls, HUD binding, reset
 ├── tests/                 # headless verification scenes (run in CI)
 ├── assets/                # placeholder/imported art (shapes are drawn in code for now)
 ├── docs/                  # concept, controls, design goals, architecture, build

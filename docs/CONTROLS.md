@@ -63,6 +63,38 @@ regenerates after a short delay. Try to swing with too little stamina and Arthur
 **fizzles** — he stumbles into recovery without landing the hit, and the stamina bar
 flashes. That fizzle is the "you overcommitted" punish.
 
+### Every hit is different — and that's the game
+There's no fixed "sword damage". A hit's force comes from one formula (see
+`Impact.gd`):
+
+> **speed × mass × charge × angle × collision bonus × combo**
+
+In practice:
+- A **slow touch** just pushes. A **fast swing** launches. A **charged** swing smashes.
+- **Wall crush** — hit an enemy with a wall (or the centre pillar) right behind it
+  and it can't fly away, so the hit hurts *much* more: `WALL CRUSH` / `STONE PRESS` /
+  `NO CUSHION`. This even punches through a Shield Soldier's guard. Shoving enemies
+  into a corner *before* you swing is the strongest thing you can do.
+- **Bowling** — enemies collide with each other. Launch a Light Soldier into a
+  crowd for chain hits: `BOWLING HIT` → `CHAIN IMPACT` → `DOUBLE BONK`.
+- **Props** — launch a rock or crate into enemies for a free hit, or push a prop
+  onto the **pressure plate** to open the gate.
+
+### Stone Flow (the combo)
+The HUD's **STONE FLOW** bar fills as you land meaningful hits and ticks down when
+you stop. Stacks give *small* buffs — faster charge, a little mobility, shorter
+recovery, more force, and a stack-5 "flow mode". They're intentionally minor:
+buffed Arthur is still hauling a rock. The combo **breaks** if you whiff a swing or
+run your stamina dry, so the loop is *land → reposition → land again* before it
+bleeds.
+
+### Know your enemies
+- **Dummy** (red) — a punching bag for testing knockback.
+- **Light Soldier** (orange) — low mass, flies far; the best bowling ball.
+- **Shield Soldier** (blue, with an arc) — shrugs off frontal hits; flank it or
+  crush it into a wall.
+- **Heavy Guard** (grey, ringed) — barely flies; useful as moving cover.
+
 ### Reset
-`R` reloads the arena scene — enemies and rocks reset, stamina refills. It's a test
-room; abuse it.
+`R` reloads the arena scene — enemies, props, and Stone Flow reset, stamina refills.
+It's a test room; abuse it.

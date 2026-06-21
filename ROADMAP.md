@@ -43,20 +43,27 @@ Make the existing mechanic *feel* as good as it reads.
 - ✅ Hit-stop / freeze-frame on impact (scaled to hit strength)
 - ✅ Swing arc trail + a charge ring on the stone
 - ✅ Camera shake scaled to impact
-- 🔶 Tunable knockback curves; squash/stretch on enemies
+- ✅ Tunable knockback — now centralized in the `Impact` hub
+- 🔶 Squash/stretch on enemies (flash + defeat fade in; squash pending)
 - ⬜ Recovery-timing pass: make the punish window *readable*
 - ⬜ Audio hooks (whoosh on wind-up, crunch on impact)
 
 ---
 
-## Phase 3 — Physics Depth 🔶  → ships as **v0.2.0**, continues toward **v0.3.0**
+## Phase 3 — Physics Depth ✅  → ships as **v0.2.0 → v0.3.0**
 
 Let the stone's mass become a real, exploitable system.
 
 - ✅ **Passive physical presence** — the stone blocks/shoves enemies and props
   while aiming (AnimatableBody2D stone head + RigidBody2D enemies/props)
 - ✅ **Overhead slam** with a radial **shockwave** (knockback + stun + cracks/dust)
-- ✅ Launchable **rock props**, including **debris** dropped by a slam
+- ✅ Launchable **rock + crate props**, including **debris** dropped by a slam
+- ✅ **Momentum-based impact formula** (one tunable `Impact` hub):
+  `speed × mass × charge × angle × collision × combo`
+- ✅ **Wall crush / no-cushion** bonus (raycast for a wall behind the target)
+- ✅ **Enemy-to-enemy bowling** (rigid-body collisions score real hits)
+- ✅ **Stone Flow** combo meter (build / decay / break, small stack buffs)
+- ✅ **Enemy types** from one configurable script (Dummy, Light, Shield, Heavy)
 - 🔶 Light terrain damage / cracks (transient on slam; persistent decals pending)
 - ⬜ Rotational inertia — the swing actually drags Arthur's body
 - ⬜ Drag-based weapon movement (the head lags and overshoots)
@@ -65,16 +72,29 @@ Let the stone's mass become a real, exploitable system.
 
 ---
 
-## Phase 3.5 — Spin Attack & Puzzle Combat ⬜  → targets **v0.3.0**
+## Phase 3.5 — Spin Attack & Challenge Rooms ⬜  → targets **v0.4.0**
 
 Build on the now-stable physics into a "weapon as tool" puzzle layer.
 
+- ✅ Push enemies / rocks / crates onto a **pressure plate** to open a gate
+  (the first puzzle seam — shipped in v0.3.0)
 - ⬜ **Spin / tornado** attack: whirl the stone, push everything outward, clear
   dust/smoke — drains stamina fast, dangerous to overuse (Arthur loses control)
-- ⬜ Knock enemies into each other and into **switches / pressure plates**
 - ⬜ Launch rocks into **weak walls** and **bridge supports**
-- ⬜ Push boulders onto plates; dirt mounds as temporary barriers
-- ⬜ A small hand-built puzzle room that uses the weapon as both weapon and tool
+- ⬜ Dirt mounds as temporary barriers; boulders as heavier plate weights
+
+### Challenge rooms (designed; not yet built)
+
+Small hand-built rooms that each teach one trick, built on the existing seams:
+
+- ⬜ **Wall-Crush Training** — defeat enemies only by pinning them to walls
+- ⬜ **Bowling Room** — clear a formation with one launched enemy
+- ⬜ **Rock Launcher** — hit enemies only by launching rocks/crates
+- ⬜ **Bridge Break** — destroy supports with heavy hits to open a route
+- ⬜ **Pressure-Plate Puzzle** — weight several plates to unlock the next room
+- ⬜ **Smoke Room** — clear smoke with the spin attack to reveal enemies
+- ⬜ **Stamina Discipline** — clear the room without exhausting stamina
+- ⬜ **Combo Trial** — reach a Stone Flow stack before time runs out
 
 ---
 
@@ -83,7 +103,7 @@ Build on the now-stable physics into a "weapon as tool" puzzle layer.
 Get it into other people's hands.
 
 - 🔶 Web (HTML5) export ✅ + a desktop build ⬜
-- ✅ Publish a GitHub **Release** (`v0.1.0`) — source milestone; desktop binary still to attach
+- ✅ Publish GitHub **Releases** (`v0.1.0` → `v0.3.0`) — source milestones; desktop binary still to attach
 - ✅ GitHub **Pages** hosting the web build: <https://dd-ching.github.io/arthur-stone-weapon-system/>
   (auto-deployed by [`.github/workflows/pages.yml`](.github/workflows/pages.yml))
 - ⬜ A capture (GIF/video) of the core loop

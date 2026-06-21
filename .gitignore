@@ -26,6 +26,7 @@ mono_crash.*.json
 # The original briefs / prompts; kept locally, not shipped in the public repo.
 finishIt.txt
 finishit2.txt
+finishit3.txt
 
 # Throwaway local verification screenshots (underscore-prefixed).
 _*.png
