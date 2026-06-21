@@ -40,3 +40,6 @@ Thumbs.db
 *~
 .idea/
 .vscode/
+
+# Playwright MCP scratch (live-demo verification artifacts)
+.playwright-mcp/
