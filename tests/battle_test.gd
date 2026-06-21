@@ -1,8 +1,9 @@
 extends Node2D
-## Headless test for the v0.4 battlefield systems. Asserts:
+## Headless test for the battlefield systems. Asserts:
 ##   - enemy AI works: a shield-wall soldier actually advances on Arthur,
 ##   - Arthur can be hurt: take_damage lowers his health,
-##   - the objective resolves: defeating the whole shield wall wins the battle.
+##   - the wave objective resolves: with every wave repelled and the field cleared,
+##     the ford holds (the battle is won).
 ##
 ## Run: godot --headless --path . res://tests/BattleTest.tscn — look for BATTLE_VERDICT.
 
@@ -36,11 +37,13 @@ func _physics_process(_delta: float) -> void:
 		var h0: float = arthur.health
 		arthur.take_damage(20.0, Vector2(0, -100))
 		_damaged = arthur.health < h0
-		# Break the entire shield wall — the objective should complete.
-		for s in get_tree().get_nodes_in_group("shieldwall"):
-			if is_instance_valid(s):
-				s.apply_hit(Vector2.UP, 50.0, 0.2, 1.0e9)
-	elif _frame >= 82:
+		# Drive the wave objective to completion: mark all waves repelled and clear the
+		# field — the ford should then be held (a win).
+		bf._wave = 99
+		for t in get_tree().get_nodes_in_group("targets"):
+			if is_instance_valid(t):
+				t.queue_free()
+	elif _frame >= 110:
 		_won = bf._won
 		_report()
 

@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.7.0 — The Ford of the Stone King</strong> · placeholder art · hold a river crossing, knocking soldiers into the current and the mill wheel, vs an endless raider warband</em></p>
+<p align="center"><em>Status: <strong>v0.8.0 — Hold the Ford</strong> · placeholder art · hold a river crossing with allied footmen against five waves of raiders — knock them into the current, the mill wheel, and each other</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
@@ -45,20 +45,26 @@ A swing is a **commitment**. Missing should hurt. Connecting should feel great.
 
 ---
 
-## Current prototype status (v0.7.0)
+## Current prototype status (v0.8.0)
 
 What's actually in the build right now:
 
-- ✅ **The Ford of the Stone King** — the arena is now a **river crossing**, and the
-  terrain is a physics weapon. A **river with a downstream current** drags and drifts
-  anything in it (cavalry and carts lose their line; props float away); a **wooden
-  bridge** is the one dry crossing — the choke; and a spinning **water wheel** on the
-  bank **bats any soldier or prop knocked into it** clear across the field. Built from
-  Godot physics areas + impulses — no fluid sim
-- ✅ **Audio event hooks** — a named-event bus (`stone_scrape`, `heavy_swing`,
-  `shield_break`, `wall_crush`, `enemy_launch`, `chain_impact`, `cavalry_charge`,
-  `banner_down`, `water_splash`, `water_wheel_creak`, `stone_flow_gain`, …) wired at
-  every impact, ready for real sounds to drop in
+- ✅ **Hold the Ford** — a real "hold the line" battle. **Five escalating waves** of
+  raiders (light → shields → spears → cavalry+cart → an officer) **march to cross the
+  ford** toward an allied banner; **allied footmen** fight at your side; let too many
+  raiders past the line and the **ford falls**. Repel all five waves to win
+- ✅ **Smarter army** — raiders **flank** to surround instead of clumping, units
+  **separate** so they don't stack, spearmen keep spacing, and everyone re-picks the
+  nearest threat (Arthur *or* an ally)
+- ✅ **The Ford terrain is a physics weapon** — a **river + downstream current** drags
+  and drifts the army (cavalry/carts lose their line), a **wooden bridge** is the dry
+  choke (and can be **collapsed** by launching props into it), a spinning **water wheel**
+  **bats anyone knocked into it** across the field, and **logs drift downstream** as
+  launchable hazards. Built from Godot physics areas + impulses — no fluid sim
+- ✅ **Real audio** — a procedural `SoundBank` makes the twelve impact events
+  (`heavy_swing`, `shield_break`, `wall_crush`, `enemy_launch`, `water_splash`,
+  `water_wheel_creak`, `stone_flow_gain`, …) actually *sound* — synthesised in-engine,
+  no asset files
 - ✅ **Musou crowd combat**: a **spin / tornado** attack (hold Shift / middle-mouse) that
   whirls the stone and launches the whole crowd outward, a **KO counter** with milestones
   (`RAMPAGE!` … `ONE-MAN ARMY!`), an endless **reinforcement horde**, telegraphed

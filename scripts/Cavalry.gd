@@ -16,11 +16,11 @@ enum Charge { REPOSITION, TELEGRAPH, CHARGE, RECOVER }
 @export var charge_speed := 430.0
 @export var reposition_speed := 120.0
 @export var telegraph_time := 0.85
-@export var charge_dur := 1.0
+@export var charge_dur := 3.0         ## a long committed dash — 3x the old charge distance
 @export var recover_dur := 1.3
 @export var charge_damage := 18.0
-@export var trigger_range := 560.0
-@export var charge_lane := 250.0      ## drawn length of the telegraph / charge
+@export var trigger_range := 720.0    ## commits from farther, to match the longer charge
+@export var charge_lane := 750.0      ## drawn length of the telegraph / charge (3x)
 
 var _cstate := Charge.REPOSITION
 var _ctime := 0.0

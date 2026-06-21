@@ -17,6 +17,9 @@ extends RigidBody2D
 @export_enum("dummy", "soldier", "shield", "heavy", "spear", "banner") var look := "dummy"
 @export var radius := 16.0
 @export var base_color := Color(0.78, 0.32, 0.33)
+## "raiders" = the warband attacking across the ford (Arthur's foe). "ally" = a footman
+## fighting FOR Arthur. The team decides who this unit hunts and who may hit it.
+@export var team := "raiders"
 
 @export_group("Defense")
 @export var max_health := 1.0e9         ## dummies: effectively a punching bag
@@ -31,6 +34,7 @@ extends RigidBody2D
 @export var move_accel := 620.0
 @export var control_regain := 160.0     ## above this speed it's "flying" → physics, not AI
 @export var keep_distance := 0.0        ## >0: spacing enemy (spearman) holds this range
+@export var sight_range := 240.0        ## within this it engages a foe; beyond it marches to the goal
 @export_enum("none", "melee", "thrust", "bash") var attack_kind := "none"
 @export var attack_range := 30.0
 @export var attack_damage := 8.0
@@ -56,16 +60,24 @@ var _dead := false
 var _alpha := 1.0
 var _chain := 0
 var _shield_broken := 0.0 ## seconds the shield is overwhelmed
-var _player = null
+var _player = null        ## current FOE to attack (Arthur/ally for raiders; a raider for allies)
 var _ai := AI.APPROACH
 var _ai_time := 0.0
 var _atk_cd := 0.0
 var _did_strike := false
-var _face := PI           ## facing toward the player (for weapons / telegraphs)
+var _face := PI           ## facing toward the foe (for weapons / telegraphs)
+var _flank := 0.0         ## side bias so non-shield units surround instead of clumping
+var _retarget_cd := 0.0   ## throttle for re-scanning for the nearest foe + separation
+var _separation := Vector2.ZERO  ## steering away from nearby same-team units (no stacking)
 
 func _ready() -> void:
-	add_to_group("targets")
 	add_to_group("hittable")
+	add_to_group(team)
+	# Raiders are the "targets" Arthur's weapon/objective/terrain act on; allies are not.
+	add_to_group("targets" if team == "raiders" else "allies")
+	# Non-shield units pick a side to flank from, so a crowd surrounds rather than stacks.
+	if not shielded:
+		_flank = -1.0 if (randf() < 0.5) else 1.0
 	health = max_health
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
@@ -135,8 +147,10 @@ func _defeat() -> void:
 	set_deferred("collision_layer", 0)   # stop colliding, keep sliding out
 	remove_from_group("shieldwall")      # objective counts this immediately, not after the fade
 	Impact.popup("DOWN!", global_position + Vector2(0, -28), Color(1.0, 0.9, 0.4), 1.1)
-	Impact.add_flow(10.0)
-	Impact.add_kill()                    # the musou KO counter
+	# A fallen ALLY costs you nothing (no KO/flow); only raiders feed the counter.
+	if team == "raiders":
+		Impact.add_flow(10.0)
+		Impact.add_kill()                # the musou KO counter
 	if is_support:
 		# A banner bearer falling rattles the line.
 		Impact.popup("MORALE BROKEN", global_position + Vector2(0, -48), Color(1.0, 0.5, 0.3), 1.2)
@@ -173,32 +187,47 @@ func _physics_process(delta: float) -> void:
 	# Launched or staggered → go limp, let the physics throw us. Arthur's hit wins.
 	if _stun > 0.0 or speed > control_regain:
 		return
-	if _player == null or not is_instance_valid(_player):
-		_player = get_tree().get_first_node_in_group("player")
-		if _player == null:
-			return
+	# Re-scan for the nearest foe + recompute crowd separation a few times a second.
+	# Throttle on the timer ALONE — a unit with no foe (e.g. an ally between waves) must
+	# not re-scan groups every frame; just drop a foe that was freed since the last scan.
+	_retarget_cd -= delta
+	if _retarget_cd <= 0.0:
+		_retarget_cd = 0.25
+		_player = _find_foe()
+		_separation = _separation_vector()
+	elif _player != null and not is_instance_valid(_player):
+		_player = null
 
-	var to_player: Vector2 = _player.global_position - global_position
-	var dist := to_player.length()
-	var dir := to_player / maxf(dist, 0.001)
-	_face = dir.angle()
-	if shielded:
-		shield_angle = _face            # keep the shield toward Arthur
+	# Where to MARCH (the ford goal for raiders / the nearest raider for allies) and the
+	# FOE to fight if one blocks the way. Distance/angle are measured to the foe.
+	var foe_dist := INF
+	var dir := Vector2.RIGHT
+	if is_instance_valid(_player):
+		var to_foe: Vector2 = _player.global_position - global_position
+		foe_dist = to_foe.length()
+		dir = to_foe / maxf(foe_dist, 0.001)
+		_face = dir.angle()
+		if shielded:
+			shield_angle = _face            # keep the shield toward whatever it's fighting
 	if _atk_cd > 0.0:
 		_atk_cd -= delta
 	_ai_time += delta
 
 	match _ai:
 		AI.APPROACH:
-			linear_velocity = linear_velocity.move_toward(_approach_velocity(dir, dist), move_accel * delta)
-			if dist <= attack_range and _atk_cd <= 0.0 and attack_kind != "none":
-				_begin_attack()
-			elif shielded and dist <= guard_range:
-				_ai = AI.GUARD
-				_ai_time = 0.0
+			# Engage a foe that's within reach; otherwise press on toward the goal.
+			if foe_dist <= sight_range:
+				linear_velocity = linear_velocity.move_toward(_approach_velocity(dir, foe_dist), move_accel * delta)
+				if foe_dist <= attack_range and _atk_cd <= 0.0 and attack_kind != "none":
+					_begin_attack()
+				elif shielded and foe_dist <= guard_range:
+					_ai = AI.GUARD
+					_ai_time = 0.0
+			else:
+				linear_velocity = linear_velocity.move_toward(_march_velocity(), move_accel * delta)
 		AI.GUARD:
-			linear_velocity = linear_velocity.move_toward(dir * move_speed * 0.3, move_accel * delta)
-			if dist > guard_range * 1.5:
+			linear_velocity = linear_velocity.move_toward(dir * move_speed * 0.3 + _separation * 36.0, move_accel * delta)
+			if foe_dist > guard_range * 1.5:
 				_ai = AI.APPROACH
 			elif _atk_cd <= 0.0 and attack_kind != "none" and _ai_time > 0.45:
 				_begin_attack()
@@ -211,10 +240,8 @@ func _physics_process(delta: float) -> void:
 		AI.STRIKE:
 			if not _did_strike:
 				_did_strike = true
-				if dist <= attack_range + radius + 6.0 and _player.has_method("take_damage"):
-					_player.take_damage(attack_damage, global_position)
-					if attack_kind == "bash" or attack_kind == "thrust":
-						apply_central_impulse(dir * 70.0)   # lunge into the strike
+				if foe_dist <= attack_range + radius + 6.0:
+					_strike(_player, dir)
 			if _ai_time >= attack_strike:
 				_ai = AI.RECOVER
 				_ai_time = 0.0
@@ -225,19 +252,101 @@ func _physics_process(delta: float) -> void:
 				_ai_time = 0.0
 				_atk_cd = attack_cooldown
 
+## Steering when a foe is in reach: spacing for spearmen, flank + separation for the rest.
 func _approach_velocity(dir: Vector2, dist: float) -> Vector2:
 	if keep_distance > 0.0:                    # spacing enemy (spearman)
 		if dist < keep_distance - 12.0:
-			return -dir * move_speed            # too close — back off
+			return -dir * move_speed + _separation * 36.0    # too close — back off
 		if dist > keep_distance + 40.0:
-			return dir * move_speed             # too far — close in
-		return Vector2.ZERO                     # hold the line
-	return dir * move_speed
+			return dir * move_speed + _separation * 36.0     # too far — close in
+		return _separation * 30.0                            # hold the line, but don't stack
+	# Flank: non-shield units curve toward the foe's side so a crowd surrounds it.
+	var d := dir
+	if _flank != 0.0 and dist > attack_range + 18.0:
+		d = (dir + Vector2(-dir.y, dir.x) * _flank * 0.55).normalized()
+	return d * move_speed + _separation * 40.0
+
+## Steering while marching toward the goal (no foe in reach), still anti-stacking.
+func _march_velocity() -> Vector2:
+	var to_goal: Vector2 = _goal_position() - global_position
+	var gd := to_goal.length()
+	var gdir := to_goal / maxf(gd, 0.001)
+	_face = gdir.angle()
+	if shielded:
+		shield_angle = _face
+	return gdir * move_speed + _separation * 40.0
 
 func _begin_attack() -> void:
 	_ai = AI.WINDUP
 	_ai_time = 0.0
 	_did_strike = false
+
+## Land a hit on the current foe — Arthur takes scaled damage; a unit takes a small
+## scored hit (so allies and raiders can actually kill each other).
+func _strike(foe, dir: Vector2) -> void:
+	if not is_instance_valid(foe):
+		return
+	if foe.has_method("take_damage"):
+		foe.take_damage(attack_damage, global_position)
+	elif foe.has_method("apply_hit"):
+		foe.apply_hit(dir, 130.0, 0.12, attack_damage)
+	if attack_kind == "bash" or attack_kind == "thrust":
+		apply_central_impulse(dir * 70.0)   # lunge into the strike
+
+## The nearest enemy of the opposing team — Arthur or an ally for a raider; a raider
+## for an ally.
+func _find_foe() -> Node2D:
+	if team == "raiders":
+		var best = get_tree().get_first_node_in_group("player")
+		var bd := INF
+		if best != null and is_instance_valid(best):
+			bd = global_position.distance_squared_to(best.global_position)
+		for a in get_tree().get_nodes_in_group("allies"):
+			if not is_instance_valid(a) or (a is Enemy and a._dead):
+				continue
+			var d: float = global_position.distance_squared_to(a.global_position)
+			if d < bd:
+				bd = d
+				best = a
+		return best
+	return _nearest_raider()
+
+func _nearest_raider() -> Node2D:
+	var best: Node2D = null
+	var bd := INF
+	for n in get_tree().get_nodes_in_group("targets"):
+		if not is_instance_valid(n) or (n is Enemy and n._dead):
+			continue
+		var d: float = global_position.distance_squared_to(n.global_position)
+		if d < bd:
+			bd = d
+			best = n
+	return best
+
+## Where this unit is trying to GO. Raiders march to the ford goal (the allied banner /
+## south bank), so they fight through the line to cross; allies hunt the nearest raider.
+func _goal_position() -> Vector2:
+	if team == "raiders":
+		var goal = get_tree().get_first_node_in_group("ford_goal")
+		if goal != null and is_instance_valid(goal):
+			return goal.global_position
+		var p = get_tree().get_first_node_in_group("player")
+		return p.global_position if p != null else global_position
+	return _player.global_position if is_instance_valid(_player) else global_position
+
+## A small push away from nearby same-team units so a crowd spreads instead of stacking
+## into one pile (recomputed a few times a second, not every frame).
+func _separation_vector() -> Vector2:
+	var push := Vector2.ZERO
+	var near := radius * 2.4
+	for o in get_tree().get_nodes_in_group(team):
+		if o == self or not is_instance_valid(o):
+			continue
+		var away: Vector2 = global_position - o.global_position
+		var d := away.length()
+		if d > 0.1 and d < near:
+			push += away / d * (1.0 - d / near)
+	return push.limit_length(1.0)
 
 # ── per-frame visuals ───────────────────────────────────────────────────────
 

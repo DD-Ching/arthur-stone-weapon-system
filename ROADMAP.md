@@ -129,15 +129,16 @@ One absurd hero mowing an army (Dynasty-Warriors energy).
 - ✅ **War cart / relic chariot** — a heavy charging mass that plows the crowd,
   staggers on a solid hit, and **flips into launchable debris** (`CART FLIPPED`)
 - ⬜ A bigger crowd (cheaper enemy update — pooling / coarser AI ticks for the web build)
-- ⬜ Layered objectives: officers/banner morale, Capture the Banner, Hold the Line,
-  Stop/Reverse the Charge, a KO + time **score screen**
-- ✅ Audio **event hooks** wired at every impact (real sound assets still to drop in)
+- ✅ Layered objectives: officer/banner **morale**, **Hold the Line** (the v0.8 ford
+  defence), **Stop the Charge** (break cavalry/carts) — a KO + time **score screen** still ⬜
+- ✅ Audio — event hooks **and** real procedural sound behind them (v0.8.0)
 
 ---
 
-## Phase 6 — The Ford of the Stone King ✅🔶  → ships as **v0.7.0**
+## Phase 6 — The Ford of the Stone King ✅  → ships as **v0.7.0 → v0.8.0**
 
-The battlefield itself becomes a physics weapon — a mythic river crossing.
+The battlefield itself becomes a physics weapon — a mythic river crossing — and then a
+real "hold the line" battle.
 
 - ✅ **River + downstream current** — a shallow ford that drags and drifts bodies
   (cavalry/carts lose their line, props float away); data-driven `Rect2` bands +
@@ -146,15 +147,19 @@ The battlefield itself becomes a physics weapon — a mythic river crossing.
   the water slows the army, so the bridge funnels the assault
 - ✅ **Water wheel hazard** — a spinning mill wheel that **bats enemies/props knocked
   into it** clear across the field (`Area2D` + a tangential Godot impulse, debounced)
-- ✅ **Audio event bus** — `Audio` autoload, all twelve named events fired at their
-  real trigger points, ready for sound assets
-- ✅ **Ford framing** — `HOLD THE FORD — BREAK THE SHIELD WALL` + a spawn title
-- 🔶 Splashable props float; floating logs as drifting hazards still to add
-- ⬜ A true **"Hold the Ford"** lose condition (too many raiders cross the line)
-- ⬜ A **structured 5-wave escalation** (raiders → shields → spears → cavalry → officer)
-  replacing the random reinforcement trickle
-- ⬜ **Bridge collapse** as an objective (launch props into the supports)
-- ⬜ Real audio behind the event hooks
+- ✅ **Audio** — the `Audio` event bus *and* a `SoundBank` that synthesises a real
+  procedural sound per event (no asset files); twelve events fire at their impact sites
+- ✅ **Structured 5-wave assault** — raiders → shields → spears+shields → cavalry+cart →
+  officer & escort, announced on the HUD, advancing as the field clears (v0.8.0)
+- ✅ **"Hold the Ford" lose condition** — an allied banner + defence line; raiders march
+  to cross, and too many breaches lose the ford (v0.8.0)
+- ✅ **Allied footmen** — a team system; allies fight raiders at your side, no friendly
+  fire, a fallen ally costs no KO (v0.8.0)
+- ✅ **Smarter AI** — separation/anti-stacking, flanking to surround, spearman spacing,
+  re-targeting between Arthur and allies (v0.8.0)
+- ✅ **Bridge collapse** — pound the deck with launched props to collapse it; the dry
+  gap becomes open water (v0.8.0)
+- ✅ **Floating logs** — drift down the current as launchable hazards (v0.8.0)
 
 ---
 

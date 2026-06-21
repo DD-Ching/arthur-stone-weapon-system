@@ -20,6 +20,7 @@ boot_splash/show_image=false
 
 Impact="*res://scripts/Impact.gd"
 Audio="*res://scripts/Audio.gd"
+SoundBank="*res://scripts/SoundBank.gd"
 
 [display]
 
