@@ -21,6 +21,14 @@ look = "soldier"
 radius = 14.0
 base_color = Color(0.86, 0.62, 0.3, 1)
 max_health = 22.0
+move_speed = 124.0
+attack_kind = "melee"
+attack_range = 26.0
+attack_damage = 7.0
+attack_windup = 0.34
+attack_strike = 0.1
+attack_recover = 0.4
+attack_cooldown = 0.7
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("soldier_shape")

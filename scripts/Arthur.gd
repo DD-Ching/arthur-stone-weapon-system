@@ -13,6 +13,8 @@ extends CharacterBody2D
 signal stamina_changed(current: float, maximum: float)
 signal weapon_state_changed(state_name: String, charge: float)
 signal exhausted()
+signal health_changed(current: float, maximum: float)
+signal died()
 
 @export_group("Movement")
 @export var max_speed := 158.0
@@ -26,9 +28,16 @@ signal exhausted()
 @export var stamina_regen := 24.0
 @export var regen_delay := 0.65  ## pause before stamina starts coming back after a swing
 
+@export_group("Health")
+@export var max_health := 100.0
+@export var invuln_time := 0.45  ## brief i-frames after a hit so a crowd can't instantly melt you
+
 var stamina := 0.0
+var health := 0.0
 var _regen_cooldown := 0.0
 var _hitstop_token := 0
+var _hurt := 0.0               ## red hit-flash, seconds remaining
+var _invuln := 0.0
 var _steer := Vector2.ZERO     ## input-driven velocity (carries momentum)
 var _dash_vel := Vector2.ZERO  ## swing-lunge burst, decays on its own
 
@@ -37,19 +46,44 @@ var _dash_vel := Vector2.ZERO  ## swing-lunge burst, decays on its own
 
 func _ready() -> void:
 	stamina = max_stamina
+	health = max_health
+	add_to_group("player")
 	weapon.hit_landed.connect(_on_weapon_hit)
 	weapon.state_changed.connect(_on_weapon_state_changed)
 	weapon.charge_changed.connect(_on_weapon_charge_changed)
 	weapon.too_tired.connect(_on_weapon_too_tired)
 	Impact.impact_fx.connect(_on_impact_fx)   # shake/hit-stop from props + bowling hits
 	stamina_changed.emit(stamina, max_stamina)
+	health_changed.emit(health, max_health)
 
 func _physics_process(delta: float) -> void:
+	if _hurt > 0.0:
+		_hurt = maxf(0.0, _hurt - delta)
+	if _invuln > 0.0:
+		_invuln = maxf(0.0, _invuln - delta)
 	_handle_aim()
 	_handle_attack()
 	_handle_movement(delta)
 	_handle_stamina(delta)
 	queue_redraw()
+
+## An enemy attack connected. Brief i-frames, a knock away from the source, a
+## hurt flash, and the combo breaks. Returns true if the hit actually landed.
+func take_damage(amount: float, from_pos: Vector2 = Vector2.ZERO) -> bool:
+	if health <= 0.0 or _invuln > 0.0:
+		return false
+	health = maxf(0.0, health - amount)
+	_hurt = 0.35
+	_invuln = invuln_time
+	Impact.note_damage()
+	if camera and camera.has_method("add_shake"):
+		camera.call("add_shake", 12.0)
+	if from_pos != Vector2.ZERO:
+		lunge((global_position - from_pos).normalized() * 90.0)   # shoved off the hit
+	health_changed.emit(health, max_health)
+	if health <= 0.0:
+		died.emit()
+	return true
 
 func _handle_aim() -> void:
 	var to_mouse := get_global_mouse_position() - global_position
@@ -169,7 +203,13 @@ func _state_name(state: int) -> String:
 
 func _draw() -> void:
 	# Placeholder Arthur: a stout little figure with a dot showing his facing.
-	draw_circle(Vector2.ZERO, 17.0, Color(0.85, 0.74, 0.55))
+	var body_col := Color(0.85, 0.74, 0.55)
+	if _hurt > 0.0:
+		body_col = body_col.lerp(Color(1.0, 0.3, 0.3), clampf(_hurt / 0.35, 0.0, 1.0))
+	# Blink while invulnerable so the i-frames are readable.
+	if _invuln > 0.0 and int(_invuln * 30.0) % 2 == 0:
+		body_col = body_col.darkened(0.25)
+	draw_circle(Vector2.ZERO, 17.0, body_col)
 	draw_arc(Vector2.ZERO, 17.0, 0.0, TAU, 20, Color(0.25, 0.2, 0.15), 3.0)
 	var face := Vector2.RIGHT.rotated(weapon.aim_angle) * 10.0 if weapon else Vector2.ZERO
 	draw_circle(face, 5.0, Color(0.2, 0.18, 0.16))

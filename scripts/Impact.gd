@@ -108,6 +108,11 @@ func note_exhausted() -> void:
 	flow = minf(flow, STACK_STEP)   # back down to ~1 stack
 	_recompute()
 
+## Arthur took a hit — the rhythm is broken, so the combo breaks.
+func note_damage() -> void:
+	flow = 0.0
+	_recompute()
+
 func reset() -> void:
 	flow = 0.0
 	_since_gain = 0.0
@@ -260,22 +265,15 @@ func collide(target: Object, dir: Vector2, relative_speed: float, attacker_mass:
 	if not is_instance_valid(target) or not target.has_method("apply_hit"):
 		return
 	var pin := cushion(from_node, target.global_position, dir)
-	var block := 1.0
-	if target.has_method("block_factor") and pin < 0.5:
-		block = target.block_factor(dir)
 	var r := resolve_hit({
 		"kind": kind, "attacker_mass": attacker_mass, "relative_speed": relative_speed,
 		"charge": 0.0, "angle_quality": 1.0, "pin": pin, "chain": chain,
 	})
-	target.apply_hit(dir, r["knockback"] * block, r["stun"], r["damage"] * block)
-	var label: String = r["label"]
-	var color: Color = r["color"]
-	if block < 0.9 and pin < 0.5:
-		label = "BLOCKED"
-		color = Color(0.7, 0.75, 0.8)
-	if label != "":
-		popup(label, target.global_position + Vector2(0.0, -26.0), color)
-	add_flow(r["flow_gain"] * (0.4 if block < 0.9 else 1.0))
+	# The enemy applies its own shield block / break and tells us if it blocked.
+	var res: Dictionary = target.apply_hit(dir, r["knockback"], r["stun"], r["damage"], pin)
+	if not res["blocked"]:
+		popup(r["label"], target.global_position + Vector2(0.0, -26.0), r["color"])
+	add_flow(r["flow_gain"] * (0.4 if res["blocked"] else 1.0))
 	impact_fx.emit(r["shake"])
 
 # ── Feedback pop-up ─────────────────────────────────────────────────────────

@@ -216,30 +216,24 @@ func _apply_swing_hits() -> void:
 		var angle_q := clampf(head_dir.dot(dir), 0.0, 1.0)   # how square the head is on the target
 
 		var pin := 0.0
-		var block := 1.0
 		if body.has_method("apply_hit"):
 			pin = Impact.cushion(self, body.global_position, dir)
-			if body.has_method("block_factor") and pin < 0.5:
-				block = body.block_factor(dir)
 
 		var r := Impact.resolve_hit({
 			"kind": "swing", "attacker_mass": Impact.MASS_STONE,
 			"relative_speed": _head_speed, "charge": 0.0,   # power is all momentum now
 			"angle_quality": angle_q, "pin": pin,
 		})
-		var kb: float = r["knockback"] * block
 		if body.has_method("apply_hit"):
-			body.apply_hit(dir, kb, r["stun"], r["damage"] * block)
+			# The enemy applies its own shield block / break and reports back.
+			var res: Dictionary = body.apply_hit(dir, r["knockback"], r["stun"], r["damage"], pin)
+			if not res["blocked"]:
+				Impact.popup(r["label"], body.global_position + Vector2(0, -26), r["color"], 1.0 + 0.4 * clampf(_head_speed / 1600.0, 0.0, 1.0))
+			Impact.add_flow(r["flow_gain"] * (0.4 if res["blocked"] else 1.0))
 		else:
-			body.apply_knockback(dir, kb)   # props: launch them, no damage
-
-		var label: String = r["label"]
-		var color: Color = r["color"]
-		if block < 0.9 and pin < 0.5:
-			label = "BLOCKED"
-			color = Color(0.7, 0.75, 0.8)
-		Impact.popup(label, body.global_position + Vector2(0, -26), color, 1.0 + 0.4 * clampf(_head_speed / 1600.0, 0.0, 1.0))
-		Impact.add_flow(r["flow_gain"] * (0.4 if block < 0.9 else 1.0))
+			body.apply_knockback(dir, r["knockback"])   # props: launch them, no damage
+			Impact.popup(r["label"], body.global_position + Vector2(0, -26), r["color"], 1.0 + 0.4 * clampf(_head_speed / 1600.0, 0.0, 1.0))
+			Impact.add_flow(r["flow_gain"])
 
 		_hit_count += 1
 		hit_landed.emit(r["shake"], _hit_count)

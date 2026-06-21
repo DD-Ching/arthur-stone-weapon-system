@@ -21,6 +21,15 @@ look = "heavy"
 radius = 21.0
 base_color = Color(0.46, 0.4, 0.46, 1)
 max_health = 60.0
+move_speed = 54.0
+attack_kind = "bash"
+attack_range = 36.0
+attack_damage = 14.0
+attack_windup = 0.6
+attack_recover = 0.6
+attack_cooldown = 1.1
+stagger_threshold = 1050.0
+shield_break_threshold = 9999.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("heavy_shape")
