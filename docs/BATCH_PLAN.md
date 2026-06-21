@@ -27,9 +27,9 @@ The genuine hard-coding/duplication targeted by the refactor:
 | 3 | **Reusable movement** — target seeking, stuck recovery, dangerous-terrain avoidance (prefer the bridge), resume after knockback/stun | ✅ v0.9.0 (in `Enemy.gd`) |
 | 4 | **Reusable terrain rule** — `TerrainZone` (slow / current / drown-light / dangerous→avoid); the ford river + mud are instances | ✅ v0.9.0 |
 | 5 | **Reusable spawner** — `Spawner` helper; the wave + ally spawns use it | ✅ v0.9.0 |
-| 6 | **Ability module** — slash / shield bash / spear thrust / charge / aura as data (wind-up/active/recover/cooldown/hit-area) | ⬜ next |
+| 8 | **Objective module** — `RepelWaves` / `DefeatOfficer` / `HoldLine` + an `ObjectiveManager`; win/lose lifted out of `Battlefield.gd` | ✅ v0.10.0 |
 | 7 | **Formation module** — `ShieldWall` / `SpearLine` / `ChargeGroup` / `ProtectedBanner` as placeable, configurable scenes | ⬜ next |
-| 8 | **Objective module** — `ProtectBanner` / `HoldLine` / `DefeatOfficer` / `BreakFormation` + an `ObjectiveManager`; lift win/lose out of `Battlefield.gd` | ⬜ next |
+| 6 | **Ability module** — slash / shield bash / spear thrust / charge / aura as data (wind-up/active/recover/cooldown/hit-area) | ⬜ next |
 | 9 | **Wave/spawn system** — a full `WaveSpawner` resource (timed waves, lanes, escalation) + optional `EnemyPool` for a bigger crowd | ⬜ next |
 | 10 | **Level data structure** — assemble levels from terrain + spawns + formations + objectives + props + params | ⬜ next |
 

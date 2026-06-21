@@ -43,8 +43,12 @@ can be collapsed, drifting **logs**.
   (slow / current / drown-light / dangerous→avoid). The ford river + mud are instances.
 - **Spawning** — `scripts/spawning/Spawner.gd`: shared helper to spawn a group of scenes
   across a lane. Used by the wave + ally spawns in `Battlefield.gd`.
+- **Objectives** — `scripts/objectives/` (`Objective` base + `RepelWaves` / `DefeatOfficer`
+  / `HoldLine`) + `scripts/systems/ObjectiveManager.gd`: a level composes its win/lose by
+  registering objectives (completable ones gate the win; constraints only gate losing).
 - **Level** — `scripts/Battlefield.gd`: assembles the ford (terrain zones, fences, banner,
-  goal), runs the 5-wave manager, the breach lose / wave-clear win, bridge collapse, logs.
+  goal), runs the 5-wave manager + log/bridge mechanics, and ticks the ObjectiveManager
+  (win/lose is no longer hand-coded here).
 - **Hazards/props** — `WaterWheel.gd` (Area2D spinner), `Rock.gd` (rock/crate), `Log.gd`,
   `Shockwave.gd` (slam burst), `PressurePlate.gd`.
 - **Audio** — `Audio.gd` (event bus, `Audio.play(name, pos)`), `SoundBank.gd` (synthesises
@@ -77,8 +81,10 @@ breaks `.tscn`/`.uid` references and risks the browser build).
 
 ## Known TODOs / next batches
 
-- Extract `formations/` (ShieldWall etc.) and `objectives/` (ProtectBanner, HoldLine,
-  DefeatOfficer) as reusable modules; today they live inline in `Battlefield.gd`.
-- A reusable `WaveSpawner`/`ObjectiveManager` (waves + win/lose still live in Battlefield).
-- KO + time **score screen**; a balance pass; a bigger crowd via enemy pooling / coarser
-  AI ticks; the challenge rooms. See [`../ROADMAP.md`](../ROADMAP.md).
+- Extract `formations/` (ShieldWall etc.) as reusable placeable scenes; today the garrison
+  is hand-placed in `Battlefield.tscn` and waves spawn flat lists via `Spawner`.
+- An `abilities/` data system (slash / bash / thrust / charge / aura); today attacks are
+  branches in `Enemy.gd`.
+- A full `WaveSpawner` resource (waves still live in `Battlefield.gd`) + an `EnemyPool`.
+- KO + time **score screen**; a balance pass; the challenge rooms. See
+  [`../ROADMAP.md`](../ROADMAP.md).

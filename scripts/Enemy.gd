@@ -82,6 +82,8 @@ func _ready() -> void:
 	add_to_group(team)
 	# Raiders are the "targets" Arthur's weapon/objective/terrain act on; allies are not.
 	add_to_group("targets" if team == "raiders" else "allies")
+	if is_support and team == "raiders":
+		add_to_group("officers")     # the DefeatOfficer objective counts this group
 	# Non-shield units pick a side to flank from, so a crowd surrounds rather than stacks.
 	if not shielded:
 		_flank = -1.0 if (randf() < 0.5) else 1.0
@@ -152,7 +154,9 @@ func _defeat() -> void:
 	_dead = true
 	_chain = 0
 	set_deferred("collision_layer", 0)   # stop colliding, keep sliding out
-	remove_from_group("shieldwall")      # objective counts this immediately, not after the fade
+	# Objectives count the defeat IMMEDIATELY, not after the ~0.6s fade-out.
+	remove_from_group("shieldwall")
+	remove_from_group("officers")        # so DefeatOfficer sees the kill the instant it lands
 	Impact.popup("DOWN!", global_position + Vector2(0, -28), Color(1.0, 0.9, 0.4), 1.1)
 	# A fallen ALLY costs you nothing (no KO/flow); only raiders feed the counter.
 	if team == "raiders":

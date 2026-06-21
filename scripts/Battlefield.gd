@@ -75,6 +75,7 @@ var _bridge_down := false
 var _bridge_zone: TerrainZone = null   ## deep water over the gap, enabled when the bridge falls
 var _crossing: Node2D = null
 var _log_cd := 6.0
+var _objectives: ObjectiveManager = null   ## this level's win/lose, composed from modules
 
 func _ready() -> void:
 	Impact.reset()
@@ -95,11 +96,17 @@ func _ready() -> void:
 	for s in $ShieldWall.get_children():
 		s.add_to_group("shieldwall")
 	_spawn_allies()
+	# Compose this level's win/lose from reusable objectives instead of hand-coding it:
+	# repel every wave AND defeat the officer to win; lose if the line is breached.
+	_objectives = ObjectiveManager.new()
+	_objectives.add(RepelWavesObjective.new()) \
+		.add(DefeatOfficerObjective.new()) \
+		.add(HoldLineObjective.new())
 	arthur.died.connect(_on_arthur_died)
 	hud.bind(arthur)
 	Impact.popup("THE FORD OF THE STONE KING", arthur.global_position + Vector2(0, -120),
 		Color(0.85, 0.8, 0.6), 1.4)
-	_update_objective()
+	_evaluate_objectives()
 	queue_redraw()
 
 func _build_fences() -> void:
@@ -164,8 +171,7 @@ func _physics_process(delta: float) -> void:
 			+ get_tree().get_nodes_in_group("allies")
 		_update_waves()
 		_check_breaches()
-		_check_victory()
-		_update_objective()
+		_evaluate_objectives()
 		_maybe_spawn_log()
 	# Terrain forces now live in the TerrainZones. The only per-body work left here is the
 	# level-specific bridge pounding (a fast prop over the deck chips it).
@@ -214,34 +220,38 @@ func _check_breaches() -> void:
 		Impact.popup("BREACH!", e.global_position + Vector2(0, -30), Color(1.0, 0.4, 0.35), 1.2)
 		Audio.play("banner_down", e.global_position)
 		e.queue_free()
-		if _breaches >= max_breaches:
-			_defeat_ford()
+		# The lose decision belongs to the HoldLine objective, not this counter.
 
-func _check_victory() -> void:
+## Tick the composed objectives with the level's live state; they decide win/lose + HUD.
+func _evaluate_objectives() -> void:
 	if _won or _lost:
 		return
-	# The assault is over once every wave is spawned and the field is essentially clear.
-	if _wave >= _waves.size() and get_tree().get_nodes_in_group("targets").size() <= 2:
-		# But a breach REMOVES a raider too — so if the field only "cleared" because the
-		# line was overrun (half the breach budget spent), that's not holding, it's losing.
-		if _breaches * 2 >= max_breaches:
-			_defeat_ford()
-			return
-		_won = true
-		hud.show_banner("THE FORD HOLDS!", Color(0.5, 0.95, 0.55))
-		Impact.popup("VICTORY — THE FORD IS YOURS", arthur.global_position + Vector2(0, -64),
-			Color(1.0, 0.85, 0.3), 1.6)
+	var ctx := {
+		"breaches": _breaches, "max_breaches": max_breaches,
+		"wave": _wave, "wave_count": _waves.size(),
+		"alive": get_tree().get_nodes_in_group("targets").size(),
+		"officers": get_tree().get_nodes_in_group("officers").size(),
+	}
+	_objectives.evaluate(ctx)
+	hud.set_objective("HOLD THE FORD   " + _objectives.hud_line(ctx))
+	if _objectives.lost:
+		_defeat_ford()
+	elif _objectives.won:
+		_victory()
+
+func _victory() -> void:
+	if _won or _lost:
+		return
+	_won = true
+	hud.show_banner("THE FORD HOLDS!", Color(0.5, 0.95, 0.55))
+	Impact.popup("VICTORY — THE FORD IS YOURS", arthur.global_position + Vector2(0, -64),
+		Color(1.0, 0.85, 0.3), 1.6)
 
 func _defeat_ford() -> void:
 	if _won or _lost:
 		return
 	_lost = true
 	hud.show_banner("THE FORD IS LOST", Color(0.95, 0.45, 0.4))
-
-func _update_objective() -> void:
-	var wave_n := mini(_wave, _waves.size())
-	hud.set_objective("HOLD THE FORD   WAVE %d/%d   ·   BREACH %d/%d"
-		% [wave_n, _waves.size(), _breaches, max_breaches])
 
 # ── bridge (a level-specific destructible) ──────────────────────────────────
 
