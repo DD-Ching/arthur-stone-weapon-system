@@ -125,9 +125,8 @@ One absurd hero mowing an army (Dynasty-Warriors energy).
 - ✅ **Reinforcement horde** — the field refills so there's always more to mow
 - ✅ **Cavalry charge** — telegraphed mounted chargers that plough the crowd and can
   be broken mid-charge (`CHARGE BROKEN`)
-- ⬜ **War cart / relic chariot** — a dangerous moving mass: charges straight, knocks
-  soldiers aside, deflects on a heavy hit, flips on a charged side hit, and breaks
-  into launchable debris on a wall impact. Feedback: `CART FLIPPED`.
+- ✅ **War cart / relic chariot** — a heavy charging mass that plows the crowd,
+  staggers on a solid hit, and **flips into launchable debris** (`CART FLIPPED`)
 - ⬜ A bigger crowd (cheaper enemy update — pooling / coarser AI ticks for the web build)
 - ⬜ Layered objectives: officers/banner morale, Capture the Banner, Hold the Line,
   Stop/Reverse the Charge, a KO + time **score screen**

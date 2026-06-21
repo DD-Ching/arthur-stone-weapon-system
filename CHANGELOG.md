@@ -9,8 +9,25 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 ## [Unreleased]
 
 ### Planned
-- War cart / relic chariot, more challenge objectives, destructible terrain, audio.
-  See [`ROADMAP.md`](ROADMAP.md).
+- Layered objectives (officers, capture-the-banner, hold-the-line), a bigger crowd
+  via cheaper enemy updates, and audio. See [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.6.0] — 2026-06-21
+
+**War Cart.** The last big charging mass joins the field.
+
+### Added
+- **War cart / relic chariot** (`WarCart.tscn`): a heavy, tanky charging mass that
+  reuses the cavalry charge brain but plows the crowd, barely flinches from a light
+  hit, staggers + breaks its charge on a solid blow, and — when finally wrecked —
+  **flips and bursts into launchable debris** (`CART FLIPPED`) that Arthur can fling
+  back into the army. One rides the central charge lane.
+
+### Notes
+- This completes the musou charge set-pieces (spin, horde, cavalry, war cart). The
+  v0.3 `Arena.tscn` remains a calm sandbox; web build stays single-threaded.
 
 ---
 
@@ -197,7 +214,8 @@ makes him slow, vulnerable, and hard to control.
 - All visuals are placeholder shapes drawn in code — game feel over polish, by design.
 - No audio, no enemy AI, no win condition yet. See [`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.4.1...v0.5.0
 [0.4.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.2.0...v0.3.0
