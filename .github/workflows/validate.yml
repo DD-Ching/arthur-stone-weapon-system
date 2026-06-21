@@ -79,3 +79,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/HoldFordTest.tscn --quit-after 600 | tee holdford.log
           grep -q "HOLDFORD_VERDICT PASS" holdford.log
+
+      - name: Run objectives test (v0.10 ObjectiveManager)
+        # Asserts the reusable objectives compose win/lose: completable objectives gate the
+        # win, a constraint objective only gates losing, the officer must be defeated to win.
+        run: |
+          godot --headless --path . res://tests/ObjectivesTest.tscn --quit-after 600 | tee objectives.log
+          grep -q "OBJ_VERDICT PASS" objectives.log

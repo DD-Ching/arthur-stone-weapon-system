@@ -9,9 +9,37 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 ## [Unreleased]
 
 ### Planned
-- More framework batches — `formations/`, `objectives/` + an `ObjectiveManager`,
-  `abilities/` — plus a KO/time score screen and a bigger crowd via pooling. See
-  [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
+- More framework batches — `formations/`, an `abilities/` data system — plus a KO/time
+  score screen and a bigger crowd via pooling. See [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md)
+  and [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.10.0] — 2026-06-21
+
+**Objectives module.** The next framework batch: the level's win/lose moves out of
+`Battlefield.gd` into reusable, composable **objectives** an `ObjectiveManager` runs — so
+a new battle is a different *list* of objectives, not new hand-coded conditions.
+
+### Added
+- **`objectives/`** — `Objective` (base) + `RepelWavesObjective`, `DefeatOfficerObjective`,
+  `HoldLineObjective`, and `systems/ObjectiveManager`. Each objective is `required` and
+  either *completable* (must be done to win) or a *constraint* (`completable = false` —
+  it can only fail you, like "don't let the line break"). The manager wins when every
+  completable required objective is done and loses the instant any required one fails,
+  and builds the HUD status line from each objective's fragment.
+- A purely-logical `ObjectivesTest` (no scene) locks the compose rules.
+
+### Changed
+- **Hold the Ford now composes three objectives**: *Repel every wave* + *Defeat the
+  officer* (both must be completed) and *Hold the line* (a breach constraint). So winning
+  now also means **defeating the enemy officer**, and the HUD reads
+  `WAVE x/5 · OFFICER ALIVE · BREACH x/12`. `Battlefield.gd` just registers the objectives;
+  the win/lose conditions are no longer hand-coded in the level.
+- A raider banner bearer now joins an `officers` group (what `DefeatOfficer` counts).
+
+### Notes
+- All eight headless tests pass; the new code passed an adversarial review.
 
 ---
 
@@ -377,7 +405,8 @@ makes him slow, vulnerable, and hard to control.
 - All visuals are placeholder shapes drawn in code — game feel over polish, by design.
 - No audio, no enemy AI, no win condition yet. See [`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.3...v0.7.0

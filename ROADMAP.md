@@ -176,10 +176,11 @@ tuned*, not copy-pasted. Full batch list + status: [`docs/BATCH_PLAN.md`](docs/B
 - ✅ **Smarter movement** — stuck-recovery + dangerous-terrain avoidance (funnel to the
   bridge)
 - ✅ **Reusable spawner** — `Spawner` (waves + allies share it)
+- ✅ **`objectives/`** + an `ObjectiveManager` (v0.10.0) — RepelWaves / DefeatOfficer /
+  HoldLine, composed; win/lose lifted out of `Battlefield.gd`. Winning now also means
+  defeating the officer
 - ⬜ **`formations/`** — ShieldWall / SpearLine / ChargeGroup / ProtectedBanner as placeable
   configurable scenes
-- ⬜ **`objectives/`** + an `ObjectiveManager` — ProtectBanner / HoldLine / DefeatOfficer /
-  BreakFormation, lifted out of `Battlefield.gd`
 - ⬜ **`abilities/`** — slash / shield-bash / spear-thrust / charge / aura as data
 - ⬜ A full **WaveSpawner** resource + optional **EnemyPool** for a bigger crowd
 
