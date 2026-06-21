@@ -56,6 +56,9 @@ const CART := preload("res://scenes/WarCart.tscn")
 const BANNER := preload("res://scenes/BannerBearer.tscn")
 const ALLY := preload("res://scenes/Ally.tscn")
 const LOG := preload("res://scenes/Log.tscn")
+const SHIELD_WALL := preload("res://scenes/formations/ShieldWall.tscn")
+const SPEAR_PHALANX := preload("res://scenes/formations/SpearPhalanx.tscn")
+const OFFICER_GUARD := preload("res://scenes/formations/OfficerGuard.tscn")
 
 @onready var arthur = $Arthur
 @onready var hud = $Hud
@@ -83,12 +86,13 @@ func _ready() -> void:
 	_build_fences()
 	_build_goal()
 	_build_terrain()
+	# Waves 2/3/5 arrive as cohesive FORMATIONS (placeable modules); 1/4 are loose mobs.
 	_waves = [
 		{"name": "LIGHT RAIDERS", "col": Color(1.0, 0.82, 0.4), "spawns": [LIGHT, LIGHT, LIGHT, LIGHT, LIGHT, LIGHT]},
-		{"name": "SHIELD SOLDIERS", "col": Color(0.72, 0.78, 0.9), "spawns": [SHIELD, SHIELD, SHIELD, SHIELD, SHIELD]},
-		{"name": "SPEARS BEHIND SHIELDS", "col": Color(0.8, 0.88, 0.7), "spawns": [SHIELD, SHIELD, SPEAR, SPEAR, SPEAR]},
+		{"name": "SHIELD WALL", "col": Color(0.72, 0.78, 0.9), "formation": SHIELD_WALL},
+		{"name": "SPEAR PHALANX", "col": Color(0.8, 0.88, 0.7), "formation": SPEAR_PHALANX},
 		{"name": "CAVALRY CHARGE", "col": Color(1.0, 0.55, 0.3), "spawns": [CAVALRY, CAVALRY, CART]},
-		{"name": "THE OFFICER", "col": Color(1.0, 0.5, 0.3), "spawns": [BANNER, SHIELD, SHIELD, SPEAR, LIGHT, LIGHT]},
+		{"name": "THE OFFICER", "col": Color(1.0, 0.5, 0.3), "formation": OFFICER_GUARD},
 	]
 	# Wake the pre-placed garrison (the type scenes ship AI-off so the sandbox stays calm).
 	for e in get_tree().get_nodes_in_group("targets"):
@@ -196,7 +200,15 @@ func _spawn_wave(idx: int) -> void:
 	Impact.popup("WAVE %d / %d — %s" % [idx + 1, _waves.size(), wave["name"]],
 		arthur.global_position + Vector2(0, -150), wave["col"], 1.5)
 	Audio.play("cavalry_charge", arthur.global_position)   # a war-horn for the incoming wave
-	Spawner.spawn(self, wave["spawns"], -HALF.y + 70.0, -380.0, 380.0, true)
+	if wave.has("formation"):
+		# A cohesive formation marches in as a block, facing the ford. Spawn it deep enough
+		# that its REAR ranks (support/commander sit up to 2×rank_gap behind, to the north)
+		# still clear the top wall — otherwise the officer lands outside the arena, trapped.
+		var f = wave["formation"].instantiate()
+		f.position = Vector2(randf_range(-300.0, 300.0), -HALF.y + 100.0 + f.rank_gap * 2.0)
+		add_child(f)   # auto-spawns its ranks on _ready
+	else:
+		Spawner.spawn(self, wave["spawns"], -HALF.y + 70.0, -380.0, 380.0, true)
 
 # ── "Hold the Ford": breaches + win/lose ────────────────────────────────────
 

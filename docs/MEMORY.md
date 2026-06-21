@@ -42,7 +42,10 @@ can be collapsed, drifting **logs**.
 - **Terrain** — `scripts/terrain/TerrainZone.gd`: a reusable placeable `Area2D` rule
   (slow / current / drown-light / dangerous→avoid). The ford river + mud are instances.
 - **Spawning** — `scripts/spawning/Spawner.gd`: shared helper to spawn a group of scenes
-  across a lane. Used by the wave + ally spawns in `Battlefield.gd`.
+  across a lane (waves 1/4 + the ally line).
+- **Formations** — `scripts/formations/Formation.gd` + `scenes/formations/` (ShieldWall,
+  SpearPhalanx, OfficerGuard): a placeable body of troops arranged in ranks. Waves 2/3/5
+  arrive as formations; drop a `*.tscn` into a level to place one.
 - **Objectives** — `scripts/objectives/` (`Objective` base + `RepelWaves` / `DefeatOfficer`
   / `HoldLine`) + `scripts/systems/ObjectiveManager.gd`: a level composes its win/lose by
   registering objectives (completable ones gate the win; constraints only gate losing).
@@ -81,10 +84,11 @@ breaks `.tscn`/`.uid` references and risks the browser build).
 
 ## Known TODOs / next batches
 
-- Extract `formations/` (ShieldWall etc.) as reusable placeable scenes; today the garrison
-  is hand-placed in `Battlefield.tscn` and waves spawn flat lists via `Spawner`.
 - An `abilities/` data system (slash / bash / thrust / charge / aura); today attacks are
   branches in `Enemy.gd`.
+- Optionally refactor the hand-placed garrison in `Battlefield.tscn` to `Formation`
+  instances (kept hand-placed for now so `battle_test`'s `$ShieldWall` group still works),
+  and add formation **break/morale** conditions.
 - A full `WaveSpawner` resource (waves still live in `Battlefield.gd`) + an `EnemyPool`.
 - KO + time **score screen**; a balance pass; the challenge rooms. See
   [`../ROADMAP.md`](../ROADMAP.md).

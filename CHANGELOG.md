@@ -9,9 +9,35 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 ## [Unreleased]
 
 ### Planned
-- More framework batches — `formations/`, an `abilities/` data system — plus a KO/time
+- An `abilities/` data system (slash / bash / thrust / charge / aura) — plus a KO/time
   score screen and a bigger crowd via pooling. See [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md)
   and [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.11.0] — 2026-06-21
+
+**Formations module.** The next framework batch: a reusable, placeable **`Formation`** so
+a body of troops is built by *configuring ranks*, not hand-placing every soldier.
+
+### Added
+- **`formations/Formation.gd`** — a placeable `Node2D` that spawns up to three ranks
+  (front / support / commander) arranged perpendicular to its `face`, on a `team`. Place
+  one in a level (it auto-spawns at its position) or spawn it from a wave; tune the roster
+  + spacing via exports. Units are added to the level as independent bodies.
+- **`scenes/formations/`** — `ShieldWall` (5 shields), `SpearPhalanx` (3 shields + 3
+  spears behind), `OfficerGuard` (2 shields + 2 spears + a banner commander) — configs of
+  `Formation`, ready to drop into any level.
+- A headless `FormationsTest` locks the roster count, team, and rank order.
+
+### Changed
+- **The reinforcement waves now arrive as cohesive formations**: wave 2 is a `ShieldWall`,
+  wave 3 a `SpearPhalanx` (spears behind shields), wave 5 an `OfficerGuard` around the
+  officer — instead of a scattered mob. Waves 1 (raiders) and 4 (cavalry + cart) stay
+  loose. The hand-placed garrison is untouched.
+
+### Notes
+- All nine headless tests pass; the new code passed an adversarial review.
 
 ---
 
@@ -405,7 +431,8 @@ makes him slow, vulnerable, and hard to control.
 - All visuals are placeholder shapes drawn in code — game feel over polish, by design.
 - No audio, no enemy AI, no win condition yet. See [`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.7.0...v0.8.0

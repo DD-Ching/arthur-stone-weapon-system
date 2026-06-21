@@ -28,7 +28,7 @@ The genuine hard-coding/duplication targeted by the refactor:
 | 4 | **Reusable terrain rule** — `TerrainZone` (slow / current / drown-light / dangerous→avoid); the ford river + mud are instances | ✅ v0.9.0 |
 | 5 | **Reusable spawner** — `Spawner` helper; the wave + ally spawns use it | ✅ v0.9.0 |
 | 8 | **Objective module** — `RepelWaves` / `DefeatOfficer` / `HoldLine` + an `ObjectiveManager`; win/lose lifted out of `Battlefield.gd` | ✅ v0.10.0 |
-| 7 | **Formation module** — `ShieldWall` / `SpearLine` / `ChargeGroup` / `ProtectedBanner` as placeable, configurable scenes | ⬜ next |
+| 7 | **Formation module** — `Formation` (front/support/commander ranks) + `ShieldWall` / `SpearPhalanx` / `OfficerGuard` scenes; the waves arrive as formations | ✅ v0.11.0 |
 | 6 | **Ability module** — slash / shield bash / spear thrust / charge / aura as data (wind-up/active/recover/cooldown/hit-area) | ⬜ next |
 | 9 | **Wave/spawn system** — a full `WaveSpawner` resource (timed waves, lanes, escalation) + optional `EnemyPool` for a bigger crowd | ⬜ next |
 | 10 | **Level data structure** — assemble levels from terrain + spawns + formations + objectives + props + params | ⬜ next |

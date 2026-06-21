@@ -179,8 +179,8 @@ tuned*, not copy-pasted. Full batch list + status: [`docs/BATCH_PLAN.md`](docs/B
 - ✅ **`objectives/`** + an `ObjectiveManager` (v0.10.0) — RepelWaves / DefeatOfficer /
   HoldLine, composed; win/lose lifted out of `Battlefield.gd`. Winning now also means
   defeating the officer
-- ⬜ **`formations/`** — ShieldWall / SpearLine / ChargeGroup / ProtectedBanner as placeable
-  configurable scenes
+- ✅ **`formations/`** (v0.11.0) — `Formation` (front/support/commander ranks) + ShieldWall
+  / SpearPhalanx / OfficerGuard; the waves arrive as cohesive formations
 - ⬜ **`abilities/`** — slash / shield-bash / spear-thrust / charge / aura as data
 - ⬜ A full **WaveSpawner** resource + optional **EnemyPool** for a bigger crowd
 

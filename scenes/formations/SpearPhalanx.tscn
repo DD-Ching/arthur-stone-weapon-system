@@ -1,0 +1,14 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/formations/Formation.gd" id="1_form"]
+[ext_resource type="PackedScene" path="res://scenes/ShieldSoldier.tscn" id="2_shield"]
+[ext_resource type="PackedScene" path="res://scenes/Spearman.tscn" id="3_spear"]
+
+[node name="SpearPhalanx" type="Node2D"]
+script = ExtResource("1_form")
+front = ExtResource("2_shield")
+front_count = 3
+support = ExtResource("3_spear")
+support_count = 3
+team = "raiders"
+face = Vector2(0, 1)
