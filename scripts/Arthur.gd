@@ -103,10 +103,8 @@ func _handle_attack() -> void:
 		weapon.start_spin()
 		return
 	weapon.stop_spin()
-	if Input.is_action_just_pressed("attack"):
-		weapon.press_attack()
-	if Input.is_action_just_released("attack"):
-		weapon.release_attack()
+	# Hold the attack button to enter swing mode — the mouse DRAG does the swinging.
+	weapon.set_swinging(Input.is_action_pressed("attack"))
 	if Input.is_action_just_pressed("slam"):
 		weapon.start_slam()
 
@@ -135,8 +133,6 @@ func _speed_multiplier() -> float:
 	match weapon.state:
 		StoneWeapon.State.SPIN:
 			return 0.7    # a moving tornado — slower, but you're not rooted
-		StoneWeapon.State.SWING:
-			return 0.6    # committed mid-swing — but the lunge is carrying you forward
 		StoneWeapon.State.SLAM_RAISE:
 			return 0.24   # heaving the stone overhead
 		StoneWeapon.State.SLAM_HOLD:

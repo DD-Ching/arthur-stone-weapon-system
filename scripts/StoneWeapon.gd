@@ -31,14 +31,15 @@ const SHOCKWAVE := preload("res://scenes/Shockwave.tscn")
 const ROCK := preload("res://scenes/Rock.tscn")
 
 @export_group("Swing feel")
-@export var rest_stiffness := 22.0     ## pull toward the trailing rest (higher = snappier return)
-@export var rest_damping := 4.6        ## angular air-resistance (lower = more wobble/momentum)
+@export var follow_stiffness := 13.0   ## how strongly the head springs TOWARD the cursor (heavy = low, laggy)
+@export var rest_damping := 4.8        ## angular air-resistance (lower = more wobble/momentum)
 @export var inertia_gain := 1.1        ## how much Arthur's movement sloshes the head around
-@export var max_avel := 30.0           ## cap on angular speed (rad/s)
-@export var fling_power := 16.0        ## the angular kick a press applies — "施力"
-@export var swing_end_speed := 250.0   ## head speed below which a flung swing is spent
-@export var solid_off_speed := 230.0   ## above this the solid stone steps aside for the impulse
-@export var lunge_impulse := 165.0     ## forward dash Arthur gets per swing (displacement + momentum)
+@export var max_avel := 28.0           ## cap on angular speed (rad/s)
+@export var drag_gain := 5.2           ## mouse-DRAG torque while swinging — how hard a whip builds speed
+@export var swing_stamina_rate := 22.0 ## stamina drained per second while actively dragging a swing
+@export var hit_speed_min := 420.0     ## head speed below which contact only PUSHES (no scored hit)
+@export var solid_off_speed := 400.0   ## above this the solid stone steps aside so the impulse hits
+@export var hit_interval := 0.3        ## a fast head re-hits the same target this often (seconds)
 
 @export_group("Facing")
 @export var face_turn_speed := 9.0     ## how fast Arthur turns to face the cursor
@@ -90,6 +91,10 @@ var _head_world := Vector2.ZERO
 var _head_speed := 0.0    ## measured head speed in px/s — the swing's "relative_speed"
 var _arthur_vel_prev := Vector2.ZERO
 var _spin_clear := 0.0    ## countdown to clear spin hit-dedup so the whirl re-hits
+var _swinging := false    ## is the attack button held (drag = swing mode)
+var _prev_aim := 0.0      ## last frame's cursor angle, for the drag's angular velocity
+var _mouse_avel := 0.0    ## how fast the cursor is being dragged around Arthur (signed: CW/CCW)
+var _hit_clear := 0.0     ## countdown to clear the contact hit-dedup
 
 @onready var hitbox: Area2D = $Hitbox
 @onready var stone_body: AnimatableBody2D = $StoneBody
@@ -98,7 +103,8 @@ var _spin_clear := 0.0    ## countdown to clear spin hit-dedup so the whirl re-h
 
 func _ready() -> void:
 	_head_dist = arm_length
-	_angle = _target_aim + PI      # the head starts hanging behind the facing
+	_angle = _target_aim          # the head rests pointing toward the cursor
+	_prev_aim = _target_aim
 	aim_angle = _target_aim
 	_head_world = to_global(Vector2(_head_dist, 0.0))
 	state_changed.emit(state)
@@ -116,31 +122,20 @@ func _slam_committed() -> bool:
 
 # --- input ------------------------------------------------------------------
 
-## Apply force: fling the head from where it is, around, to the front. The kick
-## stacks on whatever momentum the head already carries (from moving / whipping
-## the aim), so building a sweep first makes the hit harder. You can press again
-## mid-swing to re-kick (rhythmic back-and-forth) — each press costs stamina.
+## Hold the attack button to enter SWING mode: now DRAGGING the mouse around Arthur
+## whips the heavy head (drag clockwise → swing clockwise, etc.) and builds real
+## angular speed. There is no "press = attack" — a strong hit only comes from real
+## motion. set_swinging() is called every frame with the button's held state.
+func set_swinging(on: bool) -> void:
+	_swinging = on
+
+# Kept so existing callers/tests keep working: a "press" just enters swing mode,
+# a "release" leaves it. The actual swing comes from the drag, not the press.
 func press_attack() -> void:
-	if _slam_committed() or state == State.SPIN:
-		return   # committed to a slam, or spinning
-	if not _arthur.try_spend_stamina(swing_cost):
-		too_tired.emit()
-		return
-	var to_front := wrapf(_target_aim - _angle, -PI, PI)
-	var dir := signf(to_front)
-	if absf(to_front) < 0.2:                       # already near the front
-		dir = signf(_avel) if absf(_avel) > 0.1 else 1.0
-	_avel = clampf(_avel + fling_power * dir, -max_avel, max_avel)
-	# Lunge forward — the swing carries Arthur. Chain presses to sprint/reposition,
-	# and the dash speed feeds the head's momentum (a charging swing hits harder).
-	if _arthur.has_method("lunge"):
-		_arthur.lunge(Vector2.RIGHT.rotated(_target_aim) * lunge_impulse)
-	_hit_ids.clear()
-	_hit_count = 0
-	_change_state(State.SWING)
+	set_swinging(true)
 
 func release_attack() -> void:
-	pass   # no charge to release — kept so existing callers/tests stay valid
+	set_swinging(false)
 
 func start_slam() -> void:
 	if _slam_committed() or state == State.SPIN:
@@ -188,15 +183,21 @@ func _physics_process(delta: float) -> void:
 	accel = accel.limit_length(3000.0)
 	_arthur_vel_prev = av
 
+	# How fast the cursor is being dragged AROUND Arthur (signed) — computed every
+	# frame so a slam/spin can't leave a stale value that spikes the next swing.
+	_mouse_avel = wrapf(_target_aim - _prev_aim, -PI, PI) / maxf(delta, 0.0001)
+	_prev_aim = _target_aim
+
 	match state:
-		State.IDLE:
+		State.IDLE, State.SWING:
 			_update_pendulum(delta, accel)
-		State.SWING:
-			_update_pendulum(delta, accel)
-			_apply_swing_hits()
-			if (_state_time > 0.06 and _head_speed < swing_end_speed) or _state_time > 1.1:
-				if _hit_count == 0:
-					Impact.note_miss()   # a committed swing that connected with nothing bleeds the combo
+			_apply_swing_hits(delta)
+			# Cosmetic state only: SWING while the head is actually moving fast (drives
+			# the HUD read-out + the hot glow), IDLE while it just follows the cursor.
+			var fast := _head_speed > hit_speed_min
+			if fast and state == State.IDLE:
+				_change_state(State.SWING)
+			elif not fast and state == State.SWING:
 				_change_state(State.IDLE)
 		State.SLAM_RAISE:
 			_process_slam_raise(delta)
@@ -212,38 +213,55 @@ func _physics_process(delta: float) -> void:
 	rotation = _angle
 	hitbox.position = Vector2(_head_dist, 0.0)
 	stone_body.position = Vector2(_head_dist, 0.0)
-	var hot := (state == State.SWING and _head_speed > solid_off_speed) or state == State.SLAM_DROP or state == State.SPIN
+	# Solid (pushes/blocks) while slow; steps aside while fast so the scored impulse
+	# does the hitting (and during slam-drop / spin).
+	var free := state == State.IDLE or state == State.SWING
+	var hot := (free and _head_speed > solid_off_speed) or state == State.SLAM_DROP or state == State.SPIN
 	_set_solid(not hot)
 	_update_trail(delta)
-	var power := 1.0 if state == State.SPIN else (clampf(_head_speed / 1500.0, 0.0, 1.0) if state == State.SWING else 0.0)
+	var power := 1.0 if state == State.SPIN else clampf(_head_speed / 1500.0, 0.0, 1.0)
 	charge_changed.emit(power)
 	queue_redraw()
 
 func _update_facing(delta: float) -> void:
 	aim_angle = lerp_angle(aim_angle, _target_aim, clampf(face_turn_speed * delta, 0.0, 1.0))
 
-## The pendulum: a spring pulling the head to its trailing rest (behind the
-## facing), plus the pseudo-force from Arthur's acceleration (inertia), minus
-## damping. Real momentum, no scripted arc.
+## The control: the head is a heavy pendulum that springs TOWARD the cursor with
+## damping (so it follows with weight + lag, never snapping). Holding the attack
+## button turns the mouse DRAG into torque, so whipping the cursor around Arthur
+## spins the head that way — clockwise drag → clockwise swing — building real
+## angular speed instead of taking the shortest path to the cursor.
 func _update_pendulum(delta: float, accel: Vector2) -> void:
-	# In IDLE the head hangs BEHIND the facing; a press flips its "home" to the
-	# FRONT, so the spring carries the head around to where you point (the fling
-	# impulse just gets it there faster + harder). On the way back it settles behind.
-	var rest := _target_aim if state == State.SWING else _target_aim + PI
-	var diff := wrapf(rest - _angle, -PI, PI)
-	var torque := rest_stiffness * diff - rest_damping * _avel
-	# pendulum pseudo-force from the moving pivot (Arthur) → tangential component
+	# Normal follow: a spring toward the cursor, damped.
+	var diff := wrapf(_target_aim - _angle, -PI, PI)
+	var torque := follow_stiffness * diff - rest_damping * _avel
+	# Arthur's movement sloshes the heavy head (pendulum pseudo-force).
 	torque += (accel.x * sin(_angle) - accel.y * cos(_angle)) / arm_length * inertia_gain
+	# Swing mode: the drag itself whips the head (its own direction, not shortest path),
+	# building real speed. Costs stamina while you're actually dragging.
+	if _swinging and absf(_mouse_avel) > 0.25:
+		if _arthur.try_spend_stamina(swing_stamina_rate * delta):
+			torque += _mouse_avel * drag_gain
+
 	_avel = clampf(_avel + torque * delta, -max_avel, max_avel)
 	_angle = wrapf(_angle + _avel * delta, -PI, PI)
-	# a little stretch under speed sells the whip
+	# A little stretch + lift under speed sells the whip.
 	var target_dist := arm_length + clampf(absf(_avel) * 0.7, 0.0, 14.0)
 	_head_dist = lerpf(_head_dist, target_dist, clampf(10.0 * delta, 0.0, 1.0))
-	# The hammer rides UP as it whips (lift reads the momentum), settles when idle.
-	var lift_target := clampf(_head_speed / 1800.0, 0.0, 0.5) if state == State.SWING else 0.0
+	var lift_target := clampf(_head_speed / 1800.0, 0.0, 0.45)
 	_lift = lerpf(_lift, lift_target, clampf(8.0 * delta, 0.0, 1.0))
 
-func _apply_swing_hits() -> void:
+## Contact damage, straight from physics: only the FAST-moving head scores a hit
+## (slow contact is left to the solid stone body to merely push). A target the head
+## stays fast against is re-hit every hit_interval, so a sustained swing keeps biting.
+func _apply_swing_hits(delta: float) -> void:
+	_hit_clear -= delta
+	if _hit_clear <= 0.0:
+		_hit_ids.clear()
+		_hit_clear = hit_interval
+	if _head_speed < hit_speed_min:
+		return   # too slow to be an attack — the AnimatableBody2D just pushes
+
 	var origin: Vector2 = _arthur.global_position
 	for body in hitbox.get_overlapping_bodies():
 		if not (body.has_method("apply_hit") or body.has_method("apply_knockback")):
@@ -254,9 +272,7 @@ func _apply_swing_hits() -> void:
 		_hit_ids[id] = true
 
 		var to: Vector2 = body.global_position - origin
-		var head_dir := Vector2.RIGHT.rotated(_angle)
-		var dir := to.normalized() if to.length() > 1.0 else head_dir
-		var angle_q := clampf(head_dir.dot(dir), 0.0, 1.0)   # how square the head is on the target
+		var dir := to.normalized() if to.length() > 1.0 else Vector2.RIGHT.rotated(_angle)
 
 		var pin := 0.0
 		if body.has_method("apply_hit"):
@@ -264,8 +280,8 @@ func _apply_swing_hits() -> void:
 
 		var r := Impact.resolve_hit({
 			"kind": "swing", "attacker_mass": Impact.MASS_STONE,
-			"relative_speed": _head_speed, "charge": 0.0,   # power is all momentum now
-			"angle_quality": angle_q, "pin": pin,
+			"relative_speed": _head_speed, "charge": 0.0,   # power is all real motion now
+			"angle_quality": 1.0, "pin": pin,
 		})
 		if body.has_method("apply_hit"):
 			# The enemy applies its own shield block / break and reports back.
@@ -405,7 +421,7 @@ func _update_trail(delta: float) -> void:
 	var head := to_global(Vector2(_head_dist, 0.0))
 	_head_speed = minf(head.distance_to(_head_world) / maxf(delta, 0.0001), 3200.0)
 	_head_world = head
-	if (state == State.SWING and _head_speed > swing_end_speed) or state == State.SLAM_DROP or state == State.SPIN:
+	if _head_speed > hit_speed_min or state == State.SLAM_DROP or state == State.SPIN:
 		_trail.push_back({"pos": head, "age": 0.0})
 	for p in _trail:
 		p.age += delta

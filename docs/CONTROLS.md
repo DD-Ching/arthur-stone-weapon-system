@@ -3,8 +3,8 @@
 | Input                        | Action                                              |
 | ---------------------------- | --------------------------------------------------- |
 | `W` `A` `S` `D` / Arrow keys | Move                                                |
-| Mouse                        | Aim — Arthur faces the cursor; the stone hangs *behind* him |
-| `Space` / Left Mouse Button  | **Swing** — flings the head from behind to the front **and lunges Arthur forward** |
+| Mouse                        | The heavy head **follows the cursor with lag** (never snaps); slow contact just pushes |
+| **Hold** `Space` / Left Mouse **+ drag** | **Swing** — drag *around* Arthur to whip the head (drag clockwise → swing clockwise) |
 | Right Mouse Button           | Overhead slam — a committed smash with a shockwave  |
 | **`Shift`** / **Middle Mouse** (hold) | **Spin / tornado** — whirl the stone, launching the crowd outward |
 | `R`                          | Reset                                               |
@@ -22,29 +22,26 @@ Arthur has a **low acceleration** (he's slow to get moving — dead weight) and 
 drive Arthur so much as *negotiate* with him. Tunable on the `Arthur` node:
 `max_speed`, `accel`, `friction`.
 
-### The stone hangs behind you — the swing is momentum, not charge
-There's **no charge bar**. The stone head is a heavy pendulum on the end of
-Arthur's arm: while you move and aim, it **trails behind him** and sloshes with
-real inertia. Pressing `Space` / LMB doesn't "wind up" — it **applies force**, a
-kick that flings the head from behind, around, to the front (the sweep goes
-clockwise or counter-clockwise depending on how it's leaning).
+### You drag the weapon — there's no attack button
+The stone head is a heavy pendulum on the end of Arthur's arm. **Move the mouse**
+and the head **springs toward the cursor with weight and lag** — it follows where
+you point, but slowly, never snapping. While it's just following, slow contact only
+**pushes and blocks** (the solid stone shoves things aside); it deals no real damage.
 
-How hard the hit lands is read straight off the head's **real speed at contact**:
+To **attack**, **hold** the button and **drag the mouse around Arthur**. The drag
+itself applies torque to the heavy head:
 
-- A flat-footed press just shoves.
-- **Whip your aim** (or sprint in) right before you press, and that momentum stacks
-  onto the kick — the head arrives faster and hits much harder. The HUD's **POWER**
-  read-out and the stone glowing hot tell you how much momentum you've built.
+- Drag **clockwise** → the head swings **clockwise**; drag the other way → it swings
+  the other way. It follows your *drag*, not the shortest path to the cursor.
+- A faster drag builds **more angular speed** — and damage comes straight off the
+  head's **real speed at contact**. A slow drag pushes; a hard whip **launches**; a
+  whip into a wall still **wall-crushes**. The stone glows hot and the HUD shows live
+  **POWER** so you can read the speed you've built.
 
-So a good hit is your *whole body's motion* committed into the swing. Tunable on
-`StoneWeapon`: `rest_stiffness`, `rest_damping`, `fling_power`, `max_avel`.
-
-### The swing is also a dash
-Every swing **lunges Arthur forward** in the direction he's facing. Chain swings to
-**sprint and reposition** across the battlefield — and because the dash speed feeds
-the head's momentum, *charging in and swinging* is how you hit hardest. While
-mid-swing your steering is throttled (you're committed), but the lunge carries you.
-Tunable on `Arthur`: `dash_friction`, `max_dash_speed`; on `StoneWeapon`: `lunge_impulse`.
+A plain click does nothing — you have to actually *swing*. It should feel like a
+physics sandbox: you are dragging and whipping a heavy stone, not pressing "attack".
+Dragging a swing costs stamina. Tunable on `StoneWeapon`: `follow_stiffness`,
+`rest_damping`, `drag_gain`, `hit_speed_min`, `max_avel`.
 
 ### Spin / tornado — the crowd-clear
 Hold **`Shift`** (or **middle mouse**) and Arthur whirls the stone around himself,

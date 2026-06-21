@@ -14,6 +14,33 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.6.1] — 2026-06-21
+
+**Drag-to-swing control.** The weapon is now controlled like a physics sandbox: you
+*drag* the heavy stone rather than pressing an attack button.
+
+### Changed
+- **Normal mode** (button up): the head springs **toward the cursor** with weight and
+  lag — it never snaps. Slow contact just **pushes/blocks** (the solid stone body),
+  no scored damage.
+- **Swing mode** (attack button held): the **mouse drag** applies torque — dragging
+  **clockwise swings clockwise**, counter-clockwise swings counter-clockwise — and
+  builds **real angular speed** (it follows the drag, not the shortest path to the
+  cursor). Dragging costs stamina.
+- **Damage is purely physical**: a hit only scores when the head is actually moving
+  fast (the existing `Impact` formula reads head speed); a fast whip launches, a slow
+  drag pushes, fast-into-a-wall still wall-crushes. A plain click no longer creates an
+  attack. Hits apply continuously (re-biting a sustained contact), not as a scripted
+  swing.
+- Removed the click-to-fling + per-swing lunge (Arthur's knock-off on damage stays).
+  Slam, spin, Stone Flow, wall crush, bowling, knockback, the horde, cavalry, and the
+  war cart are all unchanged.
+
+### Notes
+- The swing smoke test now drives a real mouse drag; all five headless tests pass.
+
+---
+
 ## [0.6.0] — 2026-06-21
 
 **War Cart.** The last big charging mass joins the field.
@@ -214,7 +241,8 @@ makes him slow, vulnerable, and hard to control.
 - All visuals are placeholder shapes drawn in code — game feel over polish, by design.
 - No audio, no enemy AI, no win condition yet. See [`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.4.1...v0.5.0
 [0.4.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.3.0...v0.4.0

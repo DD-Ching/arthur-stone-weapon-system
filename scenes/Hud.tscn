@@ -153,4 +153,4 @@ offset_right = 1240.0
 offset_bottom = -18.0
 mouse_filter = 2
 theme_override_font_sizes/font_size = 16
-text = "WASD/Arrows: move    Mouse: aim    L-Click/Space: swing (lunges you)    R-Click: slam    Shift/Mid-Mouse: SPIN    R: reset"
+text = "WASD: move    Mouse: aim (head follows w/ lag)    HOLD L-Click/Space + DRAG to swing    R-Click: slam    Shift/Mid-Mouse: SPIN    R: reset"

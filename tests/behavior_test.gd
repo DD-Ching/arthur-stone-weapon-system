@@ -29,9 +29,9 @@ func _ready() -> void:
 	arthur.global_position = base
 	dummy_passive = load("res://scenes/TargetDummy.tscn").instantiate()
 	add_child(dummy_passive)
-	# The head now rests BEHIND the facing (aim 0 → rest at -X), so the resting
-	# stone overlaps a dummy placed behind Arthur.
-	dummy_passive.global_position = base + Vector2(-90, 0)
+	# The head rests pointing TOWARD the cursor (aim 0 → rest at +X), so the resting
+	# stone overlaps a dummy placed in front of Arthur.
+	dummy_passive.global_position = base + Vector2(90, 0)
 	dummy_slam = load("res://scenes/TargetDummy.tscn").instantiate()
 	add_child(dummy_slam)
 	dummy_slam.global_position = base + Vector2(150, 0)     # near the slam point, clear of the stone
