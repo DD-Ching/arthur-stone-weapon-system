@@ -94,9 +94,12 @@ func _process(delta: float) -> void:
 # ── Stone Flow API ──────────────────────────────────────────────────────────
 
 func add_flow(amount: float) -> void:
+	var before := stacks
 	flow = clampf(flow + amount, 0.0, FLOW_MAX)
 	_since_gain = 0.0
 	_recompute()
+	if stacks > before:
+		Audio.play("stone_flow_gain")
 
 ## A KO — the musou counter. Fires a milestone string on the big round numbers so
 ## the HUD can shout RAMPAGE! etc.
@@ -291,6 +294,8 @@ func collide(target: Object, dir: Vector2, relative_speed: float, attacker_mass:
 		popup(r["label"], target.global_position + Vector2(0.0, -26.0), r["color"])
 	add_flow(r["flow_gain"] * (0.4 if res["blocked"] else 1.0))
 	impact_fx.emit(r["shake"])
+	if kind == "bowling":
+		Audio.play("chain_impact" if chain >= 2 else "enemy_launch", target.global_position)
 
 # ── Feedback pop-up ─────────────────────────────────────────────────────────
 

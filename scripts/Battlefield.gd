@@ -25,6 +25,18 @@ const MUD := [
 	Rect2(-340, 60, 680, 90),
 ]
 
+## The ford — a shallow river the raiders must cross to reach Arthur's bank. Off the
+## bridge it drags bodies AND a light current drifts them downstream, so cavalry and
+## carts lose their line in the water. The dry BRIDGE deck in the middle is the only
+## clean crossing — the choke point. Two Rect2 segments leave the bridge gap open.
+const RIVER := [
+	Rect2(-900, 212, 830, 112),   # left of the bridge
+	Rect2(70, 212, 830, 112),     # right of the bridge
+]
+const BRIDGE := Rect2(-70, 200, 140, 136)        ## dry deck (drawn; the gap in the river)
+const WATER_DRAG := 0.93         ## velocity kept per frame in water (lighter than mud)
+const CURRENT := Vector2(48.0, 0.0)  ## downstream push (left → right) applied in water
+
 ## Reinforcements — the musou horde. Keep this many enemies alive by trickling in
 ## fresh fodder from the back of the field, so you always have an army to mow.
 @export var horde_target := 22   ## kept conservative for the single-threaded web build
@@ -43,6 +55,7 @@ var _wall_total := 1
 var _scan_cd := 0.0          ## throttles the (rare-to-change) objective scan
 var _spawn_cd := 2.0         ## gap before the first reinforcements arrive
 var _mud_bodies: Array = []  ## cached enemy+prop list, refreshed periodically
+var _wet := {}               ## instance_id -> was-in-water, for splash-on-entry
 
 func _ready() -> void:
 	Impact.reset()
@@ -55,7 +68,9 @@ func _ready() -> void:
 	_wall_total = maxi(1, get_tree().get_nodes_in_group("shieldwall").size())
 	arthur.died.connect(_on_arthur_died)
 	hud.bind(arthur)
-	hud.set_objective("BREAK THE SHIELD WALL   0 / %d" % _wall_total)
+	hud.set_objective("HOLD THE FORD — BREAK THE SHIELD WALL   0 / %d" % _wall_total)
+	Impact.popup("THE FORD OF THE STONE KING", arthur.global_position + Vector2(0, -120),
+		Color(0.85, 0.8, 0.6), 1.4)
 	queue_redraw()
 
 func _build_fences() -> void:
@@ -75,21 +90,38 @@ func _physics_process(delta: float) -> void:
 	if _scan_cd <= 0.0:
 		_scan_cd = 0.15
 		_mud_bodies = get_tree().get_nodes_in_group("targets") + get_tree().get_nodes_in_group("props")
+		# Drop splash-state for bodies freed since the last scan. Instance IDs get
+		# reused, so a stale 'wet' flag must not suppress a fresh body's splash — same
+		# reason Impact prunes its collision debounce.
+		for id in _wet.keys():
+			if not is_instance_valid(instance_from_id(id)):
+				_wet.erase(id)
 		_check_objective()
 		if _spawn_cd <= 0.0:
 			_spawn_reinforcements()
 			_spawn_cd = spawn_interval
-	# Mud drag on the cached bodies (point-in-rect). Applied every frame so charges
+	# Terrain forces on the cached bodies (point-in-rect), applied every frame so charges
 	# actually bog down; is_instance_valid guards bodies freed since the last refresh.
 	for b in _mud_bodies:
-		if is_instance_valid(b) and b is RigidBody2D and _in_mud(b.global_position):
+		if not (is_instance_valid(b) and b is RigidBody2D):
+			continue
+		if _in_mud(b.global_position):
 			b.linear_velocity *= MUD_DRAG
+		if _in_water(b.global_position):
+			b.linear_velocity *= WATER_DRAG
+			b.linear_velocity += CURRENT * delta      # the downstream drift
+			_splash_check(b)
+		elif _wet.has(b.get_instance_id()):
+			_wet.erase(b.get_instance_id())
+	# Arthur wades too: the current gently shoves him while he stands in the ford.
+	if _in_water(arthur.global_position):
+		arthur.global_position += CURRENT * delta * 0.55
 
 func _check_objective() -> void:
 	if _won or _lost:
 		return
 	var remaining := get_tree().get_nodes_in_group("shieldwall").size()
-	hud.set_objective("BREAK THE SHIELD WALL   %d / %d" % [_wall_total - remaining, _wall_total])
+	hud.set_objective("HOLD THE FORD — BREAK THE SHIELD WALL   %d / %d" % [_wall_total - remaining, _wall_total])
 	if remaining == 0:
 		_won = true
 		hud.show_banner("SHIELD WALL BROKEN!", Color(0.5, 0.95, 0.55))
@@ -100,6 +132,20 @@ func _in_mud(p: Vector2) -> bool:
 		if r.has_point(p):
 			return true
 	return false
+
+func _in_water(p: Vector2) -> bool:
+	for r in RIVER:
+		if r.has_point(p):
+			return true
+	return false
+
+## Splash + sound the first frame a moving body crosses into the ford.
+func _splash_check(b: RigidBody2D) -> void:
+	var id := b.get_instance_id()
+	if not _wet.get(id, false) and b.linear_velocity.length() > 130.0:
+		Audio.play("water_splash", b.global_position)
+		Impact.popup("SPLASH", b.global_position + Vector2(0, -24), Color(0.6, 0.85, 1.0), 0.9)
+	_wet[id] = true
 
 ## Trickle fresh fodder in from the back rank until the field is full again.
 func _spawn_reinforcements() -> void:
@@ -138,6 +184,19 @@ func _draw() -> void:
 		draw_line(Vector2(x, -HALF.y), Vector2(x, HALF.y), Color(1, 1, 1, 0.03), 1.0)
 	for y in range(-int(HALF.y), int(HALF.y) + 1, GRID_STEP):
 		draw_line(Vector2(-HALF.x, y), Vector2(HALF.x, y), Color(1, 1, 1, 0.03), 1.0)
+	# the ford — river water with a faint downstream current stripe
+	for r in RIVER:
+		draw_rect(r, Color(0.16, 0.34, 0.44, 0.78))
+		var midy: float = r.position.y + r.size.y * 0.5
+		draw_line(Vector2(r.position.x, midy), Vector2(r.position.x + r.size.x, midy),
+			Color(0.45, 0.7, 0.8, 0.35), 2.0)
+		draw_rect(r, Color(0.3, 0.55, 0.65, 0.5), false, 2.0)
+	# the wooden bridge — the dry choke across the ford
+	draw_rect(BRIDGE, Color(0.42, 0.31, 0.19))
+	for px in range(int(BRIDGE.position.x), int(BRIDGE.position.x + BRIDGE.size.x), 18):
+		draw_line(Vector2(px, BRIDGE.position.y), Vector2(px, BRIDGE.position.y + BRIDGE.size.y),
+			Color(0.3, 0.22, 0.13), 2.0)
+	draw_rect(BRIDGE, Color(0.55, 0.42, 0.27), false, 3.0)
 	# mud bands
 	for r in MUD:
 		draw_rect(r, Color(0.26, 0.2, 0.12, 0.65))

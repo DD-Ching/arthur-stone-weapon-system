@@ -19,6 +19,7 @@ boot_splash/show_image=false
 [autoload]
 
 Impact="*res://scripts/Impact.gd"
+Audio="*res://scripts/Audio.gd"
 
 [display]
 

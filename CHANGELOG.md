@@ -9,8 +9,39 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 ## [Unreleased]
 
 ### Planned
-- Layered objectives (officers, capture-the-banner, hold-the-line), a bigger crowd
-  via cheaper enemy updates, and audio. See [`ROADMAP.md`](ROADMAP.md).
+- A structured 5-wave escalation and a true "Hold the Ford" defend-the-banner lose
+  condition, a bigger crowd via cheaper enemy updates, and real audio behind the
+  event hooks. See [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.7.0] — 2026-06-21
+
+**The Ford of the Stone King.** The arena becomes a river crossing — terrain that is
+itself a physics weapon. The combat, units, officer morale, mud, props, and objective
+from v0.4–v0.6 are unchanged; this adds the *battlefield* around them.
+
+### Added
+- **The ford (river + current).** A shallow river spans the field. Off the bridge it
+  drags bodies *and* a light downstream **current** drifts them sideways, so cavalry
+  and carts lose their line in the water and loose props float away. Crossing a moving
+  body in splashes (`SPLASH`). Data-driven `Rect2` bands like the mud — no fluid sim.
+- **The wooden bridge.** A dry planked deck is the one clean crossing — the choke. Off
+  it, the water slows the army, so the bridge naturally funnels the assault.
+- **The water wheel.** A spinning mill wheel on the bank that **bats any enemy or prop
+  that wanders (or is knocked) into it** — a tangential impulse flings them off, hard
+  enough to go limp and fly. Knock a soldier into the wheel and watch them launch. An
+  `Area2D` + one Godot impulse, debounced; no custom physics.
+- **Audio event hooks.** A new `Audio` autoload is a named-event bus (`Audio.play(...)`
+  → one `sfx(event, pos)` signal). All twelve brief events are wired at their real
+  trigger points (`heavy_swing`, `stone_scrape`, `shield_block`, `shield_break`,
+  `wall_crush`, `enemy_launch`, `chain_impact`, `cavalry_charge`, `banner_down`,
+  `water_splash`, `water_wheel_creak`, `stone_flow_gain`) so dropping in real sounds
+  later is a one-file change.
+- The HUD objective now frames the fight as **HOLD THE FORD — BREAK THE SHIELD WALL**,
+  with a "THE FORD OF THE STONE KING" title on spawn.
+- A sixth headless test (`FordTest`) asserts the current drifts a body, the wheel
+  launches one, and the audio events fire. All six tests pass.
 
 ---
 
@@ -274,7 +305,8 @@ makes him slow, vulnerable, and hard to control.
 - All visuals are placeholder shapes drawn in code — game feel over polish, by design.
 - No audio, no enemy AI, no win condition yet. See [`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.3...HEAD
+[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.3...v0.7.0
 [0.6.3]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.0...v0.6.1

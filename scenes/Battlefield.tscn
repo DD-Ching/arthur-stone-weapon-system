@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/Battlefield.gd" id="1_bf"]
 [ext_resource type="PackedScene" path="res://scenes/Arthur.tscn" id="2_arthur"]
@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" path="res://scenes/Hud.tscn" id="10_hud"]
 [ext_resource type="PackedScene" path="res://scenes/Cavalry.tscn" id="11_cav"]
 [ext_resource type="PackedScene" path="res://scenes/WarCart.tscn" id="12_cart"]
+[ext_resource type="PackedScene" path="res://scenes/WaterWheel.tscn" id="13_wheel"]
 
 [sub_resource type="RectangleShape2D" id="wall_h"]
 size = Vector2(1880, 40)
@@ -125,5 +126,8 @@ position = Vector2(-230, 250)
 
 [node name="C2" parent="Props" instance=ExtResource("9_crate")]
 position = Vector2(230, 250)
+
+[node name="WaterWheel" parent="." instance=ExtResource("13_wheel")]
+position = Vector2(-560, 268)
 
 [node name="Hud" parent="." instance=ExtResource("10_hud")]
