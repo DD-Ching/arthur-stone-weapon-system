@@ -35,6 +35,7 @@ extends RigidBody2D
 @export var control_regain := 160.0     ## above this speed it's "flying" → physics, not AI
 @export var keep_distance := 0.0        ## >0: spacing enemy (spearman) holds this range
 @export var sight_range := 240.0        ## within this it engages a foe; beyond it marches to the goal
+@export var avoid_danger := true        ## route around "danger_terrain" zones toward a "crossing"
 @export_enum("none", "melee", "thrust", "bash") var attack_kind := "none"
 @export var attack_range := 30.0
 @export var attack_damage := 8.0
@@ -67,8 +68,14 @@ var _atk_cd := 0.0
 var _did_strike := false
 var _face := PI           ## facing toward the foe (for weapons / telegraphs)
 var _flank := 0.0         ## side bias so non-shield units surround instead of clumping
-var _retarget_cd := 0.0   ## throttle for re-scanning for the nearest foe + separation
+var _retarget_cd := 0.0   ## throttle for re-scanning for the nearest foe + separation + terrain
 var _separation := Vector2.ZERO  ## steering away from nearby same-team units (no stacking)
+var _last_pos := Vector2.ZERO    ## last frame's position, for stuck detection
+var _stuck_t := 0.0       ## seconds spent trying-but-failing to move (wall/jam)
+var _danger_zones: Array = []    ## cached "danger_terrain" (deep water) to route around
+var _crossings: Array = []       ## cached "crossing" markers (bridges/fords) to aim at
+var _goal_node = null            ## cached march goal (the ford banner), refreshed on retarget
+var _rerouting := false          ## currently steering around danger, not pursuing the foe
 
 func _ready() -> void:
 	add_to_group("hittable")
@@ -195,6 +202,12 @@ func _physics_process(delta: float) -> void:
 		_retarget_cd = 0.25
 		_player = _find_foe()
 		_separation = _separation_vector()
+		# Cache the (static) terrain + march goal so per-frame steering doesn't re-scan groups.
+		if avoid_danger:
+			_danger_zones = get_tree().get_nodes_in_group("danger_terrain")
+			_crossings = get_tree().get_nodes_in_group("crossing")
+		if team == "raiders":
+			_goal_node = get_tree().get_first_node_in_group("ford_goal")
 	elif _player != null and not is_instance_valid(_player):
 		_player = null
 
@@ -215,14 +228,24 @@ func _physics_process(delta: float) -> void:
 
 	match _ai:
 		AI.APPROACH:
-			# Engage a foe that's within reach; otherwise press on toward the goal.
+			_rerouting = false
 			if foe_dist <= sight_range:
-				linear_velocity = linear_velocity.move_toward(_approach_velocity(dir, foe_dist), move_accel * delta)
-				if foe_dist <= attack_range and _atk_cd <= 0.0 and attack_kind != "none":
-					_begin_attack()
-				elif shielded and foe_dist <= guard_range:
-					_ai = AI.GUARD
-					_ai_time = 0.0
+				# A foe is in sight — but if deep water blocks the straight line to it,
+				# route around to the crossing first (don't just wade in toward Arthur).
+				var sdir := _avoid_redirect(dir)
+				if sdir.dot(dir) < 0.9:
+					_rerouting = true
+					_face = sdir.angle()
+					if shielded:
+						shield_angle = _face
+					linear_velocity = linear_velocity.move_toward(sdir * move_speed + _separation * 40.0, move_accel * delta)
+				else:
+					linear_velocity = linear_velocity.move_toward(_approach_velocity(dir, foe_dist), move_accel * delta)
+					if foe_dist <= attack_range and _atk_cd <= 0.0 and attack_kind != "none":
+						_begin_attack()
+					elif shielded and foe_dist <= guard_range:
+						_ai = AI.GUARD
+						_ai_time = 0.0
 			else:
 				linear_velocity = linear_velocity.move_toward(_march_velocity(), move_accel * delta)
 		AI.GUARD:
@@ -252,6 +275,34 @@ func _physics_process(delta: float) -> void:
 				_ai_time = 0.0
 				_atk_cd = attack_cooldown
 
+	# Stuck recovery: if it's actually TRYING to advance but barely moved (jammed on a wall
+	# or a pile of bodies), slip sideways. Skip it for a spacing unit holding its band (it's
+	# waiting, not stuck) and never nudge a unit into the danger it's avoiding.
+	if _ai == AI.APPROACH and _wants_to_advance():
+		if global_position.distance_to(_last_pos) < 0.6:
+			_stuck_t += delta
+			if _stuck_t > 0.4:
+				var side := _flank if _flank != 0.0 else 1.0
+				var nudge := Vector2(-sin(_face), cos(_face)) * side
+				if not _danger_ahead(global_position + nudge * (radius + 20.0)):
+					linear_velocity = (linear_velocity + nudge * move_speed * 0.9).limit_length(move_speed)
+				_stuck_t = 0.0
+		else:
+			_stuck_t = 0.0
+	else:
+		_stuck_t = 0.0
+	_last_pos = global_position
+
+## Is the unit actually trying to move this frame (vs. a spearman deliberately holding its
+## spacing band, which must not be mistaken for "stuck")?
+func _wants_to_advance() -> bool:
+	if keep_distance <= 0.0:
+		return true
+	if not is_instance_valid(_player):
+		return true
+	var d := global_position.distance_to(_player.global_position)
+	return d < keep_distance - 12.0 or d > keep_distance + 40.0
+
 ## Steering when a foe is in reach: spacing for spearmen, flank + separation for the rest.
 func _approach_velocity(dir: Vector2, dist: float) -> Vector2:
 	if keep_distance > 0.0:                    # spacing enemy (spearman)
@@ -267,14 +318,47 @@ func _approach_velocity(dir: Vector2, dist: float) -> Vector2:
 	return d * move_speed + _separation * 40.0
 
 ## Steering while marching toward the goal (no foe in reach), still anti-stacking.
+## If dangerous terrain (deep water) is right ahead, steer toward the nearest crossing
+## (a bridge/ford) instead of wading in — this is what funnels a warband into a chokepoint.
 func _march_velocity() -> Vector2:
 	var to_goal: Vector2 = _goal_position() - global_position
-	var gd := to_goal.length()
-	var gdir := to_goal / maxf(gd, 0.001)
+	var gdir := to_goal / maxf(to_goal.length(), 0.001)
+	gdir = _avoid_redirect(gdir)
 	_face = gdir.angle()
 	if shielded:
 		shield_angle = _face
 	return gdir * move_speed + _separation * 40.0
+
+## If deep water is right ahead along `desired`, return a direction toward the nearest
+## crossing instead; otherwise return `desired` unchanged. Used by both the march and the
+## engage path, so a unit never wades into a danger zone it could go around.
+func _avoid_redirect(desired: Vector2) -> Vector2:
+	if not avoid_danger or _danger_zones.is_empty():
+		return desired
+	var ahead := global_position + desired * (radius + 30.0)
+	if _danger_ahead(ahead) and not _danger_ahead(global_position):
+		var cross := _nearest_crossing()
+		if cross.x < INF:
+			return (cross - global_position).normalized()
+	return desired
+
+func _danger_ahead(p: Vector2) -> bool:
+	for z in _danger_zones:
+		if is_instance_valid(z) and z.contains(p):
+			return true
+	return false
+
+func _nearest_crossing() -> Vector2:
+	var best := Vector2(INF, INF)
+	var bd := INF
+	for c in _crossings:
+		if not is_instance_valid(c):
+			continue
+		var d: float = global_position.distance_squared_to(c.global_position)
+		if d < bd:
+			bd = d
+			best = c.global_position
+	return best
 
 func _begin_attack() -> void:
 	_ai = AI.WINDUP
@@ -327,9 +411,8 @@ func _nearest_raider() -> Node2D:
 ## south bank), so they fight through the line to cross; allies hunt the nearest raider.
 func _goal_position() -> Vector2:
 	if team == "raiders":
-		var goal = get_tree().get_first_node_in_group("ford_goal")
-		if goal != null and is_instance_valid(goal):
-			return goal.global_position
+		if is_instance_valid(_goal_node):           # cached on the retarget tick, not per frame
+			return _goal_node.global_position
 		var p = get_tree().get_first_node_in_group("player")
 		return p.global_position if p != null else global_position
 	return _player.global_position if is_instance_valid(_player) else global_position

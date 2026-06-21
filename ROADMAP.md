@@ -163,6 +163,28 @@ real "hold the line" battle.
 
 ---
 
+## Phase 7 — Modular battlefield framework 🔶  → ships as **v0.9.0**, continues
+
+Turn the prototype into a small framework so new enemies/terrain/levels are *placed and
+tuned*, not copy-pasted. Full batch list + status: [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md).
+
+- ✅ **Project memory** — `CLAUDE.md`, `docs/MEMORY.md`, `docs/BATCH_PLAN.md`, refreshed
+  `ARCHITECTURE.md`
+- ✅ **Shared enemy base** — `Enemy.gd` (already: every type is a config/subclass of it)
+- ✅ **Reusable terrain** — `TerrainZone` (slow / current / dangerous / drown); ford + mud
+  are instances
+- ✅ **Smarter movement** — stuck-recovery + dangerous-terrain avoidance (funnel to the
+  bridge)
+- ✅ **Reusable spawner** — `Spawner` (waves + allies share it)
+- ⬜ **`formations/`** — ShieldWall / SpearLine / ChargeGroup / ProtectedBanner as placeable
+  configurable scenes
+- ⬜ **`objectives/`** + an `ObjectiveManager` — ProtectBanner / HoldLine / DefeatOfficer /
+  BreakFormation, lifted out of `Battlefield.gd`
+- ⬜ **`abilities/`** — slash / shield-bash / spear-thrust / charge / aura as data
+- ⬜ A full **WaveSpawner** resource + optional **EnemyPool** for a bigger crowd
+
+---
+
 ## Phase 4.5 — Public Demo 🔶  → ongoing
 
 Get it into other people's hands.
