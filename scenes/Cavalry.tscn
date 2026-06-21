@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/Cavalry.gd" id="1_cav"]
 
 [sub_resource type="CircleShape2D" id="cav_shape"]
-radius = 18.0
+radius = 26.0
 
 [node name="Cavalry" type="RigidBody2D"]
 collision_layer = 4
@@ -18,7 +18,7 @@ max_contacts_reported = 6
 script = ExtResource("1_cav")
 enemy_name = "Cavalry"
 look = "cavalry"
-radius = 18.0
+radius = 26.0
 base_color = Color(0.5, 0.4, 0.3, 1)
 max_health = 42.0
 stagger_threshold = 480.0
