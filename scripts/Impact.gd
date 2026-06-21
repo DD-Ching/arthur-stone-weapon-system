@@ -65,12 +65,14 @@ const SLAM_FLOW_BASE := 9.5   ## flow per enemy a slam shockwave catches (read b
 
 signal flow_changed(flow: float, stacks: int, flow_mode: bool)
 signal impact_fx(strength: float)   ## camera shake / hit-stop request from non-weapon hits
+signal kills_changed(kills: int, milestone: String)   ## musou KO counter
 
 const MAX_LABELS := 16        ## cap concurrent floating labels (web: bounds node + redraw churn)
 
 var flow := 0.0
 var stacks := 0
 var flow_mode := false        ## stack 5: "Stone Flow" mode, stronger reactions
+var kills := 0                ## total enemies defeated this battle (the KO count)
 var _since_gain := 0.0
 var _collision_cd := {}       ## shared collision debounce: instance_id -> expiry (ms)
 
@@ -96,6 +98,20 @@ func add_flow(amount: float) -> void:
 	_since_gain = 0.0
 	_recompute()
 
+## A KO — the musou counter. Fires a milestone string on the big round numbers so
+## the HUD can shout RAMPAGE! etc.
+func add_kill() -> void:
+	kills += 1
+	var milestone := ""
+	match kills:
+		10: milestone = "RAMPAGE!"
+		25: milestone = "MASSACRE!"
+		50: milestone = "WARLORD!"
+		100: milestone = "LEGENDARY!"
+		200: milestone = "UNSTOPPABLE!"
+		400: milestone = "ONE-MAN ARMY!"
+	kills_changed.emit(kills, milestone)
+
 ## A swing that connected with nothing — bleed the combo.
 func note_miss() -> void:
 	if flow <= 0.0:
@@ -115,8 +131,10 @@ func note_damage() -> void:
 
 func reset() -> void:
 	flow = 0.0
+	kills = 0
 	_since_gain = 0.0
 	_collision_cd.clear()
+	kills_changed.emit(0, "")
 	_recompute()
 
 ## One shared debounce for "a flung body hit a target" — used by enemy bowling and

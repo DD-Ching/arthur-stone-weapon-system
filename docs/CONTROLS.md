@@ -6,6 +6,7 @@
 | Mouse                        | Aim — Arthur faces the cursor; the stone hangs *behind* him |
 | `Space` / Left Mouse Button  | **Swing** — flings the head from behind to the front **and lunges Arthur forward** |
 | Right Mouse Button           | Overhead slam — a committed smash with a shockwave  |
+| **`Shift`** / **Middle Mouse** (hold) | **Spin / tornado** — whirl the stone, launching the crowd outward |
 | `R`                          | Reset                                               |
 
 These actions are defined in `project.godot` under `[input]`, so you can rebind
@@ -44,6 +45,14 @@ Every swing **lunges Arthur forward** in the direction he's facing. Chain swings
 the head's momentum, *charging in and swinging* is how you hit hardest. While
 mid-swing your steering is throttled (you're committed), but the lunge carries you.
 Tunable on `Arthur`: `dash_friction`, `max_dash_speed`; on `StoneWeapon`: `lunge_impulse`.
+
+### Spin / tornado — the crowd-clear
+Hold **`Shift`** (or **middle mouse**) and Arthur whirls the stone around himself,
+launching everything in a ring **outward**. It's the musou panic button: it bowls
+launched enemies into the rest, breaks shields it sweeps through, and racks up the
+**KO counter** fast. The cost: it **drains stamina quickly**, so it's a burst, not a
+state — and even spinning, Arthur is a slow, committed tornado (still no ninja).
+Tunable on `StoneWeapon`: the `Spin` group (`spin_rate`, `spin_cost`, `spin_stretch`…).
 
 ### The stone has weight even when you're not attacking
 The stone head is a real physical body. Just sweeping the mouse drags it *through*

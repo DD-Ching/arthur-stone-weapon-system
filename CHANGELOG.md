@@ -9,8 +9,34 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 ## [Unreleased]
 
 ### Planned
-- Cavalry charge + war cart prototypes, more battlefield objectives, and the
-  spin/tornado attack. See [`ROADMAP.md`](ROADMAP.md).
+- War cart / relic chariot, more challenge objectives, destructible terrain, audio.
+  See [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.5.0] — 2026-06-21
+
+**Musou layer.** The battlefield leans into a Dynasty-Warriors power fantasy — one
+absurd hero mowing through an army.
+
+### Added
+- **Spin / tornado attack** (hold `Shift` or middle-mouse): whirl the stone around
+  Arthur, launching the whole crowd **outward in a ring**. Drains stamina fast,
+  keeps some mobility (a moving tornado, not rooted), and takes no per-hit freeze so
+  it never stutters; the head glows hot and a spin-radius ring shows the reach. It
+  breaks shields it sweeps through and bowls launched enemies into the rest for chains.
+- **KO counter** (top-right) with musou milestones — `RAMPAGE!` / `MASSACRE!` /
+  `WARLORD!` / `LEGENDARY!` / `UNSTOPPABLE!` / `ONE-MAN ARMY!` flash on the round numbers.
+- **Reinforcement horde**: the battlefield trickles fresh fodder in from the back
+  rank to keep an army on the field (`horde_target`), so there's always more to mow.
+- **Cavalry charge**: telegraphed mounted chargers that circle, show a charge lane,
+  then charge straight — dangerous to Arthur and plowing through their own crowd, but
+  a solid hit mid-charge staggers them and **breaks the charge** (`CHARGE BROKEN`).
+- Headless spin + KO test wired into CI.
+
+### Notes
+- War cart is still **designed in [`ROADMAP.md`](ROADMAP.md)**. The v0.3 `Arena.tscn`
+  remains as a calm sandbox. Web build stays single-threaded for GitHub Pages.
 
 ---
 
@@ -171,7 +197,8 @@ makes him slow, vulnerable, and hard to control.
 - All visuals are placeholder shapes drawn in code — game feel over polish, by design.
 - No audio, no enemy AI, no win condition yet. See [`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.4.1...v0.5.0
 [0.4.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.1.0...v0.2.0

@@ -25,6 +25,14 @@ const MUD := [
 	Rect2(-340, 60, 680, 90),
 ]
 
+## Reinforcements — the musou horde. Keep this many enemies alive by trickling in
+## fresh fodder from the back of the field, so you always have an army to mow.
+@export var horde_target := 22   ## kept conservative for the single-threaded web build
+@export var spawn_interval := 1.0
+const LIGHT := preload("res://scenes/LightSoldier.tscn")
+const SHIELD := preload("res://scenes/ShieldSoldier.tscn")
+const SPEAR := preload("res://scenes/Spearman.tscn")
+
 @onready var arthur = $Arthur
 @onready var hud = $Hud
 @onready var walls: StaticBody2D = $Walls
@@ -33,6 +41,7 @@ var _won := false
 var _lost := false
 var _wall_total := 1
 var _scan_cd := 0.0          ## throttles the (rare-to-change) objective scan
+var _spawn_cd := 2.0         ## gap before the first reinforcements arrive
 var _mud_bodies: Array = []  ## cached enemy+prop list, refreshed periodically
 
 func _ready() -> void:
@@ -62,10 +71,14 @@ func _physics_process(delta: float) -> void:
 	# Refresh the body list + check the objective a few times a second — they change
 	# only on a defeat, so scanning groups every frame is wasted work on the web build.
 	_scan_cd -= delta
+	_spawn_cd -= delta
 	if _scan_cd <= 0.0:
 		_scan_cd = 0.15
 		_mud_bodies = get_tree().get_nodes_in_group("targets") + get_tree().get_nodes_in_group("props")
 		_check_objective()
+		if _spawn_cd <= 0.0:
+			_spawn_reinforcements()
+			_spawn_cd = spawn_interval
 	# Mud drag on the cached bodies (point-in-rect). Applied every frame so charges
 	# actually bog down; is_instance_valid guards bodies freed since the last refresh.
 	for b in _mud_bodies:
@@ -87,6 +100,26 @@ func _in_mud(p: Vector2) -> bool:
 		if r.has_point(p):
 			return true
 	return false
+
+## Trickle fresh fodder in from the back rank until the field is full again.
+func _spawn_reinforcements() -> void:
+	if _won or _lost:
+		return
+	for _i in 2:
+		if get_tree().get_nodes_in_group("targets").size() >= horde_target:
+			return
+		var e = _pick_reinforcement().instantiate()
+		add_child(e)
+		e.ai_enabled = true
+		e.global_position = Vector2(randf_range(-300.0, 300.0), -HALF.y + 70.0)
+
+func _pick_reinforcement() -> PackedScene:
+	var r := randf()
+	if r < 0.66:
+		return LIGHT      # mostly cannon fodder
+	if r < 0.86:
+		return SPEAR
+	return SHIELD
 
 func _on_arthur_died() -> void:
 	if _won:

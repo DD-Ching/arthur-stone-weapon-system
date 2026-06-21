@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/Battlefield.gd" id="1_bf"]
 [ext_resource type="PackedScene" path="res://scenes/Arthur.tscn" id="2_arthur"]
@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://scenes/Rock.tscn" id="8_rock"]
 [ext_resource type="PackedScene" path="res://scenes/Crate.tscn" id="9_crate"]
 [ext_resource type="PackedScene" path="res://scenes/Hud.tscn" id="10_hud"]
+[ext_resource type="PackedScene" path="res://scenes/Cavalry.tscn" id="11_cav"]
 
 [sub_resource type="RectangleShape2D" id="wall_h"]
 size = Vector2(1880, 40)
@@ -95,6 +96,14 @@ position = Vector2(300, -50)
 
 [node name="Banner" parent="." instance=ExtResource("7_banner")]
 position = Vector2(0, -330)
+
+[node name="Cavalry" type="Node2D" parent="."]
+
+[node name="Cav1" parent="Cavalry" instance=ExtResource("11_cav")]
+position = Vector2(-460, -120)
+
+[node name="Cav2" parent="Cavalry" instance=ExtResource("11_cav")]
+position = Vector2(460, -120)
 
 [node name="Props" type="Node2D" parent="."]
 

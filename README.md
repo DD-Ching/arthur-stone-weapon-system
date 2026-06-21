@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.4.0 — Momentum Swing &amp; Battlefield</strong> · placeholder art · a physics flail you fling with momentum, vs a thinking army with a shield wall to break</em></p>
+<p align="center"><em>Status: <strong>v0.5.0 — Musou</strong> · placeholder art · a physics flail + a tornado whirlwind vs an endless army — KO counter and all</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
@@ -45,10 +45,14 @@ A swing is a **commitment**. Missing should hurt. Connecting should feel great.
 
 ---
 
-## Current prototype status (v0.4.0)
+## Current prototype status (v0.5.0)
 
 What's actually in the build right now:
 
+- ✅ **Musou crowd combat**: a **spin / tornado** attack (hold Shift / middle-mouse) that
+  whirls the stone and launches the whole crowd outward, a **KO counter** with milestones
+  (`RAMPAGE!` … `ONE-MAN ARMY!`), an endless **reinforcement horde**, and telegraphed
+  **cavalry charges** that plough the army and can be broken mid-charge
 - ✅ Controllable Arthur with **momentum-based movement** + **health** and i-frames
 - ✅ The **stone-sword**, drawn correctly: Arthur grips the **sword handle**; the blade
   runs *through* a heavy **stone head** that hangs behind him and is swung like a hammer
@@ -83,6 +87,7 @@ but not built; the battlefield wants a real balance pass; no audio, no final art
 | Mouse                          | Aim — Arthur faces the cursor; the stone hangs *behind* him |
 | `Space` / Left Mouse Button    | **Swing** — flings the heavy head from behind to the front *and lunges you forward*. Chain swings to dash; whip your aim / build speed first to hit harder |
 | **Right Mouse Button**         | **Overhead slam** — a committed smash with a shockwave |
+| **`Shift`** / **Middle Mouse** (hold) | **Spin / tornado** — whirl the stone, launching the whole crowd outward. Drains stamina fast |
 | `R`                            | Reset                                           |
 
 There's no charge bar — the swing's power is **momentum**. The faster the head is
@@ -176,6 +181,7 @@ arthur-stone-weapon-system/
 │   ├── Spearman.tscn      #   holds distance, telegraphed thrust
 │   ├── HeavyGuard.tscn    #   slow, high-mass, hard to stagger — moving anchor
 │   ├── BannerBearer.tscn  #   support; on death nearby enemies panic
+│   ├── Cavalry.tscn       #   telegraphed mounted charger (Cavalry.gd extends Enemy)
 │   ├── Rock.tscn / Crate.tscn      #   launchable props (same script)
 │   ├── PressurePlate.tscn #   puzzle plate + gate (Arena)
 │   ├── Shockwave.tscn / FloatingText.tscn   #   spawned at runtime

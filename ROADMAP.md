@@ -78,8 +78,8 @@ Build on the now-stable physics into a "weapon as tool" puzzle layer.
 
 - ✅ Push enemies / rocks / crates onto a **pressure plate** to open a gate
   (the first puzzle seam — shipped in v0.3.0)
-- ⬜ **Spin / tornado** attack: whirl the stone, push everything outward, clear
-  dust/smoke — drains stamina fast, dangerous to overuse (Arthur loses control)
+- ✅ **Spin / tornado** attack: whirl the stone, launch everything outward
+  (the musou whirlwind — shipped in v0.5.0)
 - ⬜ Launch rocks into **weak walls** and **bridge supports**
 - ⬜ Dirt mounds as temporary barriers; boulders as heavier plate weights
 
@@ -114,20 +114,24 @@ The heavy attack becomes momentum; the arena becomes a battlefield.
 - ✅ **Arthur health** + i-frames + death; **"Break the Shield Wall"** objective + win/lose
 - ⬜ Balance pass against playtests; more objectives
 
-### Cavalry & war cart (designed, next milestone)
+---
 
-Built to slot into the AI's "steer-then-ragdoll" seam:
+## Phase 5 — Musou ✅🔶  → ships as **v0.5.0**, continues
 
-- ⬜ **Cavalry** — a light/medium mounted warrior: repositions at range, picks a
-  charge lane, shows a warning line, charges mostly straight with poor turning,
-  overshoots, and is vulnerable from the side. Slows in mud, trips on fences, can be
-  redirected by a side hit or a launched prop, and dismounted by a strong charged
-  swing. Feedback: `CAVALRY CHARGE` / `SIDE HIT` / `CHARGE BROKEN` / `RIDER DISMOUNTED`.
+One absurd hero mowing an army (Dynasty-Warriors energy).
+
+- ✅ **Spin / tornado** whirlwind — launch the whole crowd outward in a ring
+- ✅ **KO counter** + milestones (RAMPAGE! … ONE-MAN ARMY!)
+- ✅ **Reinforcement horde** — the field refills so there's always more to mow
+- ✅ **Cavalry charge** — telegraphed mounted chargers that plough the crowd and can
+  be broken mid-charge (`CHARGE BROKEN`)
 - ⬜ **War cart / relic chariot** — a dangerous moving mass: charges straight, knocks
   soldiers aside, deflects on a heavy hit, flips on a charged side hit, and breaks
   into launchable debris on a wall impact. Feedback: `CART FLIPPED`.
-- ⬜ More objectives: Stop the Cavalry Charge, Reverse the Charge, Capture the Banner,
-  Hold the Line, Cart Breaker, Mud Trap.
+- ⬜ A bigger crowd (cheaper enemy update — pooling / coarser AI ticks for the web build)
+- ⬜ Layered objectives: officers/banner morale, Capture the Banner, Hold the Line,
+  Stop/Reverse the Charge, a KO + time **score screen**
+- ⬜ Audio (whoosh, crunch, the roar of a crowd)
 
 ---
 
