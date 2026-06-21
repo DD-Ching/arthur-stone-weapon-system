@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/WarCart.gd" id="1_cart"]
 
 [sub_resource type="RectangleShape2D" id="cart_shape"]
-size = Vector2(56, 40)
+size = Vector2(72, 52)
 
 [node name="WarCart" type="RigidBody2D"]
 collision_layer = 4
@@ -18,7 +18,7 @@ max_contacts_reported = 8
 script = ExtResource("1_cart")
 enemy_name = "War Cart"
 look = "cart"
-radius = 26.0
+radius = 32.0
 base_color = Color(0.5, 0.36, 0.22, 1)
 max_health = 90.0
 stagger_threshold = 720.0

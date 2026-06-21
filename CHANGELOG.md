@@ -14,6 +14,19 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.6.2] — 2026-06-21
+
+### Changed
+- **Mounted units are now sized to scale.** The cavalry was barely larger than a foot
+  soldier (radius 18 vs 16), so it didn't read as a horse + rider — bumped its radius
+  and collision to **26** (≈1.6× a soldier). The war cart grew from **56×40 → 72×52**
+  (radius 26 → 32) so the heavy charger clearly dwarfs infantry. Collision shapes track
+  the new visuals; masses are unchanged (still launchable — strength still wins). Spawn
+  positions are far apart, so the bigger bodies don't overlap on start. All five tests
+  pass; cavalry charge still bowls fodder and breaks on a timed hit.
+
+---
+
 ## [0.6.1] — 2026-06-21
 
 **Drag-to-swing control.** The weapon is now controlled like a physics sandbox: you
@@ -241,7 +254,8 @@ makes him slow, vulnerable, and hard to control.
 - All visuals are placeholder shapes drawn in code — game feel over polish, by design.
 - No audio, no enemy AI, no win condition yet. See [`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.4.1...v0.5.0
