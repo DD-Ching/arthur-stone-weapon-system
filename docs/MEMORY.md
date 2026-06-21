@@ -44,8 +44,13 @@ can be collapsed, drifting **logs**.
 - **Spawning** — `scripts/spawning/Spawner.gd`: shared helper to spawn a group of scenes
   across a lane (waves 1/4 + the ally line).
 - **Formations** — `scripts/formations/Formation.gd` + `scenes/formations/` (ShieldWall,
-  SpearPhalanx, OfficerGuard): a placeable body of troops arranged in ranks. Waves 2/3/5
-  arrive as formations; drop a `*.tscn` into a level to place one.
+  SpearPhalanx, OfficerGuard, **AlliedHost**): a placeable body of troops arranged in ranks.
+  Waves 2/3/5 arrive as raider formations; the allies deploy as `AlliedHost`.
+- **Allies** — `scenes/Ally.tscn` (Footman), `AllyShield`, `AllySpear`, `AllyKnight`
+  (champion): `Enemy.gd` configs with `team="ally"`, blue. They fight raiders, take no
+  friendly fire, and stay out of the breach/wave/officer counts.
+- **Density** — `Battlefield.density` (default 2.5) scales BOTH armies (garrison + waves +
+  allied host). Big battles cost web framerate; it's a tunable export.
 - **Objectives** — `scripts/objectives/` (`Objective` base + `RepelWaves` / `DefeatOfficer`
   / `HoldLine`) + `scripts/systems/ObjectiveManager.gd`: a level composes its win/lose by
   registering objectives (completable ones gate the win; constraints only gate losing).
