@@ -24,11 +24,11 @@ max_health = 22.0
 move_speed = 124.0
 attack_kind = "melee"
 attack_range = 26.0
-attack_damage = 7.0
-attack_windup = 0.34
+attack_damage = 6.0
+attack_windup = 0.4
 attack_strike = 0.1
-attack_recover = 0.4
-attack_cooldown = 0.7
+attack_recover = 0.45
+attack_cooldown = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("soldier_shape")

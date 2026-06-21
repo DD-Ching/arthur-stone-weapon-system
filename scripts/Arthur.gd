@@ -29,8 +29,8 @@ signal died()
 @export var regen_delay := 0.65  ## pause before stamina starts coming back after a swing
 
 @export_group("Health")
-@export var max_health := 100.0
-@export var invuln_time := 0.45  ## brief i-frames after a hit so a crowd can't instantly melt you
+@export var max_health := 140.0
+@export var invuln_time := 0.6   ## i-frames after a hit so a crowd can't chain-melt you
 
 var stamina := 0.0
 var health := 0.0
