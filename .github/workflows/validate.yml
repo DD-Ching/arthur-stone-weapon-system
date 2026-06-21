@@ -86,3 +86,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/ObjectivesTest.tscn --quit-after 600 | tee objectives.log
           grep -q "OBJ_VERDICT PASS" objectives.log
+
+      - name: Run formations test (v0.11 Formation module)
+        # Asserts a placeable Formation spawns its configured roster on the right team with
+        # the support rank arranged behind the front along the facing.
+        run: |
+          godot --headless --path . res://tests/FormationsTest.tscn --quit-after 600 | tee formations.log
+          grep -q "FORM_VERDICT PASS" formations.log
