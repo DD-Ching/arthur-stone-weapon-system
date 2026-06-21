@@ -42,9 +42,12 @@ const MASK_WITH_ARTHUR := 14     ## + Arthur (so the current shoves him too)
 
 @export var max_breaches := 12        ## raiders allowed across before the ford falls
 @export var bridge_max_hp := 200.0
-@export var ally_count := 6
+## Army-size multiplier for BOTH sides — waves, the allied host, and the garrison all
+## scale by this. Big battles cost framerate on the single-threaded web build; tune down
+## if the demo chugs. 1.0 = the original army; 2.5 = a dense mass battle.
+@export var density := 2.5
 @export var wave_interval := 18.0     ## max seconds before the next wave is forced in
-@export var wave_clear_threshold := 5 ## launch the next wave once the field thins to this
+@export var wave_clear_threshold := 5 ## launch the next wave once the field thins to this (×density)
 @export var log_interval := 7.0
 @export var max_logs := 4
 
@@ -54,11 +57,13 @@ const SPEAR := preload("res://scenes/Spearman.tscn")
 const CAVALRY := preload("res://scenes/Cavalry.tscn")
 const CART := preload("res://scenes/WarCart.tscn")
 const BANNER := preload("res://scenes/BannerBearer.tscn")
+const HEAVY := preload("res://scenes/HeavyGuard.tscn")
 const ALLY := preload("res://scenes/Ally.tscn")
 const LOG := preload("res://scenes/Log.tscn")
 const SHIELD_WALL := preload("res://scenes/formations/ShieldWall.tscn")
 const SPEAR_PHALANX := preload("res://scenes/formations/SpearPhalanx.tscn")
 const OFFICER_GUARD := preload("res://scenes/formations/OfficerGuard.tscn")
+const ALLIED_HOST := preload("res://scenes/formations/AlliedHost.tscn")
 
 @onready var arthur = $Arthur
 @onready var hud = $Hud
@@ -99,6 +104,7 @@ func _ready() -> void:
 		e.ai_enabled = true
 	for s in $ShieldWall.get_children():
 		s.add_to_group("shieldwall")
+	_bulk_garrison()
 	_spawn_allies()
 	# Compose this level's win/lose from reusable objectives instead of hand-coding it:
 	# repel every wave AND defeat the officer to win; lose if the line is breached.
@@ -159,8 +165,42 @@ func _add_zone(r: Rect2, drag: float, current: Vector2, dangerous: bool, drown: 
 	add_child(z)
 	return z
 
+## A real allied army: a shield + spear HOST led by a Knight champion (scaled by density),
+## plus a line of buffed footmen across the bank.
 func _spawn_allies() -> void:
-	Spawner.spawn_count(self, ALLY, ally_count, 430.0, -260.0, 260.0)
+	var host = ALLIED_HOST.instantiate()
+	host.front_count = _scale(host.front_count)
+	host.support_count = _scale(host.support_count)
+	# Faces UP, so the rear ranks (knight commander) sit to the SOUTH; place the front high
+	# enough that the rearmost rank (2×rank_gap back) still clears the bottom wall (~540).
+	host.position = Vector2(0.0, 350.0)
+	add_child(host)
+	Spawner.spawn_count(self, ALLY, _scale(2), 445.0, -340.0, 340.0, false)
+
+## Bulk the opening raider force up to `density`: the hand-placed garrison is the ×1 base,
+## so add the remainder as extra loose raiders + a scaled shield wall at the back.
+func _bulk_garrison() -> void:
+	if density <= 1.05:
+		return
+	var extra := density - 1.0
+	Spawner.spawn(self, _repeat([LIGHT, LIGHT, SPEAR, SHIELD, HEAVY], int(round(8.0 * extra))),
+		-HALF.y + 70.0, -380.0, 380.0, true)
+	var f = SHIELD_WALL.instantiate()
+	f.front_count = _scale(f.front_count)
+	f.position = Vector2(0.0, -HALF.y + 100.0 + f.rank_gap * 2.0)
+	add_child(f)
+
+## density helpers — scale a count, and cycle a scene list to a scaled length.
+func _scale(n: int) -> int:
+	return maxi(1, int(round(n * density)))
+
+func _repeat(scenes: Array, count: int) -> Array:
+	var out: Array = []
+	if scenes.is_empty():
+		return out
+	for i in count:
+		out.append(scenes[i % scenes.size()])
+	return out
 
 func _physics_process(delta: float) -> void:
 	if not (_won or _lost):
@@ -189,8 +229,9 @@ func _update_waves() -> void:
 	if _won or _lost or _wave >= _waves.size():
 		return
 	var alive := get_tree().get_nodes_in_group("targets").size()
-	# Launch the next wave once the field thins out, or patience runs out.
-	if alive <= wave_clear_threshold or _wave_cd <= 0.0:
+	# Launch the next wave once the field thins out (the threshold scales with density so a
+	# denser battle keeps more bodies on the field), or patience runs out.
+	if alive <= _scale(wave_clear_threshold) or _wave_cd <= 0.0:
 		_spawn_wave(_wave)
 		_wave += 1
 		_wave_cd = wave_interval
@@ -201,14 +242,17 @@ func _spawn_wave(idx: int) -> void:
 		arthur.global_position + Vector2(0, -150), wave["col"], 1.5)
 	Audio.play("cavalry_charge", arthur.global_position)   # a war-horn for the incoming wave
 	if wave.has("formation"):
-		# A cohesive formation marches in as a block, facing the ford. Spawn it deep enough
-		# that its REAR ranks (support/commander sit up to 2×rank_gap behind, to the north)
-		# still clear the top wall — otherwise the officer lands outside the arena, trapped.
+		# A cohesive formation marches in as a block, facing the ford. Scale its ranks by
+		# density, and spawn it deep enough that its REAR ranks (support/commander sit up to
+		# 2×rank_gap behind, to the north) still clear the top wall.
 		var f = wave["formation"].instantiate()
+		f.front_count = _scale(f.front_count)
+		f.support_count = _scale(f.support_count)
 		f.position = Vector2(randf_range(-300.0, 300.0), -HALF.y + 100.0 + f.rank_gap * 2.0)
 		add_child(f)   # auto-spawns its ranks on _ready
 	else:
-		Spawner.spawn(self, wave["spawns"], -HALF.y + 70.0, -380.0, 380.0, true)
+		var roster: Array = _repeat(wave["spawns"], _scale(wave["spawns"].size()))
+		Spawner.spawn(self, roster, -HALF.y + 70.0, -380.0, 380.0, true)
 
 # ── "Hold the Ford": breaches + win/lose ────────────────────────────────────
 

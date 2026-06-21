@@ -1,0 +1,16 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/formations/Formation.gd" id="1_form"]
+[ext_resource type="PackedScene" path="res://scenes/AllyShield.tscn" id="2_shield"]
+[ext_resource type="PackedScene" path="res://scenes/AllySpear.tscn" id="3_spear"]
+[ext_resource type="PackedScene" path="res://scenes/AllyKnight.tscn" id="4_knight"]
+
+[node name="AlliedHost" type="Node2D"]
+script = ExtResource("1_form")
+front = ExtResource("2_shield")
+front_count = 4
+support = ExtResource("3_spear")
+support_count = 3
+commander = ExtResource("4_knight")
+team = "ally"
+face = Vector2(0, -1)

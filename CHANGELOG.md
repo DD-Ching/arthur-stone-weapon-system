@@ -10,8 +10,36 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ### Planned
 - An `abilities/` data system (slash / bash / thrust / charge / aura) — plus a KO/time
-  score screen and a bigger crowd via pooling. See [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md)
-  and [`ROADMAP.md`](ROADMAP.md).
+  score screen and enemy pooling for even bigger crowds. See
+  [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.12.0] — 2026-06-21
+
+**A real allied army + a denser battle.** The allies were six basic footmen; now they're a
+varied, much stronger host, and both armies are scaled up for a mass battle.
+
+### Added
+- **New allied unit types** (configs of `Enemy.gd`, team `ally`): a **Shield Guard**
+  (shielded front line, 64 HP), a **Spear Guard** (range + thrust), and a **Knight** —
+  a heavy champion (120 HP, mass 3.2, 21 dmg, hard to stagger or launch). The basic
+  **Footman** was buffed (34 → 52 HP, 8 → 11 dmg).
+- **`formations/AlliedHost`** — the allies now deploy as a proper formation (a shield
+  front rank, spears behind, a Knight champion), using the v0.11 `Formation` module — so
+  the player commands a real army, not a scatter of basic soldiers.
+- A **`density`** parameter (default **2.5**) that scales **both** armies — the raider
+  waves, the bulked-up garrison, and the allied host all grow with it, for a dense mass
+  battle. It's an export: dial it down if the single-threaded web build chugs.
+
+### Changed
+- The garrison, every wave, and the allied host now scale by `density`. The wave-clear
+  threshold scales too, so a denser battle keeps more bodies on the field.
+
+### Notes
+- Allies stay out of the breach/wave/officer counts and take no friendly fire. All nine
+  headless tests pass (now exercising ~67 bodies); the new code passed an adversarial
+  review.
 
 ---
 
@@ -431,7 +459,8 @@ makes him slow, vulnerable, and hard to control.
 - All visuals are placeholder shapes drawn in code — game feel over polish, by design.
 - No audio, no enemy AI, no win condition yet. See [`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.8.0...v0.9.0

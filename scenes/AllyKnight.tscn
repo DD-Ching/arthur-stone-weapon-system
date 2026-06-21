@@ -1,0 +1,38 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/Enemy.gd" id="1_enemy"]
+
+[sub_resource type="CircleShape2D" id="ally_knight_shape"]
+radius = 20.0
+
+[node name="AllyKnight" type="RigidBody2D"]
+collision_layer = 4
+collision_mask = 31
+mass = 3.2
+gravity_scale = 0.0
+linear_damp = 3.2
+angular_damp = 7.0
+lock_rotation = true
+contact_monitor = true
+max_contacts_reported = 5
+script = ExtResource("1_enemy")
+team = "ally"
+enemy_name = "Knight"
+look = "heavy"
+radius = 20.0
+base_color = Color(0.26, 0.36, 0.72, 1)
+max_health = 120.0
+stagger_threshold = 1300.0
+move_speed = 74.0
+sight_range = 380.0
+control_regain = 220.0
+attack_kind = "melee"
+attack_range = 34.0
+attack_damage = 21.0
+attack_windup = 0.4
+attack_strike = 0.12
+attack_recover = 0.46
+attack_cooldown = 0.9
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("ally_knight_shape")

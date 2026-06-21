@@ -2,10 +2,10 @@
 
 [ext_resource type="Script" path="res://scripts/Enemy.gd" id="1_enemy"]
 
-[sub_resource type="CircleShape2D" id="ally_shape"]
+[sub_resource type="CircleShape2D" id="ally_spear_shape"]
 radius = 15.0
 
-[node name="Ally" type="RigidBody2D"]
+[node name="AllySpear" type="RigidBody2D"]
 collision_layer = 4
 collision_mask = 31
 mass = 0.95
@@ -17,20 +17,20 @@ contact_monitor = true
 max_contacts_reported = 4
 script = ExtResource("1_enemy")
 team = "ally"
-enemy_name = "Footman"
-look = "soldier"
+enemy_name = "Spear Guard"
+look = "spear"
 radius = 15.0
-base_color = Color(0.36, 0.62, 0.92, 1)
-max_health = 52.0
-move_speed = 110.0
-sight_range = 340.0
-attack_kind = "melee"
-attack_range = 28.0
-attack_damage = 11.0
-attack_windup = 0.38
-attack_strike = 0.1
+base_color = Color(0.3, 0.62, 0.66, 1)
+max_health = 46.0
+move_speed = 102.0
+sight_range = 360.0
+keep_distance = 110.0
+attack_kind = "thrust"
+attack_range = 48.0
+attack_damage = 15.0
+attack_windup = 0.4
 attack_recover = 0.45
-attack_cooldown = 0.9
+attack_cooldown = 0.85
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("ally_shape")
+shape = SubResource("ally_spear_shape")

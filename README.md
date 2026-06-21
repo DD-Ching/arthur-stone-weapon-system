@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.9.0 — Modular battlefield framework</strong> · placeholder art · hold a river crossing with allied footmen against five waves of raiders — now built from reusable terrain / spawn / movement modules</em></p>
+<p align="center"><em>Status: <strong>v0.12.0 — A real allied army</strong> · placeholder art · command a host of shield guards, spears, and a knight champion holding a river crossing against a dense raider warband (built from reusable terrain / formation / objective modules)</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
