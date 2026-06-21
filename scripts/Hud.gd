@@ -11,6 +11,10 @@ extends CanvasLayer
 @onready var state_label: Label = $Root/StateLabel
 @onready var flow_fill: ColorRect = $Root/FlowBg/FlowFill
 @onready var flow_label: Label = $Root/FlowLabel
+@onready var health_fill: ColorRect = $Root/HealthBg/HealthFill
+@onready var health_label: Label = $Root/HealthLabel
+@onready var objective_label: Label = $Root/ObjectiveLabel
+@onready var banner_label: Label = $Root/BannerLabel
 
 const FILL_WIDTH := 312.0
 var _flash := 0.0       ## white flash on the stamina bar when a swing fizzles
@@ -24,9 +28,30 @@ func bind(arthur) -> void:
 	arthur.stamina_changed.connect(_on_stamina_changed)
 	arthur.weapon_state_changed.connect(_on_state_changed)
 	arthur.exhausted.connect(_on_exhausted)
+	arthur.health_changed.connect(_on_health_changed)
 	Impact.flow_changed.connect(_on_flow_changed)
 	_on_stamina_changed(arthur.stamina, arthur.max_stamina)
+	_on_health_changed(arthur.health, arthur.max_health)
 	_on_flow_changed(Impact.flow, Impact.stacks, Impact.flow_mode)
+
+## Objective + win/lose banner — only present on the battlefield, so guard the nodes.
+func set_objective(text: String) -> void:
+	if objective_label:
+		objective_label.text = text
+
+func show_banner(text: String, color: Color) -> void:
+	if banner_label:
+		banner_label.text = text + "\n(press R to restart)"
+		banner_label.add_theme_color_override("font_color", color)
+		banner_label.visible = true
+
+func _on_health_changed(current: float, maximum: float) -> void:
+	if not health_fill:
+		return
+	var ratio := clampf(current / maximum, 0.0, 1.0)
+	health_fill.size.x = FILL_WIDTH * ratio
+	health_fill.color = Color(0.85, 0.3, 0.3).lerp(Color(0.5, 0.85, 0.4), ratio)
+	health_label.text = "HEALTH  %d / %d" % [round(current), round(maximum)]
 
 func _process(delta: float) -> void:
 	_t += delta
@@ -56,9 +81,9 @@ func _on_stamina_changed(current: float, maximum: float) -> void:
 	stamina_fill.color = col
 	stamina_label.text = "STAMINA  %d / %d" % [round(current), round(maximum)]
 
-func _on_state_changed(state_name: String, charge: float) -> void:
-	if charge > 0.01:
-		state_label.text = "WEAPON: WINDING  [%d%%]" % round(charge * 100.0)
+func _on_state_changed(state_name: String, power: float) -> void:
+	if power > 0.01:
+		state_label.text = "WEAPON: POWER  [%d%%]" % round(power * 100.0)
 	else:
 		state_label.text = "WEAPON: %s" % state_name
 

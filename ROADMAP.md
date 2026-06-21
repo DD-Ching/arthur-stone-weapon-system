@@ -64,9 +64,9 @@ Let the stone's mass become a real, exploitable system.
 - ✅ **Enemy-to-enemy bowling** (rigid-body collisions score real hits)
 - ✅ **Stone Flow** combo meter (build / decay / break, small stack buffs)
 - ✅ **Enemy types** from one configurable script (Dummy, Light, Shield, Heavy)
+- ✅ **Rotational inertia / drag** — the swing is a real spring-damped pendulum that
+  lags, overshoots, and lunges Arthur's body (the v0.4.0 momentum swing)
 - 🔶 Light terrain damage / cracks (transient on slam; persistent decals pending)
-- ⬜ Rotational inertia — the swing actually drags Arthur's body
-- ⬜ Drag-based weapon movement (the head lags and overshoots)
 - ⬜ Destructible crates / walls; heavy-weapon sliding after a big swing
 - ⬜ Different **stone sizes** as a power ↔ mobility dial
 
@@ -98,12 +98,45 @@ Small hand-built rooms that each teach one trick, built on the existing seams:
 
 ---
 
-## Phase 4 — Public Demo 🔶  → targets **v0.4.0**
+## Phase 4 — Momentum Swing & Battlefield ✅  → ships as **v0.4.0**
+
+The heavy attack becomes momentum; the arena becomes a battlefield.
+
+- ✅ **Momentum swing** — the head is a spring-damped pendulum that trails behind
+  Arthur and is *flung* by a press; damage from real head speed, no charge bar
+- ✅ **Swing lunge** — each swing dashes Arthur forward (chain to sprint/reposition)
+- ✅ **Enemy AI** — approach / guard / telegraphed attack / stagger, that yields to
+  physics the instant the body is launched (steer-then-ragdoll)
+- ✅ **Enemy types**: Light Soldier, Shield Soldier (block + bash + **SHIELD BREAK**),
+  Spearman (spacing + thrust), Heavy Guard, Banner Bearer (morale)
+- ✅ **Shield-wall** formation + spear line + flanking charge group + banner
+- ✅ **Battlefield terrain**: mud drag, funnel fences, launchable props
+- ✅ **Arthur health** + i-frames + death; **"Break the Shield Wall"** objective + win/lose
+- ⬜ Balance pass against playtests; more objectives
+
+### Cavalry & war cart (designed, next milestone)
+
+Built to slot into the AI's "steer-then-ragdoll" seam:
+
+- ⬜ **Cavalry** — a light/medium mounted warrior: repositions at range, picks a
+  charge lane, shows a warning line, charges mostly straight with poor turning,
+  overshoots, and is vulnerable from the side. Slows in mud, trips on fences, can be
+  redirected by a side hit or a launched prop, and dismounted by a strong charged
+  swing. Feedback: `CAVALRY CHARGE` / `SIDE HIT` / `CHARGE BROKEN` / `RIDER DISMOUNTED`.
+- ⬜ **War cart / relic chariot** — a dangerous moving mass: charges straight, knocks
+  soldiers aside, deflects on a heavy hit, flips on a charged side hit, and breaks
+  into launchable debris on a wall impact. Feedback: `CART FLIPPED`.
+- ⬜ More objectives: Stop the Cavalry Charge, Reverse the Charge, Capture the Banner,
+  Hold the Line, Cart Breaker, Mud Trap.
+
+---
+
+## Phase 4.5 — Public Demo 🔶  → ongoing
 
 Get it into other people's hands.
 
 - 🔶 Web (HTML5) export ✅ + a desktop build ⬜
-- ✅ Publish GitHub **Releases** (`v0.1.0` → `v0.3.0`) — source milestones; desktop binary still to attach
+- ✅ Publish GitHub **Releases** (`v0.1.0` → `v0.4.0`) — source milestones; desktop binary still to attach
 - ✅ GitHub **Pages** hosting the web build: <https://dd-ching.github.io/arthur-stone-weapon-system/>
   (auto-deployed by [`.github/workflows/pages.yml`](.github/workflows/pages.yml))
 - ⬜ A capture (GIF/video) of the core loop

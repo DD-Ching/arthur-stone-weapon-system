@@ -27,6 +27,7 @@ mono_crash.*.json
 finishIt.txt
 finishit2.txt
 finishit3.txt
+finishit4.txt
 
 # Throwaway local verification screenshots (underscore-prefixed).
 _*.png

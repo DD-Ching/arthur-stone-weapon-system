@@ -11,7 +11,7 @@ config_version=5
 
 config/name="Arthur Stone Weapon System"
 config/description="A 2D prototype about the chosen one who failed the test and lifted the whole stone instead of the sword. Power vs control, weight vs mobility."
-run/main_scene="res://scenes/Arena.tscn"
+run/main_scene="res://scenes/Battlefield.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/icon="res://icon.svg"
 boot_splash/show_image=false

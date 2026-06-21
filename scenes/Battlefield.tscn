@@ -1,0 +1,116 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/Battlefield.gd" id="1_bf"]
+[ext_resource type="PackedScene" path="res://scenes/Arthur.tscn" id="2_arthur"]
+[ext_resource type="PackedScene" path="res://scenes/ShieldSoldier.tscn" id="3_shield"]
+[ext_resource type="PackedScene" path="res://scenes/Spearman.tscn" id="4_spear"]
+[ext_resource type="PackedScene" path="res://scenes/LightSoldier.tscn" id="5_light"]
+[ext_resource type="PackedScene" path="res://scenes/HeavyGuard.tscn" id="6_heavy"]
+[ext_resource type="PackedScene" path="res://scenes/BannerBearer.tscn" id="7_banner"]
+[ext_resource type="PackedScene" path="res://scenes/Rock.tscn" id="8_rock"]
+[ext_resource type="PackedScene" path="res://scenes/Crate.tscn" id="9_crate"]
+[ext_resource type="PackedScene" path="res://scenes/Hud.tscn" id="10_hud"]
+
+[sub_resource type="RectangleShape2D" id="wall_h"]
+size = Vector2(1880, 40)
+
+[sub_resource type="RectangleShape2D" id="wall_v"]
+size = Vector2(40, 1160)
+
+[node name="Battlefield" type="Node2D"]
+script = ExtResource("1_bf")
+
+[node name="Walls" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Top" type="CollisionShape2D" parent="Walls"]
+position = Vector2(0, -560)
+shape = SubResource("wall_h")
+
+[node name="Bottom" type="CollisionShape2D" parent="Walls"]
+position = Vector2(0, 560)
+shape = SubResource("wall_h")
+
+[node name="Left" type="CollisionShape2D" parent="Walls"]
+position = Vector2(-900, 0)
+shape = SubResource("wall_v")
+
+[node name="Right" type="CollisionShape2D" parent="Walls"]
+position = Vector2(900, 0)
+shape = SubResource("wall_v")
+
+[node name="Arthur" parent="." instance=ExtResource("2_arthur")]
+position = Vector2(0, 360)
+
+[node name="ShieldWall" type="Node2D" parent="."]
+
+[node name="S1" parent="ShieldWall" instance=ExtResource("3_shield")]
+position = Vector2(-180, -60)
+
+[node name="S2" parent="ShieldWall" instance=ExtResource("3_shield")]
+position = Vector2(-90, -60)
+
+[node name="S3" parent="ShieldWall" instance=ExtResource("3_shield")]
+position = Vector2(0, -60)
+
+[node name="S4" parent="ShieldWall" instance=ExtResource("3_shield")]
+position = Vector2(90, -60)
+
+[node name="S5" parent="ShieldWall" instance=ExtResource("3_shield")]
+position = Vector2(180, -60)
+
+[node name="SpearLine" type="Node2D" parent="."]
+
+[node name="P1" parent="SpearLine" instance=ExtResource("4_spear")]
+position = Vector2(-130, -180)
+
+[node name="P2" parent="SpearLine" instance=ExtResource("4_spear")]
+position = Vector2(0, -180)
+
+[node name="P3" parent="SpearLine" instance=ExtResource("4_spear")]
+position = Vector2(130, -180)
+
+[node name="ChargeGroup" type="Node2D" parent="."]
+
+[node name="L1" parent="ChargeGroup" instance=ExtResource("5_light")]
+position = Vector2(-380, 150)
+
+[node name="L2" parent="ChargeGroup" instance=ExtResource("5_light")]
+position = Vector2(-320, 210)
+
+[node name="L3" parent="ChargeGroup" instance=ExtResource("5_light")]
+position = Vector2(380, 150)
+
+[node name="L4" parent="ChargeGroup" instance=ExtResource("5_light")]
+position = Vector2(320, 210)
+
+[node name="Guards" type="Node2D" parent="."]
+
+[node name="G1" parent="Guards" instance=ExtResource("6_heavy")]
+position = Vector2(-300, -50)
+
+[node name="G2" parent="Guards" instance=ExtResource("6_heavy")]
+position = Vector2(300, -50)
+
+[node name="Banner" parent="." instance=ExtResource("7_banner")]
+position = Vector2(0, -330)
+
+[node name="Props" type="Node2D" parent="."]
+
+[node name="R1" parent="Props" instance=ExtResource("8_rock")]
+position = Vector2(-110, 250)
+
+[node name="R2" parent="Props" instance=ExtResource("8_rock")]
+position = Vector2(110, 250)
+
+[node name="R3" parent="Props" instance=ExtResource("8_rock")]
+position = Vector2(0, 200)
+
+[node name="C1" parent="Props" instance=ExtResource("9_crate")]
+position = Vector2(-230, 250)
+
+[node name="C2" parent="Props" instance=ExtResource("9_crate")]
+position = Vector2(230, 250)
+
+[node name="Hud" parent="." instance=ExtResource("10_hud")]

@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.3.0 — Impact &amp; Combo</strong> · placeholder art · momentum-based hits, wall crush, bowling, and the Stone Flow combo playable</em></p>
+<p align="center"><em>Status: <strong>v0.4.0 — Momentum Swing &amp; Battlefield</strong> · placeholder art · a physics flail you fling with momentum, vs a thinking army with a shield wall to break</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
@@ -45,32 +45,33 @@ A swing is a **commitment**. Missing should hurt. Connecting should feel great.
 
 ---
 
-## Current prototype status (v0.3.0)
+## Current prototype status (v0.4.0)
 
 What's actually in the build right now:
 
-- ✅ Controllable Arthur with **momentum-based movement** (slow to start, slides to stop)
+- ✅ Controllable Arthur with **momentum-based movement** + **health** and i-frames
 - ✅ The **stone-sword**, drawn correctly: Arthur grips the **sword handle**; the blade
-  runs *through* a heavy **stone head** that's swung like a hammer
-- ✅ A four-state heavy swing (*ready → wind-up → active → recovery*) with **hold-to-charge**,
-  a charge ring, and a swing trail — plus an **overhead slam** (right-click) with a shockwave
-- ✅ **Passive physical presence** — the stone *blocks and shoves* enemies and props even
-  while you're only aiming. It's a heavy object you steer, not a cursor
-- ✅ **Momentum-based impact** — one formula (`speed × mass × charge × angle × collision × combo`)
-  decides every hit, so a slow touch pushes, a fast swing launches, a charged swing smashes
-- ✅ **Wall crush** — pin an enemy against a wall and the hit hurts *much* more (`WALL CRUSH` /
-  `STONE PRESS`), even through a shield
-- ✅ **Bowling** — rigid-body enemies collide with each other for chain hits (`BOWLING HIT` →
-  `CHAIN IMPACT` → `DOUBLE BONK`); **rocks and crates** launch into enemies too
-- ✅ **Stone Flow combo** — a HUD meter that builds on good hits, decays, and breaks on a whiff
-  or exhaustion; stacks grant *small* buffs so Arthur never feels weightless
-- ✅ **Enemy types** (one configurable script): Dummy, Light Soldier, Shield Soldier, Heavy Guard
-- ✅ Floating **hit labels**, defeat fades, **camera shake** + **hit-stop** scaled to the impact
-- ✅ A redesigned **arena** (pinning pillar, corner pocket, soldier formation) with a
-  **pressure-plate puzzle**, a follow camera, and a HUD (stamina + weapon state + Stone Flow)
+  runs *through* a heavy **stone head** that hangs behind him and is swung like a hammer
+- ✅ **Momentum swing** (the big change): the head is a spring-damped **pendulum** you
+  **fling** with left-click/Space — no charge bar, *apply force*. Damage comes from the
+  head's real speed, so whipping your aim and moving build a harder hit. Each swing
+  **lunges Arthur forward** (chain to sprint). Plus an **overhead slam** (right-click)
+- ✅ **Passive physical presence** — the resting stone *blocks and shoves* enemies/props
+- ✅ **Enemy AI**: soldiers approach, keep shields toward you, land **telegraphed** attacks,
+  and **stagger** — but go limp the instant they're launched, so your strength always wins
+- ✅ **Enemy types** that play differently: **Light Soldier** (rush, flies far), **Shield
+  Soldier** (front block + bash + `SHIELD BREAK` on a strong hit), **Spearman** (spacing +
+  thrust), **Heavy Guard** (slow, hard to stagger), **Banner Bearer** (morale; on death the
+  line panics)
+- ✅ **Battlefield**: a **shield-wall** to break, a spear line, a flanking charge group,
+  heavy anchors, a banner, **mud** that drags charges, funnel **fences**, and launchable props
+- ✅ **Objective** — *Break the Shield Wall* — with a win/lose banner
+- ✅ Momentum-based **impact**, **wall crush**, **bowling**, the **Stone Flow** combo, floating
+  **hit labels**, defeat fades, and **shake** + **hit-stop** scaled to the impact
+- ✅ The v0.3 **sandbox arena** (pillar, pressure-plate puzzle) is still there as `Arena.tscn`
 
-What it is **not** yet: a real game. Enemies don't fight back, no full levels/challenge rooms,
-no audio, no win condition, no final art. See [`ROADMAP.md`](ROADMAP.md) for where it's going.
+What it is **not** yet: cavalry and the war cart are **designed in [`ROADMAP.md`](ROADMAP.md)**
+but not built; the battlefield wants a real balance pass; no audio, no final art.
 
 ---
 
@@ -79,14 +80,14 @@ no audio, no win condition, no final art. See [`ROADMAP.md`](ROADMAP.md) for whe
 | Input                          | Action                                          |
 | ------------------------------ | ----------------------------------------------- |
 | `W` `A` `S` `D` / Arrow keys   | Move (with weight + momentum)                   |
-| Mouse                          | Aim — the weapon turns *slowly* toward the cursor |
-| `Space` / Left Mouse Button    | Heavy swing — **hold to charge**, release to commit |
+| Mouse                          | Aim — Arthur faces the cursor; the stone hangs *behind* him |
+| `Space` / Left Mouse Button    | **Swing** — flings the heavy head from behind to the front *and lunges you forward*. Chain swings to dash; whip your aim / build speed first to hit harder |
 | **Right Mouse Button**         | **Overhead slam** — a committed smash with a shockwave |
-| `R`                            | Reset the arena                                 |
+| `R`                            | Reset                                           |
 
-Even without attacking, sweeping the mouse drags the heavy stone *through* enemies
-and rocks, shoving them around. Full notes and the design reasoning behind each
-control: [`docs/CONTROLS.md`](docs/CONTROLS.md).
+There's no charge bar — the swing's power is **momentum**. The faster the head is
+moving when it lands (from your movement and how you whip your aim), the harder it
+hits. Full notes and the design reasoning: [`docs/CONTROLS.md`](docs/CONTROLS.md).
 
 ---
 
@@ -166,30 +167,32 @@ arthur-stone-weapon-system/
 ├── project.godot          # Godot 4 project entry point — open this folder in Godot
 ├── icon.svg               # project icon (a sword stuck in a liftable stone)
 ├── scenes/                # .tscn scene files
-│   ├── Arena.tscn         #   main scene: walls, Arthur, enemies, props, plate, HUD
+│   ├── Battlefield.tscn   #   MAIN scene: shield wall, formations, terrain, objective, HUD
+│   ├── Arena.tscn         #   v0.3 sandbox: walls, pressure-plate puzzle, passive dummies
 │   ├── Arthur.tscn        #   player body + stone weapon (hitbox + stone body) + camera
-│   ├── TargetDummy.tscn   #   Dummy enemy (the Enemy script, dummy config)
-│   ├── LightSoldier.tscn  #   low-mass enemy — the bowling ball
-│   ├── ShieldSoldier.tscn #   blocks frontal hits; crush or flank it
-│   ├── HeavyGuard.tscn    #   high-mass enemy — moving cover
-│   ├── Rock.tscn          #   a launchable rigid-body prop
-│   ├── Crate.tscn         #   a launchable box (same prop script)
-│   ├── PressurePlate.tscn #   puzzle plate + gate
-│   ├── Shockwave.tscn     #   slam burst (spawned at runtime)
-│   ├── FloatingText.tscn  #   hit label (spawned at runtime)
-│   └── Hud.tscn           #   stamina + weapon state + Stone Flow
+│   ├── TargetDummy.tscn   #   passive Dummy (the Enemy script, AI off)
+│   ├── LightSoldier.tscn  #   rush + quick melee, flies far (bowling ball)
+│   ├── ShieldSoldier.tscn #   front block + bash + SHIELD BREAK; flank or crush it
+│   ├── Spearman.tscn      #   holds distance, telegraphed thrust
+│   ├── HeavyGuard.tscn    #   slow, high-mass, hard to stagger — moving anchor
+│   ├── BannerBearer.tscn  #   support; on death nearby enemies panic
+│   ├── Rock.tscn / Crate.tscn      #   launchable props (same script)
+│   ├── PressurePlate.tscn #   puzzle plate + gate (Arena)
+│   ├── Shockwave.tscn / FloatingText.tscn   #   spawned at runtime
+│   └── Hud.tscn           #   stamina + weapon power + Stone Flow + health + objective
 ├── scripts/               # GDScript — one responsibility per file
 │   ├── Impact.gd          #   AUTOLOAD: impact tuning + scoring formula + Stone Flow + feedback
-│   ├── Arthur.gd          #   movement, stamina, slam input, hit-stop, signal routing
-│   ├── StoneWeapon.gd     #   visual + swing/slam state machine + hitbox + stone body
-│   ├── Enemy.gd           #   rigid-body enemy base: hit/knockback/block/stun, bowling, defeat
+│   ├── Arthur.gd          #   movement, stamina, health, swing lunge, hit-stop, signal routing
+│   ├── StoneWeapon.gd     #   the momentum swing (pendulum head) + slam + hitbox + stone body
+│   ├── Enemy.gd           #   rigid-body enemy + AI (approach/attack/stagger) + block/break, bowling
+│   ├── Battlefield.gd     #   battlefield stage: AI on, terrain, objective, win/lose
 │   ├── Rock.gd            #   rigid-body prop/projectile (rock or crate)
 │   ├── Shockwave.gd       #   slam radial impulse + fading visual
 │   ├── PressurePlate.gd   #   plate → gate puzzle
 │   ├── FloatingText.gd    #   rising/fading hit label
 │   ├── GameCamera.gd      #   follow + shake
 │   ├── Hud.gd             #   HUD wiring
-│   └── Arena.gd           #   floor/grid + interior walls, HUD binding, reset
+│   └── Arena.gd           #   v0.3 sandbox floor/walls, HUD binding, reset
 ├── tests/                 # headless verification scenes (run in CI)
 ├── assets/                # placeholder/imported art (shapes are drawn in code for now)
 ├── docs/                  # concept, controls, design goals, architecture, build

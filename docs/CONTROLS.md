@@ -3,10 +3,10 @@
 | Input                        | Action                                              |
 | ---------------------------- | --------------------------------------------------- |
 | `W` `A` `S` `D` / Arrow keys | Move                                                |
-| Mouse                        | Aim (the weapon turns *slowly* toward the cursor)   |
-| `Space` / Left Mouse Button  | Heavy swing — **hold to charge**, release to commit |
+| Mouse                        | Aim — Arthur faces the cursor; the stone hangs *behind* him |
+| `Space` / Left Mouse Button  | **Swing** — flings the head from behind to the front **and lunges Arthur forward** |
 | Right Mouse Button           | Overhead slam — a committed smash with a shockwave  |
-| `R`                          | Reset the arena                                     |
+| `R`                          | Reset                                               |
 
 These actions are defined in `project.godot` under `[input]`, so you can rebind
 them from **Project → Project Settings → Input Map** in Godot.
@@ -21,24 +21,29 @@ Arthur has a **low acceleration** (he's slow to get moving — dead weight) and 
 drive Arthur so much as *negotiate* with him. Tunable on the `Arthur` node:
 `max_speed`, `accel`, `friction`.
 
-### Aim lags behind the mouse
-The weapon doesn't snap to your cursor — it **rotates toward it slowly**, and
-even more slowly while you're mid-swing. That lag is the stone's weight
-expressed as input. Lining up a big hit on a moving target is a real act of
-commitment. Tunable on `StoneWeapon`: `turn_speed_ready`, `turn_speed_busy`.
+### The stone hangs behind you — the swing is momentum, not charge
+There's **no charge bar**. The stone head is a heavy pendulum on the end of
+Arthur's arm: while you move and aim, it **trails behind him** and sloshes with
+real inertia. Pressing `Space` / LMB doesn't "wind up" — it **applies force**, a
+kick that flings the head from behind, around, to the front (the sweep goes
+clockwise or counter-clockwise depending on how it's leaning).
 
-### One button, two swings
-- **Tap** `Space` / LMB → a quick (still heavy) swing at minimum charge.
-- **Hold** → the head winds further back and glows; release to unleash a bigger,
-  higher-knockback swing that also costs more stamina and a longer recovery.
+How hard the hit lands is read straight off the head's **real speed at contact**:
 
-Because the mouse aims *and* left-click swings, clicking near a target both
-points the weapon toward it and begins the swing — so a click is "wind up toward
-where I'm pointing." (Use `Space` if you'd rather aim and attack separately.)
+- A flat-footed press just shoves.
+- **Whip your aim** (or sprint in) right before you press, and that momentum stacks
+  onto the kick — the head arrives faster and hits much harder. The HUD's **POWER**
+  read-out and the stone glowing hot tell you how much momentum you've built.
 
-There is always a **minimum wind-up** you can't skip — that's the commitment.
-And while you're winding up, active, or recovering, your **movement speed is
-throttled**. The bigger the swing, the longer you're stuck paying for it.
+So a good hit is your *whole body's motion* committed into the swing. Tunable on
+`StoneWeapon`: `rest_stiffness`, `rest_damping`, `fling_power`, `max_avel`.
+
+### The swing is also a dash
+Every swing **lunges Arthur forward** in the direction he's facing. Chain swings to
+**sprint and reposition** across the battlefield — and because the dash speed feeds
+the head's momentum, *charging in and swinging* is how you hit hardest. While
+mid-swing your steering is throttled (you're committed), but the lunge carries you.
+Tunable on `Arthur`: `dash_friction`, `max_dash_speed`; on `StoneWeapon`: `lunge_impulse`.
 
 ### The stone has weight even when you're not attacking
 The stone head is a real physical body. Just sweeping the mouse drags it *through*

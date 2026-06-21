@@ -51,3 +51,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/ImpactTest.tscn --quit-after 600 | tee impact.log
           grep -q "IMPACT_VERDICT PASS" impact.log
+
+      - name: Run battlefield test (v0.4 enemy AI + objective)
+        # Asserts enemy AI advances on Arthur, Arthur can be damaged, and defeating
+        # the shield wall completes the "Break the Shield Wall" objective.
+        run: |
+          godot --headless --path . res://tests/BattleTest.tscn --quit-after 600 | tee battle.log
+          grep -q "BATTLE_VERDICT PASS" battle.log

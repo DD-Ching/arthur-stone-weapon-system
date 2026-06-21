@@ -13,39 +13,82 @@ extends CharacterBody2D
 signal stamina_changed(current: float, maximum: float)
 signal weapon_state_changed(state_name: String, charge: float)
 signal exhausted()
+signal health_changed(current: float, maximum: float)
+signal died()
 
 @export_group("Movement")
 @export var max_speed := 158.0
 @export var accel := 620.0     ## low → slow to reach top speed (he is hauling a rock)
 @export var friction := 480.0  ## modest → he keeps drifting when you stop steering
+@export var dash_friction := 520.0   ## how fast a swing-lunge bleeds off
+@export var max_dash_speed := 340.0  ## cap on stacked lunges — heavy, not a rocket
 
 @export_group("Stamina")
 @export var max_stamina := 100.0
 @export var stamina_regen := 24.0
 @export var regen_delay := 0.65  ## pause before stamina starts coming back after a swing
 
+@export_group("Health")
+@export var max_health := 100.0
+@export var invuln_time := 0.45  ## brief i-frames after a hit so a crowd can't instantly melt you
+
 var stamina := 0.0
+var health := 0.0
 var _regen_cooldown := 0.0
 var _hitstop_token := 0
+var _hurt := 0.0               ## red hit-flash, seconds remaining
+var _invuln := 0.0
+var _steer := Vector2.ZERO     ## input-driven velocity (carries momentum)
+var _dash_vel := Vector2.ZERO  ## swing-lunge burst, decays on its own
+var _last_aim := 0.0           ## last drawn facing — redraw only when it changes
 
 @onready var weapon: StoneWeapon = $StoneWeapon
 @onready var camera = $Camera2D  ## untyped: GameCamera adds add_shake() at runtime
 
 func _ready() -> void:
 	stamina = max_stamina
+	health = max_health
+	add_to_group("player")
 	weapon.hit_landed.connect(_on_weapon_hit)
 	weapon.state_changed.connect(_on_weapon_state_changed)
 	weapon.charge_changed.connect(_on_weapon_charge_changed)
 	weapon.too_tired.connect(_on_weapon_too_tired)
 	Impact.impact_fx.connect(_on_impact_fx)   # shake/hit-stop from props + bowling hits
 	stamina_changed.emit(stamina, max_stamina)
+	health_changed.emit(health, max_health)
 
 func _physics_process(delta: float) -> void:
+	if _hurt > 0.0:
+		_hurt = maxf(0.0, _hurt - delta)
+	if _invuln > 0.0:
+		_invuln = maxf(0.0, _invuln - delta)
 	_handle_aim()
 	_handle_attack()
 	_handle_movement(delta)
 	_handle_stamina(delta)
-	queue_redraw()
+	# Only redraw when something visible changes (hurt flash, i-frame blink, or the
+	# facing dot turning) — moving is a transform, not a redraw.
+	if _hurt > 0.0 or _invuln > 0.0 or absf(weapon.aim_angle - _last_aim) > 0.001:
+		_last_aim = weapon.aim_angle
+		queue_redraw()
+
+## An enemy attack connected. Brief i-frames, a knock away from the source, a
+## hurt flash, and the combo breaks. Returns true if the hit actually landed.
+func take_damage(amount: float, from_pos: Vector2 = Vector2.ZERO) -> bool:
+	if health <= 0.0 or _invuln > 0.0:
+		return false
+	health = maxf(0.0, health - amount)
+	_hurt = 0.35
+	_invuln = invuln_time
+	Impact.note_damage()
+	if camera and camera.has_method("add_shake"):
+		camera.call("add_shake", 12.0)
+	if from_pos != Vector2.ZERO:
+		lunge((global_position - from_pos).normalized() * 90.0)   # shoved off the hit
+	health_changed.emit(health, max_health)
+	if health <= 0.0:
+		died.emit()
+	return true
 
 func _handle_aim() -> void:
 	var to_mouse := get_global_mouse_position() - global_position
@@ -65,20 +108,26 @@ func _handle_movement(delta: float) -> void:
 	# Stone Flow (stack 2+) grants a little extra mobility — still hauling a rock.
 	var mult := _speed_multiplier() * Impact.move_mult()
 	if dir != Vector2.ZERO:
-		velocity = velocity.move_toward(dir * max_speed * mult, accel * delta)
+		_steer = _steer.move_toward(dir * max_speed * mult, accel * delta)
 	else:
-		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+		_steer = _steer.move_toward(Vector2.ZERO, friction * delta)
+	# The swing-lunge is a separate burst that bleeds off on its own, so it reads as
+	# a dash you can chain rather than something your steering eats.
+	_dash_vel = _dash_vel.move_toward(Vector2.ZERO, dash_friction * delta)
+	# Hard cap so stacked lunges + buffs can never turn the heavy man into a rocket.
+	velocity = (_steer + _dash_vel).limit_length(max_speed + max_dash_speed)
 	move_and_slide()
+
+## A forward burst from a swing — displacement that stacks (chain swings to sprint
+## across the field), capped so Arthur stays heavy rather than turning into a rocket.
+func lunge(impulse: Vector2) -> void:
+	_dash_vel = (_dash_vel + impulse).limit_length(max_dash_speed)
 
 ## While the weapon is busy you are far less mobile — that is the cost of power.
 func _speed_multiplier() -> float:
 	match weapon.state:
-		StoneWeapon.State.WINDUP:
-			return 0.35   # bracing — barely shuffling
-		StoneWeapon.State.ACTIVE:
-			return 0.6    # dragged along by the swing's momentum
-		StoneWeapon.State.RECOVERY:
-			return 0.22   # fully committed, fully exposed
+		StoneWeapon.State.SWING:
+			return 0.6    # committed mid-swing — but the lunge is carrying you forward
 		StoneWeapon.State.SLAM_RAISE:
 			return 0.24   # heaving the stone overhead
 		StoneWeapon.State.SLAM_HOLD:
@@ -88,7 +137,7 @@ func _speed_multiplier() -> float:
 		StoneWeapon.State.SLAM_RECOVER:
 			return 0.2    # planted, wide open
 		_:
-			return 1.0
+			return 1.0   # IDLE
 
 func _handle_stamina(delta: float) -> void:
 	if _regen_cooldown > 0.0:
@@ -138,8 +187,8 @@ func _on_impact_fx(strength: float) -> void:
 func _on_weapon_state_changed(state: int) -> void:
 	weapon_state_changed.emit(_state_name(state), 0.0)
 
-func _on_weapon_charge_changed(charge: float) -> void:
-	weapon_state_changed.emit("WINDING", charge)
+func _on_weapon_charge_changed(power: float) -> void:
+	weapon_state_changed.emit("POWER", power)
 
 func _on_weapon_too_tired() -> void:
 	Impact.note_exhausted()   # running dry mid-combo breaks Stone Flow
@@ -147,12 +196,8 @@ func _on_weapon_too_tired() -> void:
 
 func _state_name(state: int) -> String:
 	match state:
-		StoneWeapon.State.WINDUP:
-			return "WINDING"
-		StoneWeapon.State.ACTIVE:
+		StoneWeapon.State.SWING:
 			return "SWING!"
-		StoneWeapon.State.RECOVERY:
-			return "RECOVER"
 		StoneWeapon.State.SLAM_RAISE, StoneWeapon.State.SLAM_HOLD:
 			return "SLAM!"
 		StoneWeapon.State.SLAM_DROP:
@@ -164,7 +209,13 @@ func _state_name(state: int) -> String:
 
 func _draw() -> void:
 	# Placeholder Arthur: a stout little figure with a dot showing his facing.
-	draw_circle(Vector2.ZERO, 17.0, Color(0.85, 0.74, 0.55))
+	var body_col := Color(0.85, 0.74, 0.55)
+	if _hurt > 0.0:
+		body_col = body_col.lerp(Color(1.0, 0.3, 0.3), clampf(_hurt / 0.35, 0.0, 1.0))
+	# Blink while invulnerable so the i-frames are readable.
+	if _invuln > 0.0 and int(_invuln * 30.0) % 2 == 0:
+		body_col = body_col.darkened(0.25)
+	draw_circle(Vector2.ZERO, 17.0, body_col)
 	draw_arc(Vector2.ZERO, 17.0, 0.0, TAU, 20, Color(0.25, 0.2, 0.15), 3.0)
 	var face := Vector2.RIGHT.rotated(weapon.aim_angle) * 10.0 if weapon else Vector2.ZERO
 	draw_circle(face, 5.0, Color(0.2, 0.18, 0.16))

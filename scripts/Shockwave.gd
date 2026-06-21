@@ -31,11 +31,16 @@ func detonate() -> void:
 			var dir := to.normalized() if dist > 0.01 else Vector2.RIGHT
 			var strength := impulse * falloff
 			if body.has_method("apply_hit"):
-				# Enemies take real damage + stun and feed a little Stone Flow.
-				# Damage/flow scale read from Impact so slam tuning lives in one place.
-				body.apply_hit(dir, strength, stun_time * falloff, Impact.DMG_BASE * Impact.SLAM_DAMAGE_MULT * falloff)
-				Impact.add_flow(Impact.SLAM_FLOW_BASE * falloff)
-				if falloff > 0.2:   # label any enemy that took a meaningful hit, not just close ones
+				# Enemies take real damage + stun and feed a little Stone Flow. Pass
+				# `pin` so a slam that pins a shielded enemy to a wall bypasses the
+				# shield (the brief's wall-crush rule), and honour the block result
+				# the same way the swing does (no SLAM! label / 0.4x flow when blocked).
+				var pin := Impact.cushion(self, body.global_position, dir)
+				var res: Dictionary = body.apply_hit(dir, strength, stun_time * falloff,
+					Impact.DMG_BASE * Impact.SLAM_DAMAGE_MULT * falloff, pin)
+				var blocked: bool = res["blocked"]
+				Impact.add_flow(Impact.SLAM_FLOW_BASE * falloff * (0.4 if blocked else 1.0))
+				if falloff > 0.2 and not blocked:   # label any enemy that took a meaningful hit
 					Impact.popup("SLAM!", body.global_position + Vector2(0, -26), Color(1.0, 0.8, 0.3))
 			elif body.has_method("apply_knockback"):
 				body.apply_knockback(dir, strength)   # props just launch
