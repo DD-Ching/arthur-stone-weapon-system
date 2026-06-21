@@ -29,10 +29,16 @@ func detonate() -> void:
 				continue
 			var falloff := 1.0 - dist / radius           # full force at centre
 			var dir := to.normalized() if dist > 0.01 else Vector2.RIGHT
-			if body.has_method("apply_knockback"):
-				body.call("apply_knockback", dir, impulse * falloff)
-			if body.has_method("stun"):
-				body.call("stun", stun_time * falloff)
+			var strength := impulse * falloff
+			if body.has_method("apply_hit"):
+				# Enemies take real damage + stun and feed a little Stone Flow.
+				# Damage/flow scale read from Impact so slam tuning lives in one place.
+				body.apply_hit(dir, strength, stun_time * falloff, Impact.DMG_BASE * Impact.SLAM_DAMAGE_MULT * falloff)
+				Impact.add_flow(Impact.SLAM_FLOW_BASE * falloff)
+				if falloff > 0.2:   # label any enemy that took a meaningful hit, not just close ones
+					Impact.popup("SLAM!", body.global_position + Vector2(0, -26), Color(1.0, 0.8, 0.3))
+			elif body.has_method("apply_knockback"):
+				body.apply_knockback(dir, strength)   # props just launch
 
 func _process(delta: float) -> void:
 	_t += delta

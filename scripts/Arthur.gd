@@ -37,6 +37,7 @@ func _ready() -> void:
 	weapon.state_changed.connect(_on_weapon_state_changed)
 	weapon.charge_changed.connect(_on_weapon_charge_changed)
 	weapon.too_tired.connect(_on_weapon_too_tired)
+	Impact.impact_fx.connect(_on_impact_fx)   # shake/hit-stop from props + bowling hits
 	stamina_changed.emit(stamina, max_stamina)
 
 func _physics_process(delta: float) -> void:
@@ -61,7 +62,8 @@ func _handle_attack() -> void:
 
 func _handle_movement(delta: float) -> void:
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var mult := _speed_multiplier()
+	# Stone Flow (stack 2+) grants a little extra mobility — still hauling a rock.
+	var mult := _speed_multiplier() * Impact.move_mult()
 	if dir != Vector2.ZERO:
 		velocity = velocity.move_toward(dir * max_speed * mult, accel * delta)
 	else:
@@ -92,7 +94,10 @@ func _handle_stamina(delta: float) -> void:
 	if _regen_cooldown > 0.0:
 		_regen_cooldown -= delta
 	elif stamina < max_stamina:
-		stamina = minf(max_stamina, stamina + stamina_regen * delta)
+		# Stone Flow mode regens slower, so the powered-up state stays a window you
+		# spend, not a place you park — keeps the combat clock ticking.
+		var rate := stamina_regen * (0.7 if Impact.flow_mode else 1.0)
+		stamina = minf(max_stamina, stamina + rate * delta)
 		stamina_changed.emit(stamina, max_stamina)
 
 ## Spend stamina if we can afford it. Returns false when too tired (caller fizzles).
@@ -120,6 +125,16 @@ func _do_hit_stop(duration: float) -> void:
 	if token == _hitstop_token:
 		Engine.time_scale = 1.0
 
+## A scored hit from a non-weapon source (a launched rock/crate, a bowling enemy,
+## a slam). Same camera shake + hit-stop language as a swing, scaled down a bit so
+## ambient chain-reactions don't lock up the screen.
+func _on_impact_fx(strength: float) -> void:
+	if camera and camera.has_method("add_shake"):
+		camera.call("add_shake", strength)
+	# Always freeze a touch on a connected prop/bowling hit — it's already scaled
+	# well below a swing's hit-stop, so even rapid chains won't lock the screen.
+	_do_hit_stop(clampf(strength * 0.005, 0.02, 0.07))
+
 func _on_weapon_state_changed(state: int) -> void:
 	weapon_state_changed.emit(_state_name(state), 0.0)
 
@@ -127,6 +142,7 @@ func _on_weapon_charge_changed(charge: float) -> void:
 	weapon_state_changed.emit("WINDING", charge)
 
 func _on_weapon_too_tired() -> void:
+	Impact.note_exhausted()   # running dry mid-combo breaks Stone Flow
 	exhausted.emit()
 
 func _state_name(state: int) -> String:

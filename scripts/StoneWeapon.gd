@@ -55,13 +55,12 @@ const ROCK := preload("res://scenes/Rock.tscn")
 @export var turn_speed_busy := 1.2
 
 @export_group("Impact")
-@export var knockback_min := 440.0
-@export var knockback_max := 1240.0
+# Knockback / shake magnitudes now live in Impact.gd — the one tuning hub — so a
+# swing, a thrown rock, and a bowling enemy all read from the same numbers. What
+# stays here is weapon-specific cost.
 @export var stamina_cost_min := 16.0
 @export var stamina_cost_max := 46.0
 @export var slam_stamina_cost := 42.0
-@export var shake_min := 5.0
-@export var shake_max := 16.0
 @export var slam_shake := 24.0
 
 var state: int = State.READY
@@ -81,6 +80,8 @@ var _hit_ids := {}
 var _hit_count := 0
 var _solid_now := true   ## is the passive stone body currently collidable
 var _trail: Array = []   ## recent head world positions for the swing trail
+var _head_world := Vector2.ZERO  ## last head world position (drives speed)
+var _head_speed := 0.0           ## measured head speed in px/s — the swing's "relative_speed"
 
 @onready var hitbox: Area2D = $Hitbox
 @onready var stone_body: AnimatableBody2D = $StoneBody
@@ -89,6 +90,7 @@ var _trail: Array = []   ## recent head world positions for the swing trail
 
 func _ready() -> void:
 	_head_dist = arm_length
+	_head_world = to_global(Vector2(_head_dist, 0.0))
 	state_changed.emit(state)
 
 func set_aim_target(angle: float) -> void:
@@ -164,11 +166,13 @@ func _update_aim(delta: float) -> void:
 # --- swing states -----------------------------------------------------------
 
 func _process_windup(delta: float) -> void:
-	_charge = clampf(_state_time / charge_time, 0.0, 1.0)
+	# Stone Flow (stack 1+) winds the stone up a touch faster.
+	var eff_charge_time := charge_time / Impact.charge_speed_mult()
+	_charge = clampf(_state_time / eff_charge_time, 0.0, 1.0)
 	charge_changed.emit(_charge)
-	var pull := windup_angle * (0.45 + 0.55 * _charge)
+	var pull := windup_angle * _charge_angle_factor(_charge)
 	_swing_offset = lerpf(_swing_offset, -pull, clampf(9.0 * delta, 0.0, 1.0))
-	if (_release_requested and _state_time >= windup_time_min) or _state_time >= charge_time:
+	if (_release_requested and _state_time >= windup_time_min) or _state_time >= eff_charge_time:
 		_fire()
 
 func _fire() -> void:
@@ -187,38 +191,67 @@ func _fire() -> void:
 func _process_active() -> void:
 	var t := clampf(_state_time / active_time, 0.0, 1.0)
 	var eased := 1.0 - pow(1.0 - t, 3.0)
-	var from_angle := -windup_angle * (0.45 + 0.55 * _active_charge)
+	var from_angle := -windup_angle * _charge_angle_factor(_active_charge)
 	_swing_offset = lerpf(from_angle, followthrough_angle, eased)
 	_apply_swing_hits()
 	if t >= 1.0:
+		if _hit_count == 0:
+			Impact.note_miss()   # a committed swing that connected with nothing bleeds the combo
 		_recovery_from = _swing_offset
 		_change_state(State.RECOVERY)
 
 func _process_recovery() -> void:
-	var dur := lerpf(recovery_time_min, recovery_time_max, _active_charge)
+	# Stone Flow (stack 3+) shortens the exposed recovery.
+	var dur := lerpf(recovery_time_min, recovery_time_max, _active_charge) * Impact.recovery_mult()
 	var t := clampf(_state_time / dur, 0.0, 1.0)
 	_swing_offset = lerpf(_recovery_from, 0.0, 1.0 - pow(1.0 - t, 2.0))
 	if t >= 1.0:
 		_change_state(State.READY)
 
 func _apply_swing_hits() -> void:
+	var origin: Vector2 = _arthur.global_position
+	var forward := Vector2.RIGHT.rotated(aim_angle)
 	for body in hitbox.get_overlapping_bodies():
-		if not body.has_method("apply_knockback"):
+		if not (body.has_method("apply_hit") or body.has_method("apply_knockback")):
 			continue
 		var id := body.get_instance_id()
 		if _hit_ids.has(id):
 			continue
 		_hit_ids[id] = true
-		var origin: Vector2 = _arthur.global_position
-		var dir := body.global_position - origin
-		if dir.length() < 1.0:
-			dir = Vector2.RIGHT.rotated(aim_angle)
-		dir = dir.normalized()
-		body.call("apply_knockback", dir, lerpf(knockback_min, knockback_max, _active_charge))
-		if body.has_method("stun"):
-			body.call("stun", 0.25 + 0.4 * _active_charge)
+
+		var to: Vector2 = body.global_position - origin
+		var dir := to.normalized() if to.length() > 1.0 else forward
+		var angle_q := clampf(forward.dot(dir), 0.0, 1.0)   # how head-on the hit is
+
+		# Wall-crush + shield only matter for enemies (the things with apply_hit).
+		var pin := 0.0
+		var block := 1.0
+		if body.has_method("apply_hit"):
+			pin = Impact.cushion(self, body.global_position, dir)
+			if body.has_method("block_factor") and pin < 0.5:
+				block = body.block_factor(dir)
+
+		var r := Impact.resolve_hit({
+			"kind": "swing", "attacker_mass": Impact.MASS_STONE,
+			"relative_speed": _head_speed, "charge": _active_charge,
+			"angle_quality": angle_q, "pin": pin,
+		})
+		var kb: float = r["knockback"] * block
+		if body.has_method("apply_hit"):
+			body.apply_hit(dir, kb, r["stun"], r["damage"] * block)
+		else:
+			body.apply_knockback(dir, kb)   # props: launch them, no damage
+
+		var label: String = r["label"]
+		var color: Color = r["color"]
+		if block < 0.9 and pin < 0.5:
+			label = "BLOCKED"
+			color = Color(0.7, 0.75, 0.8)
+		Impact.popup(label, body.global_position + Vector2(0, -26), color, 1.0 + 0.3 * _active_charge)
+		Impact.add_flow(r["flow_gain"] * (0.4 if block < 0.9 else 1.0))
+
 		_hit_count += 1
-		hit_landed.emit(lerpf(shake_min, shake_max, _active_charge), _hit_count)
+		hit_landed.emit(r["shake"], _hit_count)
 
 # --- slam states ------------------------------------------------------------
 
@@ -271,6 +304,11 @@ func _do_slam_impact() -> void:
 func ease_out(t: float) -> float:
 	return 1.0 - pow(1.0 - t, 3.0)
 
+## How far the head hauls back for a given charge (0 → 45%, 1 → 100% of windup_angle).
+## Shared by the wind-up pull and the active swing's starting angle.
+func _charge_angle_factor(charge: float) -> float:
+	return 0.45 + 0.55 * charge
+
 func _change_state(new_state: int) -> void:
 	state = new_state
 	_state_time = 0.0
@@ -286,6 +324,8 @@ func _set_solid(solid: bool) -> void:
 
 func _update_trail(delta: float) -> void:
 	var head := to_global(Vector2(_head_dist, 0.0))
+	_head_speed = minf(head.distance_to(_head_world) / maxf(delta, 0.0001), 3200.0)
+	_head_world = head
 	if state == State.ACTIVE or state == State.SLAM_DROP:
 		_trail.push_back({"pos": head, "age": 0.0})
 	for p in _trail:
