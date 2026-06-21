@@ -1,40 +1,38 @@
 # Architecture
 
-A guided tour of how the prototype is wired. It's still small — a dozen short
-scripts and a handful of scenes — but it now models real top-down physics with a
-single impact + combo brain.
+A guided tour of how the prototype is wired. It is built from small **reusable
+modules** + one **impact/combo brain**, so a new enemy is a `.tscn`, a new river is a
+placed `TerrainZone`, and a new level is a scene that assembles modules. See
+[`MEMORY.md`](MEMORY.md) for the quick map and [`BATCH_PLAN.md`](BATCH_PLAN.md) for the
+refactor status. `Battlefield.tscn` is the **main scene** (the "Hold the Ford" level);
+`Arena.tscn` is the older sandbox.
 
-## Scene tree
+## Scene tree (Battlefield — the current level)
 
 ```
-(autoload) Impact (Node, Impact.gd)                      ← impact tuning + scoring + Stone Flow + feedback
+(autoloads) Impact (Impact.gd)      ← impact tuning + scoring + Stone Flow + feedback
+            Audio  (Audio.gd)       ← named sound-event bus (signal sfx)
+            SoundBank (SoundBank.gd)← synthesises a procedural sound per Audio event
 
-Arena (Node2D, Arena.gd)
-├── Walls (StaticBody2D, layer "world")
-│   ├── Top / Bottom / Left / Right (CollisionShape2D)   ← boundary
-│   └── (interior walls added at runtime from Arena.WALLS) ← pillar + corner pocket
-├── Arthur (CharacterBody2D, Arthur.gd, layer "arthur")  ← instance of Arthur.tscn
-│   ├── CollisionShape2D
-│   ├── StoneWeapon (Node2D, StoneWeapon.gd)             ← swing + slam, drives the head
-│   │   ├── StoneBody (AnimatableBody2D, layer "weapon") ← passive presence: blocks/shoves
-│   │   │   └── CollisionShape2D                          ← the stone, follows the head
-│   │   └── Hitbox (Area2D)                              ← attack detection, follows the head
-│   │       └── CollisionShape2D
+Battlefield (Node2D, Battlefield.gd)                     ← the LEVEL: assembles modules + level rules
+├── Walls (StaticBody2D, "world")                        ← boundary + fences (built from FENCES)
+├── Arthur (CharacterBody2D, Arthur.gd, "arthur")
+│   ├── StoneWeapon (Node2D, StoneWeapon.gd)             ← drag-to-swing + slam + spin; hitbox + solid stone
 │   └── Camera2D (GameCamera.gd)                          ← follow + shake
-├── Enemies (RigidBody2D, Enemy.gd, "enemies")           ← Dummy / Light / Shield / Heavy scenes
-├── Props (RigidBody2D, Rock.gd, "props")                ← Rock + Crate, launchable
-├── PressurePlate (Node2D, PressurePlate.gd)             ← plate (Area2D) + gate (StaticBody2D)
+├── ShieldWall / SpearLine / Guards / Cavalry / … (Enemy.gd configs)  ← the pre-placed garrison
+├── WaterWheel (Area2D, WaterWheel.gd)                   ← spinning hazard: bats overlapping bodies
+├── Props (RigidBody2D, Rock.gd)                         ← Rock + Crate, launchable
 └── Hud (CanvasLayer, Hud.gd)
 
-spawned at runtime:
-  Shockwave   (Node2D, Shockwave.gd)   ← slam radial impulse + visual, frees itself
-  Rock        (debris)                 ← dropped at a slam impact
-  FloatingText(Node2D, FloatingText.gd)← a hit label, rises + fades, frees itself
+built/spawned at runtime by Battlefield:
+  TerrainZone (Area2D, terrain/TerrainZone.gd)  ← river + mud RULES, over the drawn rects
+  ford_goal / crossing (Node2D markers)         ← what raiders march at / the bridge they aim for
+  Ally (Enemy.gd, team="ally")  · wave enemies (via Spawner)  · Log (Log.gd) hazards
+  Shockwave · debris Rock · FloatingText        ← self-freeing one-shots
 ```
 
-`Arena.tscn` is the **main scene**; `Impact` is an **autoload** (see
-`project.godot` `[autoload]`), so any node can reach it as `Impact`. Spawned
-nodes are added to `get_tree().current_scene`.
+`Impact` is an **autoload** (see `project.godot` `[autoload]`), so any node reaches it as
+`Impact`; likewise `Audio`/`SoundBank`. Spawned nodes are added to the current scene.
 
 ## Responsibilities (one job per script)
 
@@ -49,8 +47,24 @@ nodes are added to `get_tree().current_scene`.
 | `PressurePlate.gd` | A weight-it-to-open-the-gate puzzle (plate Area2D + gate StaticBody2D) |
 | `FloatingText.gd`  | A rising, fading hit label (drawn in code)                          |
 | `GameCamera.gd`    | Decaying screen shake                                                |
-| `Hud.gd`           | Stamina bar + weapon-state text + the Stone Flow meter, from signals |
-| `Arena.gd`         | Floor/grid visuals, interior walls, HUD binding, `Impact.reset()`, reset hotkey |
+| `Hud.gd`           | Stamina/health bars + weapon-state + Stone Flow + objective/banner/KO, from signals |
+| `Battlefield.gd`   | The **level**: assembles terrain zones + spawns, runs the 5-wave script, breach lose / wave win, bridge collapse, log hazards |
+| `Arena.gd`         | The older sandbox: floor/grid, interior walls, HUD binding, reset hotkey |
+
+### Reusable modules (build once, reuse many)
+
+| Module | Reused for |
+| ------ | ---------- |
+| `Enemy.gd` (de-facto **EnemyBase**) | every enemy *type* is a `.tscn` config of it (Light/Shield/Spear/Heavy/Banner/Ally); Cavalry/WarCart **extend** it. Owns health, mass, stun, knockback, shield, morale, defeat, bowling, **and** the team/AI (march-to-goal + attack-foe, flank, separation, retarget, stuck-recovery, terrain-avoidance). Add an enemy by tuning exports — no new code. |
+| `terrain/TerrainZone.gd` | every river/mud/ford. A placeable `Area2D` rule: `drag` (slow), `current` (push), `dangerous` (NPCs route around it → chokepoints), `drowns_light` (knock a light unit in → it's removed). Applies forces as **impulses** so a swing's knockback / the wheel's bat still compose. Drop another instance → same rule. |
+| `spawning/Spawner.gd` | every spawn site. Static `spawn()/spawn_count()` place a group of scenes across a lane (used by the waves and the allied line). |
+| `Audio.gd` + `SoundBank.gd` | every sound. `Audio.play("event", pos)` fires one bus signal; `SoundBank` synthesises a procedural voice per event. |
+
+**How to add things** (see also [`MEMORY.md`](MEMORY.md)): a **new enemy** = a `.tscn`
+using `Enemy.gd`; a **new terrain rule** = a placed `TerrainZone` (tune its exports) or a
+new rule branch; a **new level** = a `Node2D` scene that builds terrain zones + a goal +
+spawns, like `Battlefield.gd`. Future batches (`formations/`, `objectives/`,
+`abilities/`) are listed in [`BATCH_PLAN.md`](BATCH_PLAN.md).
 
 ## The impact pipeline (`Impact.gd`)
 

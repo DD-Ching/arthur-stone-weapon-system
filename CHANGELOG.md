@@ -9,8 +9,44 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 ## [Unreleased]
 
 ### Planned
-- A bigger crowd via cheaper enemy updates (pooling / coarser AI ticks), a KO + time
-  score screen, and the challenge rooms. See [`ROADMAP.md`](ROADMAP.md).
+- More framework batches — `formations/`, `objectives/` + an `ObjectiveManager`,
+  `abilities/` — plus a KO/time score screen and a bigger crowd via pooling. See
+  [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.9.0] — 2026-06-21
+
+**Modular battlefield framework.** A refactor toward reuse — no gameplay was rewritten,
+but terrain, spawning, and movement became reusable modules so new content is built by
+*placing and tuning*, not copy-pasting. Plus project-memory docs for fast onboarding.
+
+### Added
+- **Project memory** — `CLAUDE.md`, `docs/MEMORY.md`, `docs/BATCH_PLAN.md`, and a
+  refreshed `docs/ARCHITECTURE.md`, so a session can get oriented without re-reading
+  everything (concept, system map, folder map, rules, how to add enemies/terrain/levels).
+- **`terrain/TerrainZone.gd`** — a reusable, placeable terrain rule (`Area2D`):
+  `drag` (slow), `current` (push), `dangerous` (NPCs route around it), `drowns_light`
+  (a light unit knocked in is removed). The ford river + mud are now instances of it —
+  drop another zone anywhere and it behaves identically. It applies forces as **impulses**
+  so a swing's knockback and the water wheel's bat still compose (this also fixed a latent
+  bug where a body in the old hard-coded current couldn't be knocked back).
+- **`spawning/Spawner.gd`** — a reusable spawn helper; the reinforcement waves and the
+  allied line both use it instead of duplicating the spawn loop.
+- **Smarter movement** — units now **recover when stuck** (a sideways nudge when jammed)
+  and **avoid dangerous terrain**, steering toward the nearest *crossing* when deep water
+  is ahead. With the ford river marked dangerous, the warband naturally **funnels onto the
+  bridge** — a real chokepoint — and a light raider knocked into the river **drowns**.
+
+### Changed
+- `Battlefield.gd` rewritten as a thin **level**: it builds `TerrainZone`s over the drawn
+  rects (the hard-coded terrain force-loop is gone), places a bridge "crossing" marker,
+  and uses `Spawner`. Collapsing the bridge now enables a deep-water zone over the gap.
+- Documented that `Enemy.gd` was already the shared base (all seven types are configs/
+  subclasses of it) — no rewrite needed.
+
+### Notes
+- All seven headless tests pass; the new code passed an adversarial review.
 
 ---
 
@@ -341,7 +377,8 @@ makes him slow, vulnerable, and hard to control.
 - All visuals are placeholder shapes drawn in code — game feel over polish, by design.
 - No audio, no enemy AI, no win condition yet. See [`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.3...v0.7.0
 [0.6.3]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.6.2...v0.6.3

@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.8.0 — Hold the Ford</strong> · placeholder art · hold a river crossing with allied footmen against five waves of raiders — knock them into the current, the mill wheel, and each other</em></p>
+<p align="center"><em>Status: <strong>v0.9.0 — Modular battlefield framework</strong> · placeholder art · hold a river crossing with allied footmen against five waves of raiders — now built from reusable terrain / spawn / movement modules</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
@@ -45,10 +45,18 @@ A swing is a **commitment**. Missing should hurt. Connecting should feel great.
 
 ---
 
-## Current prototype status (v0.8.0)
+## Current prototype status (v0.9.0)
 
 What's actually in the build right now:
 
+- ✅ **Modular battlefield framework** — terrain, spawning, and movement are reusable
+  modules now: a **`TerrainZone`** you drop anywhere (slow / current / dangerous / drowns
+  light units), a **`Spawner`** the waves and allies share, and one config-driven
+  **`Enemy`** base every type reuses. New enemy = a `.tscn`; new river = a placed zone;
+  new level = assembled modules. (See [`CLAUDE.md`](CLAUDE.md) + [`docs/MEMORY.md`](docs/MEMORY.md).)
+- ✅ **Terrain steers the battle** — raiders **avoid the deep ford and funnel onto the
+  bridge** (a natural chokepoint), recover when stuck, and a light raider knocked into
+  the river **drowns**. The current/wheel/knockback all compose through real physics
 - ✅ **Hold the Ford** — a real "hold the line" battle. **Five escalating waves** of
   raiders (light → shields → spears → cavalry+cart → an officer) **march to cross the
   ford** toward an allied banner; **allied footmen** fight at your side; let too many
