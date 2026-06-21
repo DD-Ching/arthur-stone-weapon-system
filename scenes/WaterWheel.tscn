@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/WaterWheel.gd" id="1_wheel"]
+
+[sub_resource type="CircleShape2D" id="wheel_area"]
+radius = 76.0
+
+[node name="WaterWheel" type="Area2D"]
+collision_layer = 0
+collision_mask = 12
+script = ExtResource("1_wheel")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("wheel_area")

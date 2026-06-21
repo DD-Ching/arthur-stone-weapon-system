@@ -70,6 +70,7 @@ func _physics_process(delta: float) -> void:
 				_ctime = 0.0
 				_hit_player = false
 				Impact.popup("CAVALRY CHARGE", global_position + Vector2(0, -34), Color(1.0, 0.5, 0.3), 1.2)
+				Audio.play("cavalry_charge", global_position)
 		Charge.CHARGE:
 			_face = _charge_dir.angle()
 			linear_velocity = linear_velocity.move_toward(_charge_dir * charge_speed, 1400.0 * delta)

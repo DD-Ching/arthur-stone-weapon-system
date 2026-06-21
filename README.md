@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.6.1 — Drag-to-Swing</strong> · placeholder art · physically drag the heavy stone vs an endless army of soldiers, cavalry, and war carts — KO counter and all</em></p>
+<p align="center"><em>Status: <strong>v0.7.0 — The Ford of the Stone King</strong> · placeholder art · hold a river crossing, knocking soldiers into the current and the mill wheel, vs an endless raider warband</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
@@ -45,10 +45,20 @@ A swing is a **commitment**. Missing should hurt. Connecting should feel great.
 
 ---
 
-## Current prototype status (v0.6.1)
+## Current prototype status (v0.7.0)
 
 What's actually in the build right now:
 
+- ✅ **The Ford of the Stone King** — the arena is now a **river crossing**, and the
+  terrain is a physics weapon. A **river with a downstream current** drags and drifts
+  anything in it (cavalry and carts lose their line; props float away); a **wooden
+  bridge** is the one dry crossing — the choke; and a spinning **water wheel** on the
+  bank **bats any soldier or prop knocked into it** clear across the field. Built from
+  Godot physics areas + impulses — no fluid sim
+- ✅ **Audio event hooks** — a named-event bus (`stone_scrape`, `heavy_swing`,
+  `shield_break`, `wall_crush`, `enemy_launch`, `chain_impact`, `cavalry_charge`,
+  `banner_down`, `water_splash`, `water_wheel_creak`, `stone_flow_gain`, …) wired at
+  every impact, ready for real sounds to drop in
 - ✅ **Musou crowd combat**: a **spin / tornado** attack (hold Shift / middle-mouse) that
   whirls the stone and launches the whole crowd outward, a **KO counter** with milestones
   (`RAMPAGE!` … `ONE-MAN ARMY!`), an endless **reinforcement horde**, telegraphed

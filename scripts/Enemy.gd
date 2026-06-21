@@ -95,17 +95,20 @@ func apply_hit(dir: Vector2, raw_strength: float, stun_time: float, raw_dmg: flo
 	if raw_strength >= stagger_threshold:
 		stun(maxf(stun_time, 0.5))
 		_interrupt()
+		Audio.play("enemy_launch", global_position)
 	var broke := false
 	if shielded and raw_strength >= shield_break_threshold and _shield_broken <= 0.0:
 		_shield_broken = 3.0
 		broke = true
 		Impact.popup("SHIELD BREAK", global_position + Vector2(0, -30), Color(1.0, 0.8, 0.4), 1.1)
+		Audio.play("shield_break", global_position)
 	health -= raw_dmg * block
 	if health <= 0.0 and not _dead:
 		_defeat()
 	var blocked := block < 0.9 and not broke
 	if blocked:
 		Impact.popup("BLOCKED", global_position + Vector2(0, -26), Color(0.7, 0.75, 0.8))
+		Audio.play("shield_block", global_position)
 	return {"blocked": blocked, "broke": broke}
 
 ## How much of a frontal hit a shield lets through (1.0 = no shield / flanked /
@@ -137,6 +140,7 @@ func _defeat() -> void:
 	if is_support:
 		# A banner bearer falling rattles the line.
 		Impact.popup("MORALE BROKEN", global_position + Vector2(0, -48), Color(1.0, 0.5, 0.3), 1.2)
+		Audio.play("banner_down", global_position)
 		for e in get_tree().get_nodes_in_group("targets"):
 			if e != self and is_instance_valid(e) and e.has_method("stun") \
 					and e.global_position.distance_to(global_position) < morale_radius:

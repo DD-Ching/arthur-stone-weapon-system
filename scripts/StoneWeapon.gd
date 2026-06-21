@@ -95,6 +95,7 @@ var _swinging := false    ## is the attack button held (drag = swing mode)
 var _prev_aim := 0.0      ## last frame's cursor angle, for the drag's angular velocity
 var _mouse_avel := 0.0    ## how fast the cursor is being dragged around Arthur (signed: CW/CCW)
 var _hit_clear := 0.0     ## countdown to clear the contact hit-dedup
+var _scrape_cd := 0.0     ## throttle for the slow grinding stone_scrape sound
 
 @onready var hitbox: Area2D = $Hitbox
 @onready var stone_body: AnimatableBody2D = $StoneBody
@@ -249,7 +250,13 @@ func _apply_swing_hits(delta: float) -> void:
 		_hit_ids.clear()
 		_hit_clear = hit_interval
 	if _head_speed < hit_speed_min:
-		return   # too slow to be an attack — the AnimatableBody2D just pushes
+		# Too slow to be an attack — the solid stone just shoves. If it's grinding
+		# against something, play a throttled scrape (the heavy-stone signature sound).
+		_scrape_cd -= delta
+		if _scrape_cd <= 0.0 and _head_speed > 45.0 and not hitbox.get_overlapping_bodies().is_empty():
+			_scrape_cd = 0.35
+			Audio.play("stone_scrape", _head_world)
+		return
 
 	var origin: Vector2 = _arthur.global_position
 	for body in hitbox.get_overlapping_bodies():
@@ -285,6 +292,7 @@ func _apply_swing_hits(delta: float) -> void:
 
 		_hit_count += 1
 		hit_landed.emit(r["shake"], _hit_count)
+		Audio.play("wall_crush" if pin >= 0.5 else "heavy_swing", body.global_position)
 
 # --- spin / tornado ---------------------------------------------------------
 

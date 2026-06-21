@@ -46,7 +46,8 @@ Make the existing mechanic *feel* as good as it reads.
 - ✅ Tunable knockback — now centralized in the `Impact` hub
 - 🔶 Squash/stretch on enemies (flash + defeat fade in; squash pending)
 - ⬜ Recovery-timing pass: make the punish window *readable*
-- ⬜ Audio hooks (whoosh on wind-up, crunch on impact)
+- ✅ Audio **event hooks** (named `Audio.play(...)` events at every impact; real
+  whoosh/crunch sounds still to author behind them)
 
 ---
 
@@ -130,7 +131,30 @@ One absurd hero mowing an army (Dynasty-Warriors energy).
 - ⬜ A bigger crowd (cheaper enemy update — pooling / coarser AI ticks for the web build)
 - ⬜ Layered objectives: officers/banner morale, Capture the Banner, Hold the Line,
   Stop/Reverse the Charge, a KO + time **score screen**
-- ⬜ Audio (whoosh, crunch, the roar of a crowd)
+- ✅ Audio **event hooks** wired at every impact (real sound assets still to drop in)
+
+---
+
+## Phase 6 — The Ford of the Stone King ✅🔶  → ships as **v0.7.0**
+
+The battlefield itself becomes a physics weapon — a mythic river crossing.
+
+- ✅ **River + downstream current** — a shallow ford that drags and drifts bodies
+  (cavalry/carts lose their line, props float away); data-driven `Rect2` bands +
+  a current vector, no fluid sim
+- ✅ **Wooden bridge** — a dry deck that is the one clean crossing (the choke); off it
+  the water slows the army, so the bridge funnels the assault
+- ✅ **Water wheel hazard** — a spinning mill wheel that **bats enemies/props knocked
+  into it** clear across the field (`Area2D` + a tangential Godot impulse, debounced)
+- ✅ **Audio event bus** — `Audio` autoload, all twelve named events fired at their
+  real trigger points, ready for sound assets
+- ✅ **Ford framing** — `HOLD THE FORD — BREAK THE SHIELD WALL` + a spawn title
+- 🔶 Splashable props float; floating logs as drifting hazards still to add
+- ⬜ A true **"Hold the Ford"** lose condition (too many raiders cross the line)
+- ⬜ A **structured 5-wave escalation** (raiders → shields → spears → cavalry → officer)
+  replacing the random reinforcement trickle
+- ⬜ **Bridge collapse** as an objective (launch props into the supports)
+- ⬜ Real audio behind the event hooks
 
 ---
 
