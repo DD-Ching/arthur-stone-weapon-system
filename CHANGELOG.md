@@ -9,9 +9,50 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 ## [Unreleased]
 
 ### Planned
-- Phase 3.5: spin/tornado attack and full challenge rooms (wall-crush training,
-  bowling room, rock-launcher range) built on the pressure-plate seam. See
-  [`ROADMAP.md`](ROADMAP.md).
+- Cavalry charge + war cart prototypes, more battlefield objectives, and the
+  spin/tornado attack. See [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.4.0] — 2026-06-21
+
+**Momentum Swing & Battlefield Prototype.** The heavy attack became a physics
+flail you fling with momentum, and the arena grew into a small ancient battlefield
+with a thinking army and an objective.
+
+### Changed — the swing is now momentum, not charge
+- The stone head is a spring-damped **pendulum that hangs behind Arthur** and
+  sloshes with real inertia as he moves and turns. Left-click / Space **applies a
+  force** — an angular kick that flings the head from behind, around, to the front
+  (clockwise or counter-clockwise emerges from the physics). The kick stacks on the
+  momentum you already built by moving and whipping your aim.
+- **Damage is read straight off the head's real speed** (no charge term). The stone
+  glows hotter the faster it moves and the HUD shows live swing **POWER**.
+- Each swing **lunges Arthur forward** — a dash you can chain to sprint/reposition,
+  and the dash speed feeds the head's momentum.
+
+### Added — battlefield
+- **Enemy AI** on the shared `Enemy` base: approach, keep shield toward Arthur, a
+  telegraphed attack (melee / shield-bash / spear thrust), and stagger. The AI
+  **yields to physics the instant the body is launched or staggered**, so a hard
+  enough hit always wins — Arthur's strength overrules a soldier's defense.
+- **Enemy types** behave differently: Light Soldier (rush, flies far), Shield
+  Soldier (front block + bash + **SHIELD BREAK** on a strong hit), Spearman (holds
+  distance + telegraphed thrust), Heavy Guard (slow, hard to stagger), Banner
+  Bearer (stays back; on death nearby enemies **panic**).
+- Shields own their block/break maths, decided on the **raw** hit: a weak swing is
+  `BLOCKED`, a strong swing `SHIELD BREAK`s and staggers; wall-crush bypasses it.
+- A **shield-wall formation** + spear line + flanking charge group + heavy anchors
+  + a banner, **mud** that drags charges, funnel **fences**, and launchable props.
+- **Arthur health**, i-frames, a hurt flash, and death; taking a hit breaks Stone
+  Flow. The **"Break the Shield Wall"** objective with a win/lose banner.
+- New main scene `Battlefield.tscn`; HUD gains a health bar, objective line, and
+  banner. A battlefield headless test (AI advance + Arthur damage + objective) in CI.
+
+### Notes
+- Cavalry and the war cart are **designed in [`ROADMAP.md`](ROADMAP.md)** for the
+  next milestone, not yet built. The v0.3 `Arena.tscn` remains as a calm sandbox.
+  Web build stays single-threaded for GitHub Pages.
 
 ---
 
@@ -130,7 +171,8 @@ makes him slow, vulnerable, and hard to control.
 - All visuals are placeholder shapes drawn in code — game feel over polish, by design.
 - No audio, no enemy AI, no win condition yet. See [`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/DD-Ching/arthur-stone-weapon-system/releases/tag/v0.1.0
