@@ -78,6 +78,13 @@ spin={
 ]
 }
 
+[input_devices]
+
+; Touch is read directly (InputEventScreen*) by TouchControls; we don't want Godot also
+; synthesising mouse events from touch (it would fight the right-stick aim with a stale
+; cursor + spurious LMB "attack"). Disabling this leaves the real desktop mouse untouched.
+pointing/emulate_mouse_from_touch=false
+
 [layer_names]
 
 2d_physics/layer_1="world"

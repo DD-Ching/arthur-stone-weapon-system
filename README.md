@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.12.0 — A real allied army</strong> · placeholder art · command a host of shield guards, spears, and a knight champion holding a river crossing against a dense raider warband (built from reusable terrain / formation / objective modules)</em></p>
+<p align="center"><em>Status: <strong>v0.13.0 — Mobile play</strong> · placeholder art · command a host of shield guards, spears, and a knight champion holding a river crossing against a dense raider warband (built from reusable terrain / formation / objective modules) — now playable on phones with on-screen joysticks</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
@@ -114,6 +114,7 @@ but not built; the battlefield wants a real balance pass; no audio, no final art
 | **Right Mouse Button**         | **Overhead slam** — a committed smash with a shockwave |
 | **`Shift`** / **Middle Mouse** (hold) | **Spin / tornado** — whirl the stone, launching the whole crowd outward. Drains stamina fast |
 | `R`                            | Reset                                           |
+| **Touch** (phone / tablet)     | **Left stick** moves, **right stick** aims — **circle it to swing** — plus **SLAM** / **SPIN** / **R** buttons. The overlay appears only on a touchscreen; play landscape |
 
 There's no attack button and no charge bar — you **physically drag and swing** the
 heavy stone, and damage comes straight from how fast it's actually moving (a plain

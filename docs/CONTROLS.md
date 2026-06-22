@@ -8,9 +8,27 @@
 | Right Mouse Button           | Overhead slam — a committed smash with a shockwave  |
 | **`Shift`** / **Middle Mouse** (hold) | **Spin / tornado** — whirl the stone, launching the crowd outward |
 | `R`                          | Reset                                               |
+| **Touch** (phone / tablet)   | **Left stick** move · **right stick** aim — *circle it to swing* · **SLAM** / **SPIN** buttons · **R** button resets |
 
 These actions are defined in `project.godot` under `[input]`, so you can rebind
 them from **Project → Project Settings → Input Map** in Godot.
+
+## Touch / mobile
+
+On a touchscreen, an on-screen overlay (`scripts/ui/TouchControls.gd`, shown via the HUD)
+appears automatically — desktop is unaffected:
+
+- **Left stick** (floating, left half of the screen) — analog movement, same weight + momentum.
+- **Right stick** (right half) — points the stone where you push it, and **circling your
+  thumb whips the head around Arthur**. This is the *exact same control as the mouse*: the
+  swing is the drag *around* you, so a fast circle is a hard swing and just holding the stick
+  out only pushes. Flicking the stick out is a quick swing in that direction.
+- **SLAM** / **SPIN** buttons (bottom-right) — the overhead smash and the whirlwind.
+- **R** button (top-right) — restart (the touch stand-in for the `R` key).
+
+The sticks reuse the existing input model (the right stick presses the same `attack` action
+and feeds the same aim the mouse gives), so the feel — and every combat number — is identical
+to playing with a mouse; only the input device changes. Hold the phone **landscape**.
 
 ## Why the controls feel the way they do
 

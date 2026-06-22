@@ -55,7 +55,9 @@ func set_objective(text: String) -> void:
 
 func show_banner(text: String, color: Color) -> void:
 	if banner_label:
-		banner_label.text = text + "\n(press R to restart)"
+		var tc = get_tree().get_first_node_in_group("touch_controls")
+		var how := "(tap the R button to restart)" if tc and tc.active_ui else "(press R to restart)"
+		banner_label.text = text + "\n" + how
 		banner_label.add_theme_color_override("font_color", color)
 		banner_label.visible = true
 
