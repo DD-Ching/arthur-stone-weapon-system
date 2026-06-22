@@ -15,6 +15,37 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.13.0] — 2026-06-22
+
+**Mobile play — on-screen joysticks.** The game was mouse-only (the whole swing is "drag
+the cursor around Arthur"), so phones couldn't play it. Now they can, without changing the
+desktop experience or the combat model.
+
+### Added
+- **`ui/TouchControls`** — a reusable on-screen control overlay that lives inside the HUD,
+  so every level (and every future one) gets mobile controls for free:
+  - a **left virtual stick** for analog movement,
+  - a **right virtual stick** that aims the stone *and* — because the swing is a drag
+    *around* Arthur — **whips it when you circle your thumb** (it presses the existing
+    `attack` action and feeds the same aim drag the mouse does; **no weapon code changed**),
+  - **SLAM** and **SPIN** buttons that press the existing actions, and an **R** button that
+    restarts (the touchscreen stand-in for the `R` key).
+- A headless **`TouchControlsTest`** (now in CI) asserting the sticks produce an analog
+  move vector, the right stick drives aim + the `attack` action (and rotating it sweeps the
+  aim), and the buttons press/release their actions.
+
+### Changed
+- `Arthur` prefers the touch stick for aim + movement **only when a touchscreen is present**;
+  on desktop nothing changes (the overlay stays hidden and the mouse/keyboard path is intact).
+- Disabled `pointing/emulate_mouse_from_touch` so touch doesn't synthesise a stale cursor /
+  spurious clicks that would fight the right-stick aim. The real desktop mouse is untouched.
+
+### Notes
+- The overlay reveals on a touchscreen (or on the first real screen touch, as a fallback),
+  so it never clutters the desktop web demo. All ten headless tests pass.
+
+---
+
 ## [0.12.0] — 2026-06-21
 
 **A real allied army + a denser battle.** The allies were six basic footmen; now they're a

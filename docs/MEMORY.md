@@ -62,6 +62,12 @@ can be collapsed, drifting **logs**.
 - **Audio** — `Audio.gd` (event bus, `Audio.play(name, pos)`), `SoundBank.gd` (synthesises
   a procedural sound per event). Twelve named events fired at impact sites.
 - **HUD/camera/text** — `Hud.gd`, `GameCamera.gd`, `FloatingText.gd`.
+- **Touch / mobile** — `scripts/ui/TouchControls.gd` (a `Control` instanced inside `Hud.tscn`,
+  so every level gets it): a left stick (move) + right stick (aim — *circle it to swing*) +
+  SLAM/SPIN/restart buttons. Reuses the existing input — the right stick drives the same aim
+  the mouse does and presses the `attack` action — so combat is identical; only the device
+  changes. Hidden on desktop (`is_touchscreen_available()` + reveal-on-first-touch). Arthur
+  reads it via the `touch_controls` group; `emulate_mouse_from_touch` is off.
 
 ## Folder map
 
@@ -69,8 +75,8 @@ can be collapsed, drifting **logs**.
 CLAUDE.md, README, ROADMAP, CHANGELOG, CONTRIBUTING
 docs/        MEMORY, ARCHITECTURE, BATCH_PLAN, CONCEPT, DESIGN_GOALS, CONTROLS, BUILD
 devlog/      0001..0007 (dated narrative)
-scripts/     actors + systems (flat) + terrain/ + spawning/
-scenes/      actor/prop/level scenes (flat) + terrain/
+scripts/     actors + systems (flat) + terrain/ + spawning/ + formations/ + objectives/ + ui/
+scenes/      actor/prop/level scenes (flat) + terrain/ + formations/ + ui/
 tests/       headless *_test.gd + *.tscn (7 gate CI)
 .github/     validate.yml (tests), pages.yml (web deploy)
 ```

@@ -93,3 +93,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/FormationsTest.tscn --quit-after 600 | tee formations.log
           grep -q "FORM_VERDICT PASS" formations.log
+
+      - name: Run touch-controls test (v0.13 mobile play)
+        # Asserts the virtual sticks produce an analog move vector + drive the existing
+        # aim/attack so circling the right stick swings, and the SLAM/SPIN buttons press
+        # and release the existing actions.
+        run: |
+          godot --headless --path . res://tests/TouchControlsTest.tscn --quit-after 600 | tee touch.log
+          grep -q "TOUCH_VERDICT PASS" touch.log

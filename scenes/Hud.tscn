@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/Hud.gd" id="1_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/TouchControls.tscn" id="2_touch"]
 
 [node name="Hud" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -153,4 +154,6 @@ offset_right = 1240.0
 offset_bottom = -18.0
 mouse_filter = 2
 theme_override_font_sizes/font_size = 16
-text = "WASD: move    Mouse: aim (head follows w/ lag)    HOLD L-Click/Space + DRAG to swing    R-Click: slam    Shift/Mid-Mouse: SPIN    R: reset"
+text = "WASD: move    Mouse: aim (head follows w/ lag)    HOLD L-Click/Space + DRAG to swing    R-Click: slam    Shift/Mid-Mouse: SPIN    R: reset    •    Touch: left stick move, right stick aim + circle to swing"
+
+[node name="TouchControls" parent="." instance=ExtResource("2_touch")]

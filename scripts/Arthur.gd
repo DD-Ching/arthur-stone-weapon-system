@@ -41,6 +41,7 @@ var _invuln := 0.0
 var _steer := Vector2.ZERO     ## input-driven velocity (carries momentum)
 var _dash_vel := Vector2.ZERO  ## swing-lunge burst, decays on its own
 var _last_aim := 0.0           ## last drawn facing — redraw only when it changes
+var _touch_cache = null        ## the on-screen touch controls (mobile), or null on desktop
 
 @onready var weapon: StoneWeapon = $StoneWeapon
 @onready var camera = $Camera2D  ## untyped: GameCamera adds add_shake() at runtime
@@ -90,10 +91,24 @@ func take_damage(amount: float, from_pos: Vector2 = Vector2.ZERO) -> bool:
 		died.emit()
 	return true
 
+## On a touchscreen the right stick owns aiming (the mouse is stale on mobile), and on
+## desktop nothing changes — `_touch_controls()` is null so we fall through to the cursor.
 func _handle_aim() -> void:
+	var tc = _touch_controls()
+	if tc and tc.active_ui:
+		if tc.aim_active:
+			weapon.set_aim_target(tc.aim_angle)
+		return
 	var to_mouse := get_global_mouse_position() - global_position
 	if to_mouse.length() > 4.0:
 		weapon.set_aim_target(to_mouse.angle())
+
+## The on-screen touch controls, cached. They live under the HUD and announce themselves
+## via the "touch_controls" group; null when there's no HUD (e.g. the swing smoke test).
+func _touch_controls():
+	if _touch_cache == null or not is_instance_valid(_touch_cache):
+		_touch_cache = get_tree().get_first_node_in_group("touch_controls")
+	return _touch_cache
 
 func _handle_attack() -> void:
 	# Hold to whirl (the musou tornado); takes priority over swing/slam while held.
@@ -110,6 +125,10 @@ func _handle_attack() -> void:
 
 func _handle_movement(delta: float) -> void:
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	# Fold in the touch stick (zero on desktop / when untouched, so this is a no-op there).
+	var tc = _touch_controls()
+	if tc:
+		dir = (dir + tc.move_vec).limit_length(1.0)
 	# Stone Flow (stack 2+) grants a little extra mobility — still hauling a rock.
 	var mult := _speed_multiplier() * Impact.move_mult()
 	if dir != Vector2.ZERO:
