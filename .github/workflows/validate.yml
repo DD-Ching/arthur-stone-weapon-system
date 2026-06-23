@@ -101,3 +101,18 @@ jobs:
         run: |
           godot --headless --path . res://tests/TouchControlsTest.tscn --quit-after 600 | tee touch.log
           grep -q "TOUCH_VERDICT PASS" touch.log
+
+      - name: Run navigation test (v0.14 obstacle avoidance)
+        # Asserts a marching raider routes AROUND a solid wall (world layer) through the
+        # gap to reach its goal, instead of jamming against it (the Steering module).
+        run: |
+          godot --headless --path . res://tests/NavTest.tscn --quit-after 3000 | tee nav.log
+          grep -q "NAV_VERDICT PASS" nav.log
+
+      - name: Run abilities test (v0.14 data-driven moves)
+        # Asserts the Ability system: javelin spawns a projectile that damages an opposing
+        # foe, pound deals an instant radial AoE (and spares allies), and the library picks
+        # a gap-closer when far / a melee when close.
+        run: |
+          godot --headless --path . res://tests/AbilitiesTest.tscn --quit-after 600 | tee abilities.log
+          grep -q "ABIL_VERDICT PASS" abilities.log

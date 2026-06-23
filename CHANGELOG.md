@@ -15,6 +15,43 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.14.0] — 2026-06-23
+
+**Smarter enemies — they path around walls and have real move-sets.** Raiders used to march
+in a straight line and jam against fences; attacks were one hardcoded `attack_kind`. This batch
+splits the fix into three reusable modules (designed in parallel, stitched into the shared
+`Enemy` brain) — no enemy rewrite, every existing config behaves exactly as before.
+
+### Added
+- **`ai/Steering`** — reusable, physics-based obstacle avoidance. Short whisker raycasts against
+  the **world** layer let a unit *flow around* walls/fences (and find the clear side when jammed)
+  in **every** level with zero per-level wiring. Marching + engaging units now route around solid
+  geometry instead of pinning against it; the stuck-recovery turns toward whichever side is
+  actually open (with a stable per-unit bias so a unit commits to one end rather than jittering).
+- **`abilities/` — a data-driven move system.** An **`Ability`** (timings / ranges / damage +
+  one `execute`) and an **`AbilityLibrary`** registry (slash / thrust / bash / **lunge** / **leap**
+  / **javelin** / **pound**). A unit lists `moves` (a `PackedStringArray`) and the brain **picks
+  one by range** — a gap-closer when far, the cheap melee up close. Adding a move is data, not new
+  combat code. Includes a thrown **`Javelin`** projectile (respects friendly fire).
+- **Three new enemy archetypes** (pure `.tscn` configs): a **Skirmisher** (ranged javelin kiter),
+  a **Berserker** (fast leap-in pouncer), and a **Marauder** (slow brute with a radial **pound**
+  AoE). Folded into Wave 1, Wave 4, and the scaled garrison.
+- Headless **`NavTest`** (a raider routes around a wall through a gap) and **`AbilitiesTest`**
+  (javelin damages a foe, pound is a friendly-fire-safe AoE, the library picks far/near moves).
+
+### Changed
+- `Enemy.gd` now routes its desired direction through `Steering`, drives its WINDUP/STRIKE/RECOVER
+  from the selected `Ability`'s timings, and synthesises a single legacy move from the old
+  `attack_kind`/`attack_*` exports when `moves` is empty — so every existing unit is unchanged.
+  `Cavalry` keeps its own charge brain (untouched).
+
+### Notes
+- Modules were authored in parallel by separate agents, then reconciled + integrated by hand. All
+  **twelve** headless tests pass; the dense battle runs clean. Gap-aware: pure local steering funnels
+  units toward openings (as the ford's fences intend) rather than baking a navmesh.
+
+---
+
 ## [0.13.0] — 2026-06-22
 
 **Mobile play — on-screen joysticks.** The game was mouse-only (the whole swing is "drag

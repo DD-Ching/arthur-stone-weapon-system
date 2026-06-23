@@ -1,0 +1,38 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/Enemy.gd" id="1_enemy"]
+
+[sub_resource type="CircleShape2D" id="marauder_shape"]
+radius = 22.0
+
+[node name="Marauder" type="RigidBody2D"]
+collision_layer = 4
+collision_mask = 31
+mass = 3.2
+gravity_scale = 0.0
+linear_damp = 5.0
+angular_damp = 7.0
+lock_rotation = true
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_enemy")
+enemy_name = "Marauder"
+look = "heavy"
+radius = 22.0
+base_color = Color(0.5, 0.36, 0.34, 1)
+max_health = 70.0
+move_speed = 48.0
+sight_range = 240.0
+attack_kind = "bash"
+attack_range = 40.0
+attack_damage = 16.0
+attack_windup = 0.7
+attack_strike = 0.14
+attack_recover = 0.65
+attack_cooldown = 1.3
+stagger_threshold = 1050.0
+shield_break_threshold = 9999.0
+moves = PackedStringArray("pound", "bash")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("marauder_shape")

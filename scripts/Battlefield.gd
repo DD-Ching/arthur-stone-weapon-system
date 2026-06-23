@@ -58,6 +58,9 @@ const CAVALRY := preload("res://scenes/Cavalry.tscn")
 const CART := preload("res://scenes/WarCart.tscn")
 const BANNER := preload("res://scenes/BannerBearer.tscn")
 const HEAVY := preload("res://scenes/HeavyGuard.tscn")
+const SKIRMISHER := preload("res://scenes/Skirmisher.tscn")  ## ranged kiter (javelin)
+const BERSERKER := preload("res://scenes/Berserker.tscn")    ## fast pouncer (leap + slash)
+const MARAUDER := preload("res://scenes/Marauder.tscn")      ## slow area brute (pound + bash)
 const ALLY := preload("res://scenes/Ally.tscn")
 const LOG := preload("res://scenes/Log.tscn")
 const SHIELD_WALL := preload("res://scenes/formations/ShieldWall.tscn")
@@ -93,10 +96,10 @@ func _ready() -> void:
 	_build_terrain()
 	# Waves 2/3/5 arrive as cohesive FORMATIONS (placeable modules); 1/4 are loose mobs.
 	_waves = [
-		{"name": "LIGHT RAIDERS", "col": Color(1.0, 0.82, 0.4), "spawns": [LIGHT, LIGHT, LIGHT, LIGHT, LIGHT, LIGHT]},
+		{"name": "LIGHT RAIDERS", "col": Color(1.0, 0.82, 0.4), "spawns": [LIGHT, LIGHT, SKIRMISHER, LIGHT, BERSERKER, LIGHT]},
 		{"name": "SHIELD WALL", "col": Color(0.72, 0.78, 0.9), "formation": SHIELD_WALL},
 		{"name": "SPEAR PHALANX", "col": Color(0.8, 0.88, 0.7), "formation": SPEAR_PHALANX},
-		{"name": "CAVALRY CHARGE", "col": Color(1.0, 0.55, 0.3), "spawns": [CAVALRY, CAVALRY, CART]},
+		{"name": "CAVALRY CHARGE", "col": Color(1.0, 0.55, 0.3), "spawns": [CAVALRY, CAVALRY, MARAUDER, CART]},
 		{"name": "THE OFFICER", "col": Color(1.0, 0.5, 0.3), "formation": OFFICER_GUARD},
 	]
 	# Wake the pre-placed garrison (the type scenes ship AI-off so the sandbox stays calm).
@@ -183,7 +186,7 @@ func _bulk_garrison() -> void:
 	if density <= 1.05:
 		return
 	var extra := density - 1.0
-	Spawner.spawn(self, _repeat([LIGHT, LIGHT, SPEAR, SHIELD, HEAVY], int(round(8.0 * extra))),
+	Spawner.spawn(self, _repeat([LIGHT, LIGHT, SPEAR, SHIELD, HEAVY, SKIRMISHER, BERSERKER, MARAUDER], int(round(8.0 * extra))),
 		-HALF.y + 70.0, -380.0, 380.0, true)
 	var f = SHIELD_WALL.instantiate()
 	f.front_count = _scale(f.front_count)

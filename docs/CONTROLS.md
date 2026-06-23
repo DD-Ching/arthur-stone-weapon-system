@@ -123,6 +123,14 @@ bleeds.
 - **Shield Soldier** (blue, with an arc) — shrugs off frontal hits; flank it or
   crush it into a wall.
 - **Heavy Guard** (grey, ringed) — barely flies; useful as moving cover.
+- **Skirmisher** (yellow, spear) — hangs back and throws **javelins**; close the gap or it chips you.
+- **Berserker** (red) — fast; **leaps** in to pounce, fragile if you catch it mid-air.
+- **Marauder** (dark, big) — slow brute with a radial **ground-pound** that hits everything near it;
+  bait the pound, then punish the long recovery.
+
+Enemies now **route around walls and fences** (whisker steering) instead of jamming, and pick a
+**move by range** — so a mixed warband applies pressure from multiple angles. New types are just a
+`.tscn` config of `Enemy.gd` with a `moves` list (see `scripts/abilities/AbilityLibrary.gd`).
 
 ### Reset
 `R` reloads the arena scene — enemies, props, and Stone Flow reset, stamina refills.
