@@ -43,6 +43,10 @@ extends RigidBody2D
 @export var attack_strike := 0.12
 @export var attack_recover := 0.5
 @export var attack_cooldown := 0.8
+## Optional data-driven moveset (ability ids from AbilityLibrary.TABLE: slash / thrust / bash /
+## lunge / leap / javelin / pound). EMPTY → use the legacy attack_kind exports above, so every
+## existing .tscn is byte-for-byte unchanged. A config that lists moves picks among them by range.
+@export var moves: PackedStringArray = PackedStringArray()
 @export var guard_range := 64.0         ## shielded: slow + raise shield inside this
 
 @export_group("Support")
@@ -66,8 +70,12 @@ var _ai := AI.APPROACH
 var _ai_time := 0.0
 var _atk_cd := 0.0
 var _did_strike := false
+var _abilities: Array = []          ## built Ability list (from `moves`, or the legacy synth)
+var _ability_cd := {}               ## per-move-id cooldown seconds remaining
+var _cur_ability: Ability = null    ## the move chosen for the current windup/strike/recover
 var _face := PI           ## facing toward the foe (for weapons / telegraphs)
 var _flank := 0.0         ## side bias so non-shield units surround instead of clumping
+var _steer_bias := 1.0    ## stable ±1 so wall-avoidance commits to one end (even for shields)
 var _retarget_cd := 0.0   ## throttle for re-scanning for the nearest foe + separation + terrain
 var _separation := Vector2.ZERO  ## steering away from nearby same-team units (no stacking)
 var _last_pos := Vector2.ZERO    ## last frame's position, for stuck detection
@@ -76,6 +84,7 @@ var _danger_zones: Array = []    ## cached "danger_terrain" (deep water) to rout
 var _crossings: Array = []       ## cached "crossing" markers (bridges/fords) to aim at
 var _goal_node = null            ## cached march goal (the ford banner), refreshed on retarget
 var _rerouting := false          ## currently steering around danger, not pursuing the foe
+var _space: PhysicsDirectSpaceState2D = null  ## world physics space, refreshed on the retarget tick
 
 func _ready() -> void:
 	add_to_group("hittable")
@@ -87,7 +96,23 @@ func _ready() -> void:
 	# Non-shield units pick a side to flank from, so a crowd surrounds rather than stacks.
 	if not shielded:
 		_flank = -1.0 if (randf() < 0.5) else 1.0
+	# A stable side for wall-rounding: reuse the flank if it has one, else pick once at random so
+	# a unit dead-centre on a wall still commits to an end instead of jittering.
+	_steer_bias = _flank if _flank != 0.0 else (1.0 if randf() < 0.5 else -1.0)
 	health = max_health
+	# Build the moveset: data-driven if the config opted in, else synthesise ONE move from the
+	# legacy attack_kind/timing/damage exports so every existing .tscn behaves exactly as before.
+	if moves.size() > 0:
+		_abilities = AbilityLibrary.build_for(moves)
+	elif attack_kind != "none":
+		_abilities = [Ability.from_dict({
+			"id": attack_kind, "kind": attack_kind,
+			"min_range": 0.0, "max_range": attack_range,
+			"windup": attack_windup, "strike": attack_strike,
+			"recover": attack_recover, "cooldown": attack_cooldown,
+			"damage": attack_damage, "knockback": 130.0, "stun": 0.12,
+			"lunge_impulse": (70.0 if attack_kind == "bash" or attack_kind == "thrust" else 0.0),
+		})]
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
 
@@ -206,6 +231,8 @@ func _physics_process(delta: float) -> void:
 		_retarget_cd = 0.25
 		_player = _find_foe()
 		_separation = _separation_vector()
+		# Cache the world physics space for the wall-avoidance raycasts (cheap, 4x/sec).
+		_space = get_world_2d().direct_space_state
 		# Cache the (static) terrain + march goal so per-frame steering doesn't re-scan groups.
 		if avoid_danger:
 			_danger_zones = get_tree().get_nodes_in_group("danger_terrain")
@@ -228,6 +255,10 @@ func _physics_process(delta: float) -> void:
 			shield_angle = _face            # keep the shield toward whatever it's fighting
 	if _atk_cd > 0.0:
 		_atk_cd -= delta
+	# Tick down each move's own cooldown so a multi-move unit paces each move independently.
+	for id in _ability_cd.keys():
+		if _ability_cd[id] > 0.0:
+			_ability_cd[id] = maxf(0.0, _ability_cd[id] - delta)
 	_ai_time += delta
 
 	match _ai:
@@ -245,8 +276,8 @@ func _physics_process(delta: float) -> void:
 					linear_velocity = linear_velocity.move_toward(sdir * move_speed + _separation * 40.0, move_accel * delta)
 				else:
 					linear_velocity = linear_velocity.move_toward(_approach_velocity(dir, foe_dist), move_accel * delta)
-					if foe_dist <= attack_range and _atk_cd <= 0.0 and attack_kind != "none":
-						_begin_attack()
+					if _atk_cd <= 0.0 and _attack_ready(foe_dist):
+						_begin_attack(foe_dist)
 					elif shielded and foe_dist <= guard_range:
 						_ai = AI.GUARD
 						_ai_time = 0.0
@@ -256,28 +287,35 @@ func _physics_process(delta: float) -> void:
 			linear_velocity = linear_velocity.move_toward(dir * move_speed * 0.3 + _separation * 36.0, move_accel * delta)
 			if foe_dist > guard_range * 1.5:
 				_ai = AI.APPROACH
-			elif _atk_cd <= 0.0 and attack_kind != "none" and _ai_time > 0.45:
-				_begin_attack()
+			elif _atk_cd <= 0.0 and _ai_time > 0.45 and _guard_attack_ready(foe_dist):
+				_begin_attack(foe_dist)
 		AI.WINDUP:
 			linear_velocity = linear_velocity.move_toward(Vector2.ZERO, move_accel * delta)
-			if _ai_time >= attack_windup:
+			if _ai_time >= _cur_windup():
 				_ai = AI.STRIKE
 				_ai_time = 0.0
 				_did_strike = false
 		AI.STRIKE:
 			if not _did_strike:
 				_did_strike = true
-				if foe_dist <= attack_range + radius + 6.0:
+				# AoE / ranged moves (pound / javelin) don't need the foe in melee reach.
+				var reach: float = _cur_ability.max_range if _cur_ability != null else attack_range
+				if _cur_is_ranged_or_aoe() or foe_dist <= reach + radius + 6.0:
 					_strike(_player, dir)
-			if _ai_time >= attack_strike:
+			if _ai_time >= _cur_strike():
 				_ai = AI.RECOVER
 				_ai_time = 0.0
 		AI.RECOVER:
 			linear_velocity = linear_velocity.move_toward(Vector2.ZERO, move_accel * delta)
-			if _ai_time >= attack_recover:
+			if _ai_time >= _cur_recover():
 				_ai = AI.APPROACH
 				_ai_time = 0.0
-				_atk_cd = attack_cooldown
+				if moves.is_empty():
+					_atk_cd = attack_cooldown          # legacy single-attack pacing, verbatim
+				else:
+					_atk_cd = 0.0                      # multi-move: per-move cooldowns pace it
+					if _cur_ability != null:
+						_ability_cd[_cur_ability.id] = _cur_ability.cooldown
 
 	# Stuck recovery: if it's actually TRYING to advance but barely moved (jammed on a wall
 	# or a pile of bodies), slip sideways. Skip it for a spacing unit holding its band (it's
@@ -286,10 +324,12 @@ func _physics_process(delta: float) -> void:
 		if global_position.distance_to(_last_pos) < 0.6:
 			_stuck_t += delta
 			if _stuck_t > 0.4:
-				var side := _flank if _flank != 0.0 else 1.0
-				var nudge := Vector2(-sin(_face), cos(_face)) * side
-				if not _danger_ahead(global_position + nudge * (radius + 20.0)):
-					linear_velocity = (linear_velocity + nudge * move_speed * 0.9).limit_length(move_speed)
+				# Turn toward whichever side is ACTUALLY clear (biased to the goal heading),
+				# instead of a fixed flank that could re-shove us into the same corner.
+				var goal_dir := Vector2.RIGHT.rotated(_face)
+				var open := Steering.most_open_dir(_space, global_position, radius, goal_dir, get_rid())
+				if not _danger_ahead(global_position + open * (radius + 20.0)):
+					linear_velocity = (linear_velocity + open * move_speed * 0.9).limit_length(move_speed)
 				_stuck_t = 0.0
 		else:
 			_stuck_t = 0.0
@@ -319,6 +359,7 @@ func _approach_velocity(dir: Vector2, dist: float) -> Vector2:
 	var d := dir
 	if _flank != 0.0 and dist > attack_range + 18.0:
 		d = (dir + Vector2(-dir.y, dir.x) * _flank * 0.55).normalized()
+	d = Steering.avoid(_space, global_position, radius, d, get_rid(), _steer_bias)   # round fences while closing in
 	return d * move_speed + _separation * 40.0
 
 ## Steering while marching toward the goal (no foe in reach), still anti-stacking.
@@ -327,7 +368,8 @@ func _approach_velocity(dir: Vector2, dist: float) -> Vector2:
 func _march_velocity() -> Vector2:
 	var to_goal: Vector2 = _goal_position() - global_position
 	var gdir := to_goal / maxf(to_goal.length(), 0.001)
-	gdir = _avoid_redirect(gdir)
+	gdir = _avoid_redirect(gdir)                                           # route around deep water first
+	gdir = Steering.avoid(_space, global_position, radius, gdir, get_rid(), _steer_bias)  # then bend around walls
 	_face = gdir.angle()
 	if shielded:
 		shield_angle = _face
@@ -364,14 +406,60 @@ func _nearest_crossing() -> Vector2:
 			best = c.global_position
 	return best
 
-func _begin_attack() -> void:
+func _begin_attack(foe_dist: float = INF) -> void:
+	_cur_ability = _pick_ability(foe_dist)
 	_ai = AI.WINDUP
 	_ai_time = 0.0
 	_did_strike = false
+	# Gap-closers (leap / lunge) commit their travel at the START of the wind-up, so the body
+	# crosses the gap DURING the wind-up and arrives as the strike lands — a real pounce, not a
+	# hit from afar. (bash / thrust keep their small strike-time lunge inside Ability.execute.)
+	if _cur_ability != null and (_cur_ability.kind == "leap" or _cur_ability.kind == "lunge") \
+			and is_instance_valid(_player):
+		var to: Vector2 = _player.global_position - global_position
+		if to.length() > 0.001:
+			apply_central_impulse(to.normalized() * _cur_ability.lunge_impulse)
+
+## Best in-range, off-cooldown move for the foe at `dist`; null if none / no moveset.
+func _pick_ability(dist: float) -> Ability:
+	if _abilities.is_empty():
+		return null
+	return AbilityLibrary.choose(_abilities, dist, _ability_cd)
+
+## APPROACH may start an attack when a move is in range (moves config), or — legacy — when the
+## single attack_kind is within attack_range. Keeps every existing config identical.
+func _attack_ready(dist: float) -> bool:
+	if not moves.is_empty():
+		return _pick_ability(dist) != null
+	return attack_kind != "none" and dist <= attack_range
+
+## GUARD (shielded) starts an attack without a range gate, exactly like the legacy code; a moves
+## config still requires a usable move.
+func _guard_attack_ready(dist: float) -> bool:
+	if not moves.is_empty():
+		return _pick_ability(dist) != null
+	return attack_kind != "none"
+
+# Per-move timing accessors — fall back to the flat legacy exports when no move is selected (e.g. a
+# shielded unit that wound up out of range), so those legacy paths still behave as before.
+func _cur_windup() -> float:
+	return _cur_ability.windup if _cur_ability != null else attack_windup
+func _cur_strike() -> float:
+	return _cur_ability.strike if _cur_ability != null else attack_strike
+func _cur_recover() -> float:
+	return _cur_ability.recover if _cur_ability != null else attack_recover
+func _cur_is_ranged_or_aoe() -> bool:
+	return _cur_ability != null and (_cur_ability.kind == "javelin" or _cur_ability.kind == "pound")
 
 ## Land a hit on the current foe — Arthur takes scaled damage; a unit takes a small
 ## scored hit (so allies and raiders can actually kill each other).
 func _strike(foe, dir: Vector2) -> void:
+	# Delegate to the chosen move (take_damage/apply_hit for single target, an AoE for pound/leap,
+	# a projectile for javelin — all mirroring the old semantics). Fall back to the legacy single
+	# hit only if no move was selected (e.g. a shielded whiff with no usable ability).
+	if _cur_ability != null:
+		_cur_ability.execute(self, foe, dir)
+		return
 	if not is_instance_valid(foe):
 		return
 	if foe.has_method("take_damage"):
@@ -495,16 +583,33 @@ func _draw_attack_telegraph() -> void:
 	if _dead:
 		return
 	var fwd := Vector2(cos(_face), sin(_face))
+	# Resolve the telegraph look + reach from the chosen move, or the legacy exports if none.
+	# "line" = thrust/javelin/lunge, "arc" = slash/bash/melee, "ring" = pound/leap.
+	var shape := "arc"
+	var reach := attack_range
+	if _cur_ability != null:
+		shape = _cur_ability.telegraph_shape()
+		reach = _cur_ability.max_range
+	elif attack_kind == "thrust":
+		shape = "line"
 	if _ai == AI.WINDUP:
-		var t := clampf(_ai_time / maxf(attack_windup, 0.01), 0.0, 1.0)
+		var t := clampf(_ai_time / maxf(_cur_windup(), 0.01), 0.0, 1.0)
 		var warn := Color(1.0, 0.55, 0.2, _alpha * (0.3 + 0.5 * t))
-		if attack_kind == "thrust":
-			draw_line(fwd * radius, fwd * (radius + attack_range + 10.0), warn, 4.0)
-		else:
-			draw_arc(Vector2.ZERO, radius + 10.0, _face - 0.8, _face + 0.8, 12, warn, 5.0)
+		match shape:
+			"line":
+				draw_line(fwd * radius, fwd * (radius + reach + 10.0), warn, 4.0)
+			"ring":
+				var rr: float = _cur_ability.aoe_radius if _cur_ability != null and _cur_ability.aoe_radius > 0.0 else reach
+				draw_arc(Vector2.ZERO, rr, 0.0, TAU, 28, warn, 4.0)
+			_:
+				draw_arc(Vector2.ZERO, radius + 10.0, _face - 0.8, _face + 0.8, 12, warn, 5.0)
 	elif _ai == AI.STRIKE:
 		var hot := Color(1.0, 0.85, 0.4, _alpha)
-		if attack_kind == "thrust":
-			draw_line(fwd * radius, fwd * (radius + attack_range + 14.0), hot, 6.0)
-		else:
-			draw_arc(Vector2.ZERO, radius + 12.0, _face - 1.0, _face + 1.0, 14, hot, 7.0)
+		match shape:
+			"line":
+				draw_line(fwd * radius, fwd * (radius + reach + 14.0), hot, 6.0)
+			"ring":
+				var rr2: float = _cur_ability.aoe_radius if _cur_ability != null and _cur_ability.aoe_radius > 0.0 else reach
+				draw_arc(Vector2.ZERO, rr2, 0.0, TAU, 32, hot, 6.0)
+			_:
+				draw_arc(Vector2.ZERO, radius + 12.0, _face - 1.0, _face + 1.0, 14, hot, 7.0)

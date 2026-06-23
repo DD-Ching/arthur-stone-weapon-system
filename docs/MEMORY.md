@@ -38,7 +38,16 @@ can be collapsed, drifting **logs**.
   health, mass, stun, knockback, shield block/break, morale, defeat, bowling, **and** the
   team/AI (march-to-goal + attack-foe, flanking, separation, retarget). Each type is just
   a `.tscn` of it: `LightSoldier`, `ShieldSoldier`, `Spearman`, `HeavyGuard`,
-  `BannerBearer`, `Ally`. `Cavalry.gd` (+`WarCart.gd`) *extend* it with a charge brain.
+  `BannerBearer`, `Ally`. `Cavalry.gd` (+`WarCart.gd`) *extend* it with a charge brain. New
+  raider archetypes are configs too: `Skirmisher` (javelin kiter), `Berserker` (leap pouncer),
+  `Marauder` (pound brute).
+- **Enemy navigation** — `scripts/ai/Steering.gd`: a stateless helper that whisker-raycasts the
+  **world** layer so a unit flows *around* walls/fences (and unsticks toward the open side) in any
+  level, no per-level wiring. `Enemy.gd` routes its march + approach direction through it.
+- **Abilities** — `scripts/abilities/` (`Ability` + `AbilityLibrary` + `Javelin`): a data-driven
+  move-set. A unit lists `moves` (ability ids: slash/thrust/bash/lunge/leap/javelin/pound); the
+  brain picks one by range and runs its windup/strike/recover. Empty `moves` → a synth move from
+  the legacy `attack_kind` exports, so old configs are unchanged.
 - **Terrain** — `scripts/terrain/TerrainZone.gd`: a reusable placeable `Area2D` rule
   (slow / current / drown-light / dangerous→avoid). The ford river + mud are instances.
 - **Spawning** — `scripts/spawning/Spawner.gd`: shared helper to spawn a group of scenes
@@ -75,7 +84,7 @@ can be collapsed, drifting **logs**.
 CLAUDE.md, README, ROADMAP, CHANGELOG, CONTRIBUTING
 docs/        MEMORY, ARCHITECTURE, BATCH_PLAN, CONCEPT, DESIGN_GOALS, CONTROLS, BUILD
 devlog/      0001..0007 (dated narrative)
-scripts/     actors + systems (flat) + terrain/ + spawning/ + formations/ + objectives/ + ui/
+scripts/     actors + systems (flat) + terrain/ + spawning/ + formations/ + objectives/ + ui/ + ai/ + abilities/
 scenes/      actor/prop/level scenes (flat) + terrain/ + formations/ + ui/
 tests/       headless *_test.gd + *.tscn (7 gate CI)
 .github/     validate.yml (tests), pages.yml (web deploy)
@@ -95,8 +104,10 @@ breaks `.tscn`/`.uid` references and risks the browser build).
 
 ## Known TODOs / next batches
 
-- An `abilities/` data system (slash / bash / thrust / charge / aura); today attacks are
-  branches in `Enemy.gd`.
+- ~~An `abilities/` data system~~ — **done (v0.14)**: `scripts/abilities/` (Ability + Library +
+  Javelin). Possible next: more kinds (aura/buff, ranged volley), per-ability VFX, ability cooldown
+  UI. Obstacle nav is `scripts/ai/Steering.gd` (whisker avoidance); a baked navmesh is a future
+  option if local steering proves too weak on a concave map.
 - Optionally refactor the hand-placed garrison in `Battlefield.tscn` to `Formation`
   instances (kept hand-placed for now so `battle_test`'s `$ShieldWall` group still works),
   and add formation **break/morale** conditions.

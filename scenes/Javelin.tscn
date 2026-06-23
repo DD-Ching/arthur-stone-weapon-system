@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/Javelin.gd" id="1_javelin"]
+
+[sub_resource type="CapsuleShape2D" id="javelin_shape"]
+radius = 4.0
+height = 22.0
+
+[node name="Javelin" type="Area2D"]
+collision_layer = 0
+collision_mask = 6
+script = ExtResource("1_javelin")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+rotation = 1.5707963
+shape = SubResource("javelin_shape")
