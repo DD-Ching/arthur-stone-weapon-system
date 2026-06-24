@@ -116,3 +116,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/AbilitiesTest.tscn --quit-after 600 | tee abilities.log
           grep -q "ABIL_VERDICT PASS" abilities.log
+
+      - name: Run wall-crush room test (challenge level #2)
+        # Asserts the shared Impact.cushion raycast detects a wall behind a pinned enemy (and
+        # reads ~0 in open space), a strong pinning hit defeats it, and the WallCrushRoom
+        # scene recognises "field cleared → win".
+        run: |
+          godot --headless --path . res://tests/WallCrushRoomTest.tscn --quit-after 600 | tee wallroom.log
+          grep -q "WALL_ROOM_VERDICT PASS" wallroom.log
