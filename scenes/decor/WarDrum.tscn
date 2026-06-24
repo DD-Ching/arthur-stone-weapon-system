@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+; A great war drum (戰鼓) on its stand. Set `faction` to ring its rim in a kingdom's
+; colour (魏 Wei blue / 蜀 Shu green / 吳 Wu red / neutral grey). Pure decor, no physics.
+
+[ext_resource type="Script" path="res://scripts/decor/WarDrum.gd" id="1_drum"]
+
+[node name="WarDrum" type="Node2D"]
+script = ExtResource("1_drum")

@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+; A solid stone gate post on the "world" layer (bit 1). Drop it in (in pairs to frame a
+; gate), resize the CollisionShape2D's RectangleShape2D, and the drawn stone look follows.
+
+[ext_resource type="Script" path="res://scripts/decor/GatePost.gd" id="1_gatepost"]
+
+[sub_resource type="RectangleShape2D" id="gatepost_shape"]
+size = Vector2(34, 96)
+
+[node name="GatePost" type="StaticBody2D"]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("1_gatepost")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("gatepost_shape")
