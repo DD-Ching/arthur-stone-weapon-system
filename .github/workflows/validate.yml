@@ -207,3 +207,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/BattleMapTest.tscn --quit-after 600 | tee battlemap.log
           grep -q "MAP_VERDICT PASS" battlemap.log
+
+      - name: Run Red Cliffs map + FireZone test (赤壁 burning ford)
+        # Asserts the reusable FireZone hazard burns a unit standing inside it (down to death)
+        # while a unit outside takes no damage, and the Red Cliffs map boots (Arthur + HUD),
+        # spawns Cao Cao's 魏 Wei raiders, and reaches victory once the field is cleared.
+        run: |
+          godot --headless --path . res://tests/RedCliffsTest.tscn --quit-after 600 | tee redcliffs.log
+          grep -q "CHIBI_VERDICT PASS" redcliffs.log
