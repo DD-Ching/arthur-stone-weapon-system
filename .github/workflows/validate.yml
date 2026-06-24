@@ -277,3 +277,8 @@ jobs:
         run: |
           godot --headless --path . res://tests/DecorTest.tscn --quit-after 600 | tee decor.log
           grep -q "DECOR_VERDICT PASS" decor.log
+
+      - name: Run Spearman art test (槍兵 beautified spear silhouette)
+        run: |
+          godot --headless --path . res://tests/SpearArtTest.tscn --quit-after 600 | tee spearart.log
+          grep -q "ART_SPEAR_VERDICT PASS" spearart.log
