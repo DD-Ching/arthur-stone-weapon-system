@@ -149,6 +149,15 @@ jobs:
           godot --headless --path . res://tests/VisualReadabilityTest.tscn --quit-after 600 | tee visread.log
           grep -q "VISREAD_VERDICT PASS" visread.log
 
+      - name: Run soldier-art test (beautified light-footman silhouette)
+        # Asserts the beautified light-footman art (scripts/art/SoldierArt.gd): a real LightSoldier
+        # ("soldier" look) draws its enriched silhouette (sleek helm, short sword, buckler, tunic,
+        # faction sash) across every faction plus a faded copy, over a few frames with no errors,
+        # and survives with look "soldier". Purely visual — no gameplay change.
+        run: |
+          godot --headless --path . res://tests/SoldierArtTest.tscn --quit-after 600 | tee soldierart.log
+          grep -q "ART_SOLDIER_VERDICT PASS" soldierart.log
+
       - name: Run beautify test (faction colour theming + enriched silhouettes)
         # Asserts the additive faction-beautification drawing: every (look x faction) combo draws
         # over a few frames with no errors, faction_color() returns the expected hue per kingdom
@@ -157,6 +166,15 @@ jobs:
         run: |
           godot --headless --path . res://tests/BeautifyTest.tscn --quit-after 600 | tee beautify.log
           grep -q "BEAUTIFY_VERDICT PASS" beautify.log
+
+      - name: Run shield-art test (beautified plated shieldbearer)
+        # Asserts the beautified shieldbearer art (scripts/art/ShieldArt.gd): the shipped
+        # ShieldSoldier.tscn (look == "shield") draws over a few frames with no errors in BOTH the
+        # intact plated state (boss + bright rim + faction emblem + helmet) AND the forced broken
+        # state (e._shield_broken = 3.0 → shattered), across factions, with the unit staying alive.
+        run: |
+          godot --headless --path . res://tests/ShieldArtTest.tscn --quit-after 600 | tee shieldart.log
+          grep -q "ART_SHIELD_VERDICT PASS" shieldart.log
 
       - name: Run bowling-room test (chain-impact challenge level)
         # Asserts the Bowling Room: a heavy striker launched into a packed wedge of pins chains
@@ -277,3 +295,28 @@ jobs:
         run: |
           godot --headless --path . res://tests/DecorTest.tscn --quit-after 600 | tee decor.log
           grep -q "DECOR_VERDICT PASS" decor.log
+
+      - name: Run Spearman art test (槍兵 beautified spear silhouette)
+        run: |
+          godot --headless --path . res://tests/SpearArtTest.tscn --quit-after 600 | tee spearart.log
+          grep -q "ART_SPEAR_VERDICT PASS" spearart.log
+
+      - name: Run HeavyArtTest (per-unit art beautification)
+        run: |
+          godot --headless --path . res://tests/HeavyArtTest.tscn --quit-after 600 | tee heavyart.log
+          grep -q "ART_HEAVY_VERDICT PASS" heavyart.log
+
+      - name: Run BannerArtTest (per-unit art beautification)
+        run: |
+          godot --headless --path . res://tests/BannerArtTest.tscn --quit-after 600 | tee bannerart.log
+          grep -q "ART_BANNER_VERDICT PASS" bannerart.log
+
+      - name: Run KnightArtTest (per-unit art beautification)
+        run: |
+          godot --headless --path . res://tests/KnightArtTest.tscn --quit-after 600 | tee knightart.log
+          grep -q "ART_KNIGHT_VERDICT PASS" knightart.log
+
+      - name: Run CavalryArtTest (per-unit art beautification)
+        run: |
+          godot --headless --path . res://tests/CavalryArtTest.tscn --quit-after 600 | tee cavalryart.log
+          grep -q "ART_CAVALRY_VERDICT PASS" cavalryart.log
