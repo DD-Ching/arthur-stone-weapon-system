@@ -116,3 +116,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/AbilitiesTest.tscn --quit-after 600 | tee abilities.log
           grep -q "ABIL_VERDICT PASS" abilities.log
+
+      - name: Run enemy variants test (new raider configs)
+        # Asserts the three pure-.tscn raider variants (Archer / Brute / Outrider) join the
+        # raider groups, build one Ability per `moves` id, act without error, and take damage.
+        run: |
+          godot --headless --path . res://tests/EnemyVariantsTest.tscn --quit-after 600 | tee variants.log
+          grep -q "VARIANTS_VERDICT PASS" variants.log

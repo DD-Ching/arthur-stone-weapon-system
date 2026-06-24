@@ -1,0 +1,38 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/Enemy.gd" id="1_enemy"]
+
+[sub_resource type="CircleShape2D" id="brute_shape"]
+radius = 24.0
+
+[node name="Brute" type="RigidBody2D"]
+collision_layer = 4
+collision_mask = 31
+mass = 3.4
+gravity_scale = 0.0
+linear_damp = 5.2
+angular_damp = 7.0
+lock_rotation = true
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_enemy")
+enemy_name = "Brute"
+look = "heavy"
+radius = 24.0
+base_color = Color(0.42, 0.3, 0.3, 1)
+max_health = 120.0
+move_speed = 42.0
+sight_range = 260.0
+attack_kind = "bash"
+attack_range = 44.0
+attack_damage = 18.0
+attack_windup = 0.75
+attack_strike = 0.16
+attack_recover = 0.7
+attack_cooldown = 1.4
+stagger_threshold = 1400.0
+shield_break_threshold = 9999.0
+moves = PackedStringArray("pound", "bash")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("brute_shape")
