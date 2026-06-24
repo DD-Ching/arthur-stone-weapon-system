@@ -15,6 +15,26 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.16.1] — 2026-06-24
+
+**Phone landscape (橫屏) play.** Make the web build properly playable on a phone in
+landscape, building on the v0.13 touch controls.
+
+### Added / Fixed
+- **Landscape web shell** (`export_presets` `html/head_include`): a mobile viewport meta,
+  fill-the-screen CSS with `touch-action:none`/`overscroll-behavior:none` so the on-screen
+  joysticks aren't hijacked by browser scroll/zoom, a **"rotate to landscape" overlay**
+  shown only on portrait phones (請將手機轉為橫向 / Rotate your phone to landscape), and a
+  first-gesture `requestFullscreen()` + `screen.orientation.lock('landscape')` that fails
+  silently where unsupported (iOS Safari). Cross-browser vetted for iOS/Android.
+- **`display/window/handheld/orientation=landscape`** in `project.godot`.
+- **Tappable Stage-Select** — the boot menu now handles `InputEventScreenTouch` (tap a
+  battle to deploy), since mobile runs with `emulate_mouse_from_touch` off.
+- **On-screen ULT button** in `TouchControls` so the Musou ultimate (the `Q` key) is
+  reachable on a phone.
+
+---
+
 ## [0.16.0] — 2026-06-24
 
 **三國無雙 / Dynasty Warriors — maps, generals, musou** — twelve parallel agents on a new
