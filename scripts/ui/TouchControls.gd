@@ -40,9 +40,11 @@ var _fingers := {}               ## finger index -> {role:String, base:Vector2, 
 var _slam_c := Vector2.ZERO      ## button centres + radii, recomputed on resize
 var _spin_c := Vector2.ZERO
 var _reset_c := Vector2.ZERO
+var _musou_c := Vector2.ZERO     ## MUSOU ultimate (ULT) button — phone access to the Q ultimate
 const SLAM_R := 56.0
 const SPIN_R := 48.0
 const RESET_R := 28.0
+const MUSOU_R := 50.0
 
 func _ready() -> void:
 	add_to_group("touch_controls")
@@ -59,6 +61,7 @@ func _layout() -> void:
 	_slam_c = Vector2(_vp.x - 96.0, _vp.y - 100.0)    # bottom-right thumb
 	_spin_c = Vector2(_vp.x - 222.0, _vp.y - 78.0)    # just left of SLAM
 	_reset_c = Vector2(_vp.x - 52.0, 52.0)            # top-right (mostly for after win/lose)
+	_musou_c = Vector2(_vp.x - 110.0, _vp.y - 212.0)  # above the SLAM/SPIN cluster
 	queue_redraw()
 
 # --- input ------------------------------------------------------------------
@@ -104,6 +107,11 @@ func _press(index: int, p: Vector2) -> void:
 		Input.action_press("spin")
 		queue_redraw()
 		return
+	if p.distance_to(_musou_c) <= MUSOU_R:
+		_fingers[index] = {"role": "musou"}
+		Input.action_press("musou")   # Arthur only fires when the gauge is full; a premature tap is safely ignored
+		queue_redraw()
+		return
 	if p.x < _vp.x * 0.5:
 		if not _has_role("move"):
 			_fingers[index] = {"role": "move", "base": p, "cur": p}
@@ -131,6 +139,8 @@ func _release(index: int) -> void:
 			Input.action_release("slam")
 		"spin":
 			Input.action_release("spin")
+		"musou":
+			Input.action_release("musou")
 		"move", "aim":
 			_recompute()
 	queue_redraw()
@@ -179,6 +189,7 @@ func _draw() -> void:
 		_draw_hint(Vector2(_vp.x * 0.56, _vp.y - 56.0), "AIM · circle to SWING")
 	_draw_button(_slam_c, SLAM_R, "SLAM", _has_role("slam"), Color(0.92, 0.42, 0.3))
 	_draw_button(_spin_c, SPIN_R, "SPIN", _has_role("spin"), Color(0.42, 0.62, 0.95))
+	_draw_button(_musou_c, MUSOU_R, "ULT", _has_role("musou"), Color(1.0, 0.84, 0.3))
 	_draw_button(_reset_c, RESET_R, "R", false, Color(0.72, 0.72, 0.78))
 	for index in _fingers:
 		var f: Dictionary = _fingers[index]
