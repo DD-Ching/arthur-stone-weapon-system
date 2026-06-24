@@ -200,3 +200,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/EnemyVariantsTest.tscn --quit-after 600 | tee variants.log
           grep -q "VARIANTS_VERDICT PASS" variants.log
+
+      - name: Run troops test (Three-Kingdoms troop configs)
+        # Asserts the five pure-.tscn troop types (Halberdier / Crossbow / ShockTrooper join the
+        # raider groups + build one Ability per `moves` id + take damage; Drummer / Standard Bearer
+        # are morale supports flagged is_support, counted as officers, carrying no attack moveset).
+        run: |
+          godot --headless --path . res://tests/TroopsTest.tscn --quit-after 600 | tee troops.log
+          grep -q "TROOPS_VERDICT PASS" troops.log
