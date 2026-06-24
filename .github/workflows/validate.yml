@@ -207,3 +207,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/BattleMapTest.tscn --quit-after 600 | tee battlemap.log
           grep -q "MAP_VERDICT PASS" battlemap.log
+
+      - name: Run generals test (named 武將 boss units)
+        # Asserts each named general (LuBu / GuanYu / ZhangFei / XiahouDun) joins the boss
+        # "generals" group plus the raider groups, has boss-tier HP, builds its moveset from
+        # `moves`, acts without error near a foe, and takes damage from apply_hit.
+        run: |
+          godot --headless --path . res://tests/GeneralsTest.tscn --quit-after 600 | tee generals.log
+          grep -q "GENERALS_VERDICT PASS" generals.log
