@@ -20,6 +20,13 @@ extends RigidBody2D
 ## "raiders" = the warband attacking across the ford (Arthur's foe). "ally" = a footman
 ## fighting FOR Arthur. The team decides who this unit hunts and who may hit it.
 @export var team := "raiders"
+## Three-Kingdoms allegiance, used only for COLOUR theming (魏 Wei blue / 蜀 Shu green /
+## 吳 Wu red / neutral grey). It does NOT change targeting — `team` ("raiders"/"ally") still
+## decides who hunts whom; faction is pure readability flavour.
+@export_enum("neutral", "wei", "shu", "wu") var faction := "neutral"
+## A named general (武將), a boss-tier unit: joins the "generals" group so the boss-healthbar
+## UI can track it. Otherwise it is an ordinary configurable Enemy.
+@export var is_general := false
 
 @export_group("Defense")
 @export var max_health := 1.0e9         ## dummies: effectively a punching bag
@@ -86,6 +93,15 @@ var _goal_node = null            ## cached march goal (the ford banner), refresh
 var _rerouting := false          ## currently steering around danger, not pursuing the foe
 var _space: PhysicsDirectSpaceState2D = null  ## world physics space, refreshed on the retarget tick
 
+## The faction's banner colour (魏 Wei blue / 蜀 Shu green / 吳 Wu red / neutral grey). The
+## drawing pass tints a unit with this so the three kingdoms read at a glance; no gameplay effect.
+func faction_color() -> Color:
+	match faction:
+		"wei": return Color(0.30, 0.52, 0.95)
+		"shu": return Color(0.36, 0.78, 0.42)
+		"wu": return Color(0.86, 0.36, 0.34)
+		_: return Color(0.70, 0.70, 0.72)
+
 func _ready() -> void:
 	add_to_group("hittable")
 	add_to_group(team)
@@ -93,6 +109,8 @@ func _ready() -> void:
 	add_to_group("targets" if team == "raiders" else "allies")
 	if is_support and team == "raiders":
 		add_to_group("officers")     # the DefeatOfficer objective counts this group
+	if is_general:
+		add_to_group("generals")     # the boss-healthbar UI tracks named generals (武將)
 	# Non-shield units pick a side to flank from, so a crowd surrounds rather than stacks.
 	if not shielded:
 		_flank = -1.0 if (randf() < 0.5) else 1.0

@@ -200,3 +200,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/EnemyVariantsTest.tscn --quit-after 600 | tee variants.log
           grep -q "VARIANTS_VERDICT PASS" variants.log
+
+      - name: Run battle-map base test (Musou map foundation)
+        # Asserts the reusable BattleMap base boots (Arthur + HUD + score screen), spawns its
+        # wave via WaveSpawner, and reaches victory once the field is cleared (RepelWaves).
+        run: |
+          godot --headless --path . res://tests/BattleMapTest.tscn --quit-after 600 | tee battlemap.log
+          grep -q "MAP_VERDICT PASS" battlemap.log
