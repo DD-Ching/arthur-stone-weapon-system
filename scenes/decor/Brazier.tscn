@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+; A small flickering camp brazier — a stone bowl of fire. Pure decor, no physics.
+
+[ext_resource type="Script" path="res://scripts/decor/Brazier.gd" id="1_brazier"]
+
+[node name="Brazier" type="Node2D"]
+script = ExtResource("1_brazier")

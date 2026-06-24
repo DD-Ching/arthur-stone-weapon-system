@@ -1,0 +1,36 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/Enemy.gd" id="1_enemy"]
+
+[sub_resource type="CircleShape2D" id="halberdier_shape"]
+radius = 16.0
+
+[node name="Halberdier" type="RigidBody2D"]
+collision_layer = 4
+collision_mask = 31
+mass = 1.4
+gravity_scale = 0.0
+linear_damp = 3.2
+angular_damp = 6.0
+lock_rotation = true
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_enemy")
+enemy_name = "Wei Halberdier"
+look = "spear"
+radius = 16.0
+base_color = Color(0.36, 0.4, 0.62, 1)
+max_health = 40.0
+move_speed = 84.0
+sight_range = 280.0
+attack_kind = "thrust"
+attack_range = 96.0
+attack_damage = 11.0
+attack_windup = 0.55
+attack_strike = 0.14
+attack_recover = 0.55
+attack_cooldown = 1.1
+moves = PackedStringArray("thrust", "bash")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("halberdier_shape")

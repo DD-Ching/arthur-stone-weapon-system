@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3]
+
+; A placeable burning-ground hazard (FireZone): an Area2D that burns any Enemy body (raider
+; OR ally) overlapping it every `tick` seconds via the shared Enemy.apply_hit path, so the
+; flames can actually kill. Drop it in a level and resize the CollisionShape2D / tune `burn_dmg`
+; and `tick` — one scene, many fires (a burning deck, a torched field, a wall of flame).
+; collision_mask = 4 = layer 3 "enemies" (raider AND ally bodies share that layer).
+
+[ext_resource type="Script" path="res://scripts/hazards/FireZone.gd" id="1_fire"]
+
+[sub_resource type="RectangleShape2D" id="fire_shape"]
+size = Vector2(160, 120)
+
+[node name="FireZone" type="Area2D"]
+collision_layer = 0
+collision_mask = 4
+script = ExtResource("1_fire")
+burn_dmg = 4.0
+burn_strength = 60.0
+tick = 0.4
+size = Vector2(160, 120)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("fire_shape")

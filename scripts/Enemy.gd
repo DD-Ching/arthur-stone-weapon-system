@@ -20,6 +20,13 @@ extends RigidBody2D
 ## "raiders" = the warband attacking across the ford (Arthur's foe). "ally" = a footman
 ## fighting FOR Arthur. The team decides who this unit hunts and who may hit it.
 @export var team := "raiders"
+## Three-Kingdoms allegiance, used only for COLOUR theming (魏 Wei blue / 蜀 Shu green /
+## 吳 Wu red / neutral grey). It does NOT change targeting — `team` ("raiders"/"ally") still
+## decides who hunts whom; faction is pure readability flavour.
+@export_enum("neutral", "wei", "shu", "wu") var faction := "neutral"
+## A named general (武將), a boss-tier unit: joins the "generals" group so the boss-healthbar
+## UI can track it. Otherwise it is an ordinary configurable Enemy.
+@export var is_general := false
 
 @export_group("Defense")
 @export var max_health := 1.0e9         ## dummies: effectively a punching bag
@@ -86,6 +93,15 @@ var _goal_node = null            ## cached march goal (the ford banner), refresh
 var _rerouting := false          ## currently steering around danger, not pursuing the foe
 var _space: PhysicsDirectSpaceState2D = null  ## world physics space, refreshed on the retarget tick
 
+## The faction's banner colour (魏 Wei blue / 蜀 Shu green / 吳 Wu red / neutral grey). The
+## drawing pass tints a unit with this so the three kingdoms read at a glance; no gameplay effect.
+func faction_color() -> Color:
+	match faction:
+		"wei": return Color(0.30, 0.52, 0.95)
+		"shu": return Color(0.36, 0.78, 0.42)
+		"wu": return Color(0.86, 0.36, 0.34)
+		_: return Color(0.70, 0.70, 0.72)
+
 func _ready() -> void:
 	add_to_group("hittable")
 	add_to_group(team)
@@ -93,6 +109,8 @@ func _ready() -> void:
 	add_to_group("targets" if team == "raiders" else "allies")
 	if is_support and team == "raiders":
 		add_to_group("officers")     # the DefeatOfficer objective counts this group
+	if is_general:
+		add_to_group("generals")     # the boss-healthbar UI tracks named generals (武將)
 	# Non-shield units pick a side to flank from, so a crowd surrounds rather than stacks.
 	if not shielded:
 		_flank = -1.0 if (randf() < 0.5) else 1.0
@@ -553,10 +571,15 @@ func _draw() -> void:
 	# only while alive, and it pulses with `_t` (already advanced for the telegraphs).
 	if is_support and not _dead:
 		_draw_morale_aura()
-	var col := base_color.lerp(Color(1, 1, 1), clampf(_flash / 0.18, 0.0, 1.0))
-	col.a = _alpha
+	# Body colour = hit-flash applied first (so a hit still flashes white), THEN a modest tint
+	# toward the unit's faction_color so allegiance reads at a glance. Computed by the pure
+	# `body_color()` helper so a test can assert the faction shift without a viewport.
+	var col := body_color()
 	draw_circle(Vector2.ZERO, radius, col)
 	draw_arc(Vector2.ZERO, radius, 0.0, TAU, 20, Color(0.16, 0.1, 0.1, _alpha), 2.5)
+	# A faction-coloured emblem ring just inside the rim — Wei blue / Shu green / Wu red — so the
+	# kingdom reads even past the body tint. Neutral units skip it (stay plain). Cheap: one arc.
+	_draw_faction_emblem()
 	_draw_type()
 	_draw_attack_telegraph()
 
@@ -576,18 +599,22 @@ func _draw_type() -> void:
 	var side := Vector2(-fwd.y, fwd.x)
 	match look:
 		"soldier":
-			# A light footman: a small helm dot forward + a short blade along the facing.
+			# A light footman: a small helm dot forward + a short blade along the facing, plus a
+			# tiny round buckler on the off-hand so the lone soldier reads distinct from a spearman.
 			draw_line(fwd * radius * 0.4, fwd * (radius + 16.0), Color(0.82, 0.84, 0.9, _alpha), 2.5)
 			draw_circle(fwd * radius * 0.45, radius * 0.28, Color(0.95, 0.9, 0.8, _alpha))
+			draw_arc(-side * radius * 0.55, radius * 0.3, 0.0, TAU, 10, Color(0.66, 0.68, 0.74, _alpha), 2.0)
 		"shield":
 			# Clearer shield: a filled chord-cap on the guarding side, then a rim arc on top.
 			# A BROKEN shield reads distinctly — dull, thin, and visibly cracked (a gap + a jag).
 			_draw_shield()
 		"heavy":
-			# Bulky armour: a thick body ring + a pair of pauldron studs across the shoulders.
+			# Bulky armour: a thick body ring + a pair of pauldron studs across the shoulders, and
+			# a short stubby haft forward so it reads as a blunt bruiser (vs the knight's long blade).
 			draw_arc(Vector2.ZERO, radius * 0.62, 0.0, TAU, 18, Color(0.2, 0.16, 0.16, _alpha), 4.5)
 			draw_circle(side * radius * 0.72, radius * 0.22, Color(0.3, 0.26, 0.26, _alpha))
 			draw_circle(-side * radius * 0.72, radius * 0.22, Color(0.3, 0.26, 0.26, _alpha))
+			draw_line(fwd * radius * 0.4, fwd * (radius + 9.0), Color(0.34, 0.3, 0.3, _alpha), 4.0)
 		"spear":
 			# A long reaching shaft + a clear leaf head, so its threat range reads from afar.
 			var tip := fwd * (radius + 34.0)
@@ -602,12 +629,33 @@ func _draw_type() -> void:
 			draw_rect(Rect2(0, -radius - 34.0, 22, 16), Color(0.8, 0.3, 0.25, _alpha))
 			draw_line(Vector2(-5, -radius - 34.0), Vector2(5, -radius - 34.0), Color(0.62, 0.5, 0.36, _alpha), 2.0)
 		"knight":
-			# An elite: an armoured ring + a forward-swept blade and a crest plume, distinct
-			# from the bulky-but-blunt "heavy". Reads as the sharper, faster threat.
+			# An elite: an armoured ring + a long forward-swept blade with a crossguard and a crest
+			# plume, distinct from the bulky-but-blunt "heavy". Reads as the sharper, faster threat.
 			draw_arc(Vector2.ZERO, radius * 0.66, 0.0, TAU, 18, Color(0.85, 0.86, 0.92, _alpha), 3.0)
 			draw_line(fwd * radius * 0.3, fwd * (radius + 22.0), Color(0.92, 0.93, 1.0, _alpha), 3.0)
 			draw_circle(fwd * (radius + 22.0), 3.0, Color(0.95, 0.96, 1.0, _alpha))
+			# A crossguard at the blade's base so it reads as a sword, not a pole.
+			var guard := fwd * (radius + 4.0)
+			draw_line(guard + side * 5.0, guard - side * 5.0, Color(0.78, 0.79, 0.86, _alpha), 2.5)
 			draw_line(-fwd * radius * 0.4, -fwd * (radius + 9.0) + side * 4.0, Color(0.9, 0.4, 0.35, _alpha), 2.5)
+
+## A faction emblem ring + a small rear cloak/pennant trim in the faction colour, so Wei/Shu/Wu
+## read at a glance beyond the body tint. Neutral units draw nothing (stay plain grey). Cheap:
+## one inner rim arc + a couple of short trim lines, all allocation-free.
+func _draw_faction_emblem() -> void:
+	if faction == "neutral":
+		return
+	var fc := faction_color()
+	# Bright inner emblem ring just inside the body rim (full where unfaded).
+	draw_arc(Vector2.ZERO, radius * 0.82, 0.0, TAU, 22, Color(fc.r, fc.g, fc.b, _alpha * 0.9), 2.5)
+	# A short faction-coloured cloak/pennant trim trailing BEHIND the facing, so even side-on the
+	# allegiance shows. Drawn opposite `_face` as two splayed strokes (a little banner-tail).
+	var fwd := Vector2(cos(_face), sin(_face))
+	var side := Vector2(-fwd.y, fwd.x)
+	var back := -fwd * (radius + 4.0)
+	var trim := Color(fc.r, fc.g, fc.b, _alpha)
+	draw_line(back + side * 3.0, -fwd * (radius + 12.0) + side * 6.0, trim, 3.0)
+	draw_line(back - side * 3.0, -fwd * (radius + 12.0) - side * 6.0, trim, 3.0)
 
 ## Draw the shield cap on the guarding side. Intact = a solid bright cap + rim; broken =
 ## a dull, thinner, visibly CRACKED arc (a wedge gap + a jagged spur) so the player can
@@ -644,6 +692,18 @@ func _draw_morale_aura() -> void:
 ## misconfigured value never draws a pinpoint or a screen-filling ring.
 func morale_aura_radius() -> float:
 	return clampf(morale_radius, 40.0, 320.0)
+
+## The unit's drawn body colour: the base tint with the hit-flash applied FIRST (so a fresh hit
+## still flashes white regardless of faction), THEN a modest blend toward faction_color so
+## allegiance reads at a glance. Neutral units get no faction shift (~unchanged). Pure + cheap so
+## the readability test can assert the colour shifts toward the faction colour for Wei/Shu/Wu and
+## stays put for neutral, all without a viewport.
+func body_color() -> Color:
+	var col := base_color.lerp(Color(1, 1, 1), clampf(_flash / 0.18, 0.0, 1.0))
+	if faction != "neutral":
+		col = col.lerp(faction_color(), 0.25)   # 25% tint — visible, but team/flash still read
+	col.a = _alpha
+	return col
 
 ## A small set of marker points (local space) summarising a look's silhouette, used by the
 ## readability test to assert each look produces sane, non-empty geometry. Mirrors the shapes

@@ -10,8 +10,49 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ### Planned
 - Enemy pooling (`EnemyPool`) for even bigger crowds, per-ability VFX + a cooldown UI,
-  formation break/morale, adopting `WaveSpawner` inside the ford level, and a balance pass.
+  a balance pass, more named generals & officer duels, and a map-to-map campaign flow.
   See [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.16.0] — 2026-06-24
+
+**三國無雙 / Dynasty Warriors — maps, generals, musou** — twelve parallel agents on a new
+reusable battle-map foundation, all additive on the existing shared modules (no engine
+rewrite), then integrated on `dev`.
+
+### Added — 三國無雙 batch (12 parallel agents)
+**No engine rewrite — additive on the shared modules; the browser build stays
+single-threaded.** A 12-agent batch built on a new reusable `BattleMap` base so a new
+map is a thin `extends BattleMap` subclass.
+- **Foundation** — `scripts/maps/BattleMap.gd`: a reusable battle-map base (instantiates
+  Arthur + HUD + score screen + a boss-healthbar overlay, drives a `WaveSpawner`, runs an
+  `ObjectiveManager`, tracks KO / elapsed / breaches, resolves win/lose). `Enemy.gd` gains
+  `faction` (魏 Wei / 蜀 Shu / 吳 Wu / neutral colour theming) + `is_general` (joins the
+  "generals" group) exports + `faction_color()`; `project.godot` gains a `musou` input (Q).
+- **Five Three-Kingdoms battle maps** (`scenes/maps/` + `scripts/maps/`): **Hu Lao Gate
+  (虎牢關)** gate chokepoint (final wave is the warlord 呂武 Lu Bu); **Red Cliffs (赤壁)**
+  fire + river with a new reusable `FireZone` hazard (`scripts/hazards/`); **Guandu (官渡)**
+  base-raid with a new reusable `Base` entity + `CaptureBasesObjective`; **Changban
+  (長坂坡)** escort/protect (reuses `ProtectBannerObjective`); **Yellow Turban (黃巾之亂)**
+  survival horde with a new reusable `SurviveObjective`.
+- **Named generals (武將)** — `scripts/General.gd` boss brain + `scenes/generals/`
+  (LuBu / GuanYu / ZhangFei / XiahouDun): `is_general=true`, 300–520 HP, a signature war-cry.
+- **Five new troop types** (`scenes/troops/`, pure `Enemy.gd` configs): Halberdier,
+  Crossbow, ShockTrooper, Drummer, StandardBearer.
+- **Musou gauge + ultimate** — `Arthur.gd` gains a rage gauge (fills on hits / KOs / damage)
+  and a Q-triggered screen-clearing ultimate (reuses the Shockwave radial-launch force path);
+  `Hud.gd` / `Hud.tscn` show a gold MUSOU gauge.
+- **Boss healthbar UI** — `scenes/ui/GeneralHealthbar.tscn`: auto-tracks the "generals"
+  group, drawing faction-tinted boss HP bars; `BattleMap` shows it on every map.
+- **Faction-colour beautification** — `Enemy.gd` `_draw` now tints units toward their
+  faction colour with richer per-look silhouettes.
+- **Stage-select boot menu** — `scenes/ui/StageSelect.tscn` (a 三國無雙 battle picker) is
+  now the boot scene (`project.godot run/main_scene`), listing Hold the Ford + the 4
+  challenge rooms + the 5 new maps (guarded by `ResourceLoader.exists`).
+- **Faction banners & decor props** (`scenes/decor/` + `scripts/decor/`): FactionBanner,
+  Brazier, GatePost, WarDrum.
+- **Twelve new headless tests** — the CI suite grows from 24 to **36**.
 
 ---
 

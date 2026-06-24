@@ -43,3 +43,4 @@ Thumbs.db
 
 # Playwright MCP scratch (live-demo verification artifacts)
 .playwright-mcp/
+.claude/
