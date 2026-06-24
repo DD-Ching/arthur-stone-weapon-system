@@ -158,6 +158,14 @@ jobs:
           godot --headless --path . res://tests/BeautifyTest.tscn --quit-after 600 | tee beautify.log
           grep -q "BEAUTIFY_VERDICT PASS" beautify.log
 
+      - name: Run cavalry-art test (beautified mounted units — warhorse + chariot)
+        # Asserts the BEAUTIFIED Cavalry (warhorse + lancer) and WarCart (wheeled chariot) draw
+        # over a few frames across every faction with no errors and stay alive. Purely visual —
+        # drawing only, no charge-brain change.
+        run: |
+          godot --headless --path . res://tests/CavalryArtTest.tscn --quit-after 600 | tee cavalry_art.log
+          grep -q "ART_CAVALRY_VERDICT PASS" cavalry_art.log
+
       - name: Run bowling-room test (chain-impact challenge level)
         # Asserts the Bowling Room: a heavy striker launched into a packed wedge of pins chains
         # bowling impacts (Impact's enemy-to-enemy collisions) to knock multiple pins out, and
