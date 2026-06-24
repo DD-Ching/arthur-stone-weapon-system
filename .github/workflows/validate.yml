@@ -200,3 +200,12 @@ jobs:
         run: |
           godot --headless --path . res://tests/EnemyVariantsTest.tscn --quit-after 600 | tee variants.log
           grep -q "VARIANTS_VERDICT PASS" variants.log
+
+      - name: Run decor test (Three-Kingdoms battlefield props)
+        # Asserts the code-drawn decor scenes instantiate + draw without error: the FactionBanner
+        # colours its pennant per kingdom (wei blue / shu green / wu red / neutral grey), the
+        # WarDrum accent tracks its faction, and the GatePost is a solid StaticBody2D on the
+        # "world" layer with a collision shape. Pure atmosphere — no gameplay change.
+        run: |
+          godot --headless --path . res://tests/DecorTest.tscn --quit-after 600 | tee decor.log
+          grep -q "DECOR_VERDICT PASS" decor.log
