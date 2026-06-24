@@ -207,3 +207,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/BattleMapTest.tscn --quit-after 600 | tee battlemap.log
           grep -q "MAP_VERDICT PASS" battlemap.log
+
+      - name: Run Guandu map test (Base-capture mechanic + 官渡 map)
+        # Asserts the reusable Base captures once its garrison is cleared (engaged-then-empty),
+        # the CaptureBasesObjective wins when every depot is held, and the Guandu map boots
+        # (Arthur + HUD) and reaches victory after all base garrisons are defeated.
+        run: |
+          godot --headless --path . res://tests/GuanduTest.tscn --quit-after 600 | tee guandu.log
+          grep -q "GUANDU_VERDICT PASS" guandu.log
