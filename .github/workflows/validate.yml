@@ -207,3 +207,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/BattleMapTest.tscn --quit-after 600 | tee battlemap.log
           grep -q "MAP_VERDICT PASS" battlemap.log
+
+      - name: Run Yellow Turban test (黃巾之亂 survival map + SurviveObjective)
+        # Asserts the reusable SurviveObjective wins on EITHER bar (time-out OR KO body-count),
+        # and the Yellow Turban survival map boots (Arthur + HUD), pours its escalating rebel
+        # horde onto the field, and reaches victory by outlasting the survival clock.
+        run: |
+          godot --headless --path . res://tests/YellowTurbanTest.tscn --quit-after 600 | tee yellowturban.log
+          grep -q "YELLOWTURBAN_VERDICT PASS" yellowturban.log
