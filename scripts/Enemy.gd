@@ -14,7 +14,7 @@ extends RigidBody2D
 
 @export_group("Identity")
 @export var enemy_name := "Dummy"
-@export_enum("dummy", "soldier", "shield", "heavy", "spear", "banner") var look := "dummy"
+@export_enum("dummy", "soldier", "shield", "heavy", "spear", "banner", "knight") var look := "dummy"
 @export var radius := 16.0
 @export var base_color := Color(0.78, 0.32, 0.33)
 ## "raiders" = the warband attacking across the ford (Arthur's foe). "ally" = a footman
@@ -541,12 +541,18 @@ func _process(delta: float) -> void:
 			queue_free()
 	# AI enemies animate (facing, telegraphs) so they redraw each frame; passive
 	# dummies only redraw when something visible changes (keeps the web build light).
-	if ai_enabled or _flash > 0.0 or _stun > 0.0 or _alpha < 1.0:
+	# A support unit also redraws so its morale-aura ring keeps pulsing (few of them, cheap).
+	if ai_enabled or is_support or _flash > 0.0 or _stun > 0.0 or _alpha < 1.0:
 		queue_redraw()
 
 # ── drawing ─────────────────────────────────────────────────────────────────
 
 func _draw() -> void:
+	# A support unit (banner/officer) gets a faint morale-aura ring drawn UNDER the body,
+	# so allies/raiders nearby read as "rallied around this one". Cheap: a single arc,
+	# only while alive, and it pulses with `_t` (already advanced for the telegraphs).
+	if is_support and not _dead:
+		_draw_morale_aura()
 	var col := base_color.lerp(Color(1, 1, 1), clampf(_flash / 0.18, 0.0, 1.0))
 	col.a = _alpha
 	draw_circle(Vector2.ZERO, radius, col)
@@ -562,22 +568,112 @@ func _draw() -> void:
 		draw_string(ThemeDB.fallback_font, Vector2(-6.0, -radius - 8.0), str(hit_count),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1, 0.95, 0.7, _alpha))
 
+# Per-look SILHOUETTE so each unit reads at a glance. Each branch layers a couple of cheap
+# primitives keyed to `_face` / `shield_angle`; the markers it draws are summarised (purely)
+# by `silhouette_points()` so a test can assert each look produces sane geometry.
 func _draw_type() -> void:
+	var fwd := Vector2(cos(_face), sin(_face))
+	var side := Vector2(-fwd.y, fwd.x)
 	match look:
 		"soldier":
-			draw_circle(Vector2(cos(_face), sin(_face)) * radius * 0.45, radius * 0.28, Color(0.95, 0.9, 0.8, _alpha))
+			# A light footman: a small helm dot forward + a short blade along the facing.
+			draw_line(fwd * radius * 0.4, fwd * (radius + 16.0), Color(0.82, 0.84, 0.9, _alpha), 2.5)
+			draw_circle(fwd * radius * 0.45, radius * 0.28, Color(0.95, 0.9, 0.8, _alpha))
 		"shield":
-			var col := Color(0.4, 0.45, 0.55, _alpha) if _shield_broken > 0.0 else Color(0.72, 0.74, 0.82, _alpha)
-			draw_arc(Vector2.ZERO, radius + 5.0, shield_angle - 0.95, shield_angle + 0.95, 16, col, 6.0)
+			# Clearer shield: a filled chord-cap on the guarding side, then a rim arc on top.
+			# A BROKEN shield reads distinctly — dull, thin, and visibly cracked (a gap + a jag).
+			_draw_shield()
 		"heavy":
-			draw_arc(Vector2.ZERO, radius * 0.6, 0.0, TAU, 16, Color(0.2, 0.16, 0.16, _alpha), 4.0)
+			# Bulky armour: a thick body ring + a pair of pauldron studs across the shoulders.
+			draw_arc(Vector2.ZERO, radius * 0.62, 0.0, TAU, 18, Color(0.2, 0.16, 0.16, _alpha), 4.5)
+			draw_circle(side * radius * 0.72, radius * 0.22, Color(0.3, 0.26, 0.26, _alpha))
+			draw_circle(-side * radius * 0.72, radius * 0.22, Color(0.3, 0.26, 0.26, _alpha))
 		"spear":
-			var tip := Vector2(cos(_face), sin(_face)) * (radius + 34.0)
-			draw_line(Vector2.ZERO, tip, Color(0.7, 0.6, 0.45, _alpha), 3.0)
-			draw_circle(tip, 3.0, Color(0.85, 0.85, 0.9, _alpha))
+			# A long reaching shaft + a clear leaf head, so its threat range reads from afar.
+			var tip := fwd * (radius + 34.0)
+			draw_line(fwd * radius * 0.2, tip, Color(0.7, 0.6, 0.45, _alpha), 3.0)
+			var barb := fwd * (radius + 27.0)
+			draw_line(barb, barb + side * 4.5, Color(0.85, 0.85, 0.9, _alpha), 2.0)
+			draw_line(barb, barb - side * 4.5, Color(0.85, 0.85, 0.9, _alpha), 2.0)
+			draw_circle(tip, 3.0, Color(0.9, 0.9, 0.95, _alpha))
 		"banner":
+			# A tall pole with a pennant + a crossbar — the officer's standard, plain to spot.
 			draw_line(Vector2(0, -radius), Vector2(0, -radius - 34.0), Color(0.5, 0.4, 0.3, _alpha), 3.0)
 			draw_rect(Rect2(0, -radius - 34.0, 22, 16), Color(0.8, 0.3, 0.25, _alpha))
+			draw_line(Vector2(-5, -radius - 34.0), Vector2(5, -radius - 34.0), Color(0.62, 0.5, 0.36, _alpha), 2.0)
+		"knight":
+			# An elite: an armoured ring + a forward-swept blade and a crest plume, distinct
+			# from the bulky-but-blunt "heavy". Reads as the sharper, faster threat.
+			draw_arc(Vector2.ZERO, radius * 0.66, 0.0, TAU, 18, Color(0.85, 0.86, 0.92, _alpha), 3.0)
+			draw_line(fwd * radius * 0.3, fwd * (radius + 22.0), Color(0.92, 0.93, 1.0, _alpha), 3.0)
+			draw_circle(fwd * (radius + 22.0), 3.0, Color(0.95, 0.96, 1.0, _alpha))
+			draw_line(-fwd * radius * 0.4, -fwd * (radius + 9.0) + side * 4.0, Color(0.9, 0.4, 0.35, _alpha), 2.5)
+
+## Draw the shield cap on the guarding side. Intact = a solid bright cap + rim; broken =
+## a dull, thinner, visibly CRACKED arc (a wedge gap + a jagged spur) so the player can
+## read "this shield is down — hit it" at a glance.
+func _draw_shield() -> void:
+	if _shield_broken > 0.0:
+		# Broken: split the rim into two short, dull, thin arcs with a gap — a snapped shield.
+		var dull := Color(0.42, 0.46, 0.55, _alpha)
+		draw_arc(Vector2.ZERO, radius + 4.0, shield_angle - 0.95, shield_angle - 0.18, 8, dull, 3.0)
+		draw_arc(Vector2.ZERO, radius + 4.0, shield_angle + 0.18, shield_angle + 0.95, 8, dull, 3.0)
+		# A jagged spur falling away from the break, so it reads as shattered, not just faded.
+		var br := Vector2(cos(shield_angle), sin(shield_angle))
+		var bs := Vector2(-br.y, br.x)
+		draw_line(br * (radius + 4.0), br * (radius + 11.0) + bs * 4.0, dull, 2.0)
+		return
+	var rim := Color(0.74, 0.76, 0.84, _alpha)
+	draw_arc(Vector2.ZERO, radius + 5.0, shield_angle - 0.95, shield_angle + 0.95, 18, rim, 6.0)
+	# A faint inner boss so the shield reads as a solid plate, not a thin line.
+	draw_arc(Vector2.ZERO, radius + 1.5, shield_angle - 0.8, shield_angle + 0.8, 14, Color(0.5, 0.54, 0.64, _alpha * 0.8), 3.0)
+
+## Faint morale-aura ring + a tiny officer pip for an `is_support` unit — drawn under the body
+## in `_draw`. Radius comes from `morale_aura_radius()` (pure, testable).
+func _draw_morale_aura() -> void:
+	var r := morale_aura_radius()
+	var pulse := 0.10 + 0.05 * sin(_t * 2.0)
+	draw_arc(Vector2.ZERO, r, 0.0, TAU, 40, Color(0.95, 0.8, 0.4, _alpha * pulse), 2.0)
+	draw_arc(Vector2.ZERO, r * 0.62, 0.0, TAU, 32, Color(0.95, 0.8, 0.4, _alpha * pulse * 0.7), 1.5)
+	# A small star pip just above the body marks the officer/standard-bearer.
+	draw_circle(Vector2(0, -radius - 6.0), 2.5, Color(1.0, 0.85, 0.45, _alpha))
+
+# ── pure geometry helpers (unit-testable; no drawing, no allocations per frame) ───────────────
+
+## The drawn radius of the morale aura — the unit's morale_radius, clamped to a sane band so a
+## misconfigured value never draws a pinpoint or a screen-filling ring.
+func morale_aura_radius() -> float:
+	return clampf(morale_radius, 40.0, 320.0)
+
+## A small set of marker points (local space) summarising a look's silhouette, used by the
+## readability test to assert each look produces sane, non-empty geometry. Mirrors the shapes
+## `_draw_type` lays down; kept pure so it can be checked without a viewport.
+func silhouette_points(look_name: String) -> PackedVector2Array:
+	var fwd := Vector2(cos(_face), sin(_face))
+	var side := Vector2(-fwd.y, fwd.x)
+	match look_name:
+		"soldier":
+			return PackedVector2Array([fwd * radius * 0.45, fwd * (radius + 16.0)])
+		"shield":
+			var s := Vector2(cos(shield_angle), sin(shield_angle))
+			return PackedVector2Array([s * (radius + 5.0), s * (radius + 1.5)])
+		"heavy":
+			return PackedVector2Array([side * radius * 0.72, -side * radius * 0.72, Vector2(0, radius * 0.62)])
+		"spear":
+			return PackedVector2Array([fwd * radius * 0.2, fwd * (radius + 34.0)])
+		"banner":
+			return PackedVector2Array([Vector2(0, -radius), Vector2(0, -radius - 34.0), Vector2(22, -radius - 18.0)])
+		"knight":
+			return PackedVector2Array([fwd * radius * 0.3, fwd * (radius + 22.0), -fwd * (radius + 9.0)])
+		_:
+			# Any other look (dummy/cavalry/cart) still has a body — return its outline extent.
+			return PackedVector2Array([Vector2(radius, 0), Vector2(-radius, 0), Vector2(0, radius)])
+
+## Endpoints [start, end] of a forward thrust/charge warning line for a given reach. Pure so the
+## test can assert the line points along `_face` and spans the expected length.
+func thrust_line_endpoints(reach: float) -> PackedVector2Array:
+	var fwd := Vector2(cos(_face), sin(_face))
+	return PackedVector2Array([fwd * radius, fwd * (radius + reach + 10.0)])
 
 func _draw_attack_telegraph() -> void:
 	if _dead:
@@ -592,12 +688,19 @@ func _draw_attack_telegraph() -> void:
 		reach = _cur_ability.max_range
 	elif attack_kind == "thrust":
 		shape = "line"
+	# A gap-closing lunge gets a CHARGE LANE: a long, fading danger lane down the facing during
+	# windup (the cavalry charge proper lives in Cavalry.gd, unreachable from here — this covers
+	# the foot lunge/leap commit). For thrusts it doubles as the THRUST WARNING LINE.
+	var is_lunge := _cur_ability != null and (_cur_ability.kind == "lunge" or _cur_ability.kind == "leap")
 	if _ai == AI.WINDUP:
 		var t := clampf(_ai_time / maxf(_cur_windup(), 0.01), 0.0, 1.0)
 		var warn := Color(1.0, 0.55, 0.2, _alpha * (0.3 + 0.5 * t))
 		match shape:
 			"line":
-				draw_line(fwd * radius, fwd * (radius + reach + 10.0), warn, 4.0)
+				if is_lunge:
+					_draw_charge_lane(fwd, reach, t)
+				else:
+					_draw_thrust_warning(fwd, reach, t, false)
 			"ring":
 				var rr: float = _cur_ability.aoe_radius if _cur_ability != null and _cur_ability.aoe_radius > 0.0 else reach
 				draw_arc(Vector2.ZERO, rr, 0.0, TAU, 28, warn, 4.0)
@@ -607,9 +710,38 @@ func _draw_attack_telegraph() -> void:
 		var hot := Color(1.0, 0.85, 0.4, _alpha)
 		match shape:
 			"line":
-				draw_line(fwd * radius, fwd * (radius + reach + 14.0), hot, 6.0)
+				if is_lunge:
+					_draw_charge_lane(fwd, reach, 1.0)
+				else:
+					_draw_thrust_warning(fwd, reach, 1.0, true)
 			"ring":
 				var rr2: float = _cur_ability.aoe_radius if _cur_ability != null and _cur_ability.aoe_radius > 0.0 else reach
 				draw_arc(Vector2.ZERO, rr2, 0.0, TAU, 32, hot, 6.0)
 			_:
 				draw_arc(Vector2.ZERO, radius + 12.0, _face - 1.0, _face + 1.0, 14, hot, 7.0)
+
+## A spear THRUST danger line: a forward line that thickens/brightens as the windup fills, with
+## a small barbed tip so it reads as an incoming poke. `hot` = the strike frame (brightest).
+func _draw_thrust_warning(fwd: Vector2, reach: float, t: float, hot: bool) -> void:
+	var ends := thrust_line_endpoints(reach)
+	var col := Color(1.0, 0.85, 0.4, _alpha) if hot else Color(1.0, 0.5, 0.2, _alpha * (0.35 + 0.5 * t))
+	var w := 6.0 if hot else 3.0 + 2.0 * t
+	draw_line(ends[0], ends[1], col, w)
+	# A little arrowhead at the tip so the danger reads directional, not just a streak.
+	var side := Vector2(-fwd.y, fwd.x)
+	var tip: Vector2 = ends[1]
+	draw_line(tip, tip - fwd * 7.0 + side * 5.0, col, w * 0.6)
+	draw_line(tip, tip - fwd * 7.0 - side * 5.0, col, w * 0.6)
+
+## A CHARGE LANE for a lunge/leap commit: a long, narrow danger corridor down the facing that
+## fills toward the strike — a "get out of the way" cue distinct from a short thrust line.
+func _draw_charge_lane(fwd: Vector2, reach: float, t: float) -> void:
+	var side := Vector2(-fwd.y, fwd.x)
+	var lane: float = reach + 20.0
+	var col := Color(1.0, 0.45, 0.2, _alpha * (0.18 + 0.45 * t))
+	var near := fwd * radius
+	var far := fwd * (radius + lane)
+	# Two rails + a brightening centre line so the lane reads as a corridor, not a single beam.
+	draw_line(near + side * 6.0, far + side * 6.0, col, 2.0)
+	draw_line(near - side * 6.0, far - side * 6.0, col, 2.0)
+	draw_line(near, fwd * (radius + lane * (0.3 + 0.7 * t)), Color(1.0, 0.6, 0.25, _alpha * (0.4 + 0.5 * t)), 3.0)
