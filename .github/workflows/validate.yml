@@ -116,3 +116,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/AbilitiesTest.tscn --quit-after 600 | tee abilities.log
           grep -q "ABIL_VERDICT PASS" abilities.log
+
+      - name: Run bowling-room test (chain-impact challenge level)
+        # Asserts the Bowling Room: a heavy striker launched into a packed wedge of pins chains
+        # bowling impacts (Impact's enemy-to-enemy collisions) to knock multiple pins out, and
+        # the room's win-detection fires once the cluster is cleared — but not before the strike.
+        run: |
+          godot --headless --path . res://tests/BowlingRoomTest.tscn --quit-after 600 | tee bowling.log
+          grep -q "BOWL_ROOM_VERDICT PASS" bowling.log
