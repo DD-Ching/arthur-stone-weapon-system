@@ -116,3 +116,12 @@ jobs:
         run: |
           godot --headless --path . res://tests/AbilitiesTest.tscn --quit-after 600 | tee abilities.log
           grep -q "ABIL_VERDICT PASS" abilities.log
+
+      - name: Run visual-readability test (enriched enemy silhouettes/telegraphs)
+        # Asserts the additive enemy DRAWING enrichments are sound: every look (soldier/shield/
+        # spear/heavy/banner/knight) plus a shielded + a support unit draw over a few frames with
+        # no errors, and the pure geometry helpers return sane, non-empty silhouette/telegraph/aura
+        # values. Purely visual — no gameplay change.
+        run: |
+          godot --headless --path . res://tests/VisualReadabilityTest.tscn --quit-after 600 | tee visread.log
+          grep -q "VISREAD_VERDICT PASS" visread.log
