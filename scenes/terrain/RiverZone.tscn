@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3]
+
+; A placeable deep-river TerrainZone: downstream current + drag, dangerous (NPCs route
+; around it toward a crossing), and it drowns the lightest units that wade in. Drop it in
+; a level and resize the CollisionShape2D / tune the exports — one scene, many rivers.
+; Parameter values match Battlefield._build_terrain() (drag 0.93 / current (48,0), and
+; mask 14 = arthur+enemies+props so the current shoves Arthur too — matches MASK_WITH_ARTHUR).
+
+[ext_resource type="Script" path="res://scripts/terrain/TerrainZone.gd" id="1_zone"]
+
+[sub_resource type="RectangleShape2D" id="river_shape"]
+size = Vector2(800, 112)
+
+[node name="RiverZone" type="Area2D"]
+collision_layer = 0
+collision_mask = 14
+script = ExtResource("1_zone")
+drag = 0.93
+current = Vector2(48, 0)
+dangerous = true
+drowns_light = true
+drown_mass_max = 0.7
+splash = true
+arthur_push = 0.55
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("river_shape")

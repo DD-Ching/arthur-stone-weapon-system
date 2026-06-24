@@ -84,18 +84,20 @@ Build on the now-stable physics into a "weapon as tool" puzzle layer.
 - ⬜ Launch rocks into **weak walls** and **bridge supports**
 - ⬜ Dirt mounds as temporary barriers; boulders as heavier plate weights
 
-### Challenge rooms (designed; not yet built)
+### Challenge rooms (first four built; rest designed)
 
-Small hand-built rooms that each teach one trick, built on the existing seams:
+Small hand-built rooms that each teach one trick, built on the existing seams. The first
+four shipped as self-contained `scripts/rooms/` + `scenes/rooms/` levels; the rest are
+designed but not yet built:
 
-- ⬜ **Wall-Crush Training** — defeat enemies only by pinning them to walls
-- ⬜ **Bowling Room** — clear a formation with one launched enemy
-- ⬜ **Rock Launcher** — hit enemies only by launching rocks/crates
+- ✅ **Wall-Crush Training** — defeat enemies only by pinning them to walls
+- ✅ **Bowling Room** — clear a formation with one launched enemy
+- ✅ **Rock Launcher** — hit enemies only by launching rocks/crates
 - ⬜ **Bridge Break** — destroy supports with heavy hits to open a route
 - ⬜ **Pressure-Plate Puzzle** — weight several plates to unlock the next room
 - ⬜ **Smoke Room** — clear smoke with the spin attack to reveal enemies
 - ⬜ **Stamina Discipline** — clear the room without exhausting stamina
-- ⬜ **Combo Trial** — reach a Stone Flow stack before time runs out
+- ✅ **Combo Trial** — reach a Stone Flow stack before time runs out
 
 ---
 
@@ -130,7 +132,8 @@ One absurd hero mowing an army (Dynasty-Warriors energy).
   staggers on a solid hit, and **flips into launchable debris** (`CART FLIPPED`)
 - ⬜ A bigger crowd (cheaper enemy update — pooling / coarser AI ticks for the web build)
 - ✅ Layered objectives: officer/banner **morale**, **Hold the Line** (the v0.8 ford
-  defence), **Stop the Charge** (break cavalry/carts) — a KO + time **score screen** still ⬜
+  defence), **Stop the Charge** (break cavalry/carts) — a KO + time **score screen** ✅
+  (`scripts/ui/ScoreScreen.gd`, shown on victory/defeat)
 - ✅ Audio — event hooks **and** real procedural sound behind them (v0.8.0)
 
 ---
@@ -182,7 +185,11 @@ tuned*, not copy-pasted. Full batch list + status: [`docs/BATCH_PLAN.md`](docs/B
 - ✅ **`formations/`** (v0.11.0) — `Formation` (front/support/commander ranks) + ShieldWall
   / SpearPhalanx / OfficerGuard; the waves arrive as cohesive formations
 - ⬜ **`abilities/`** — slash / shield-bash / spear-thrust / charge / aura as data
-- ⬜ A full **WaveSpawner** resource + optional **EnemyPool** for a bigger crowd
+- 🔶 A full **WaveSpawner** resource (`scripts/spawning/WaveSpawner.gd` + `Wave.gd` +
+  `scenes/data/SampleWaves.tres` shipped, additive — not yet adopted in the ford level) +
+  optional **EnemyPool** for a bigger crowd (⬜)
+- ✅ **Placeable building blocks** — `scenes/terrain/` zones (River/Mud/Fence), a
+  `ChargeGroup` formation, and a `ProtectBanner` constraint objective
 
 ---
 

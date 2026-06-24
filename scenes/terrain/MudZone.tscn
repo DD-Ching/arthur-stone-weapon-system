@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3]
+
+; A placeable mud TerrainZone: heavy drag that bogs units down, no current, safe (NPCs
+; walk through it). Drop it in a level and resize the CollisionShape2D / tune the exports.
+; Parameter values match Battlefield._build_terrain() (drag 0.86, no current, no drown).
+
+[ext_resource type="Script" path="res://scripts/terrain/TerrainZone.gd" id="1_zone"]
+
+[sub_resource type="RectangleShape2D" id="mud_shape"]
+size = Vector2(680, 90)
+
+[node name="MudZone" type="Area2D"]
+collision_layer = 0
+collision_mask = 12
+script = ExtResource("1_zone")
+drag = 0.86
+current = Vector2(0, 0)
+dangerous = false
+drowns_light = false
+splash = false
+arthur_push = 0.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("mud_shape")

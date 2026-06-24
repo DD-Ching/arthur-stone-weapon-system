@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+; A placeable solid wall on the "world" layer (bit 1). Drop it in, resize the
+; CollisionShape2D's RectangleShape2D, and the drawn fence look follows the shape.
+
+[ext_resource type="Script" path="res://scripts/terrain/Fence.gd" id="1_fence"]
+
+[sub_resource type="RectangleShape2D" id="fence_shape"]
+size = Vector2(220, 28)
+
+[node name="Fence" type="StaticBody2D"]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("1_fence")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("fence_shape")

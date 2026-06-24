@@ -87,12 +87,27 @@ jobs:
           godot --headless --path . res://tests/ObjectivesTest.tscn --quit-after 600 | tee objectives.log
           grep -q "OBJ_VERDICT PASS" objectives.log
 
+      - name: Run protect-banner test (ProtectBanner objective constraint)
+        # Asserts the reusable ProtectBanner constraint: it holds while the allied banner
+        # lives, fails (→ lose) once the ward is gone, never reports "done", and drives the
+        # ObjectiveManager to emit a loss when the ward dies.
+        run: |
+          godot --headless --path . res://tests/ProtectBannerTest.tscn --quit-after 600 | tee protectbanner.log
+          grep -q "PROTECT_OBJ_VERDICT PASS" protectbanner.log
+
       - name: Run formations test (v0.11 Formation module)
         # Asserts a placeable Formation spawns its configured roster on the right team with
         # the support rank arranged behind the front along the facing.
         run: |
           godot --headless --path . res://tests/FormationsTest.tscn --quit-after 600 | tee formations.log
           grep -q "FORM_VERDICT PASS" formations.log
+
+      - name: Run charge-group test (ChargeGroup formation config)
+        # Asserts the reusable ChargeGroup spawns a wide front rank of light chargers plus a
+        # Cavalry commander, all on the raider team, facing down toward the defenders.
+        run: |
+          godot --headless --path . res://tests/ChargeGroupTest.tscn --quit-after 600 | tee chargegroup.log
+          grep -q "CHARGE_GRP_VERDICT PASS" chargegroup.log
 
       - name: Run touch-controls test (v0.13 mobile play)
         # Asserts the virtual sticks produce an analog move vector + drive the existing
@@ -116,3 +131,72 @@ jobs:
         run: |
           godot --headless --path . res://tests/AbilitiesTest.tscn --quit-after 600 | tee abilities.log
           grep -q "ABIL_VERDICT PASS" abilities.log
+
+      - name: Run visual-readability test (enriched enemy silhouettes/telegraphs)
+        # Asserts the additive enemy DRAWING enrichments are sound: every look (soldier/shield/
+        # spear/heavy/banner/knight) plus a shielded + a support unit draw over a few frames with
+        # no errors, and the pure geometry helpers return sane, non-empty silhouette/telegraph/aura
+        # values. Purely visual — no gameplay change.
+        run: |
+          godot --headless --path . res://tests/VisualReadabilityTest.tscn --quit-after 600 | tee visread.log
+          grep -q "VISREAD_VERDICT PASS" visread.log
+
+      - name: Run bowling-room test (chain-impact challenge level)
+        # Asserts the Bowling Room: a heavy striker launched into a packed wedge of pins chains
+        # bowling impacts (Impact's enemy-to-enemy collisions) to knock multiple pins out, and
+        # the room's win-detection fires once the cluster is cleared — but not before the strike.
+        run: |
+          godot --headless --path . res://tests/BowlingRoomTest.tscn --quit-after 600 | tee bowling.log
+          grep -q "BOWL_ROOM_VERDICT PASS" bowling.log
+
+      - name: Run wall-crush room test (challenge level #2)
+        # Asserts the shared Impact.cushion raycast detects a wall behind a pinned enemy (and
+        # reads ~0 in open space), a strong pinning hit defeats it, and the WallCrushRoom
+        # scene recognises "field cleared → win".
+        run: |
+          godot --headless --path . res://tests/WallCrushRoomTest.tscn --quit-after 600 | tee wallroom.log
+          grep -q "WALL_ROOM_VERDICT PASS" wallroom.log
+
+      - name: Run rock-launcher-room test (challenge level #3)
+        # Asserts a Rock launched at speed into an enemy registers a real hit via
+        # Impact.collide (damage + knockback), and the room recognises "all enemies
+        # defeated -> win" through its composed ClearRoomObjective.
+        run: |
+          godot --headless --path . res://tests/RockLauncherRoomTest.tscn --quit-after 600 | tee rockroom.log
+          grep -q "ROCK_ROOM_VERDICT PASS" rockroom.log
+
+      - name: Run combo trial room test (challenge level — Stone Flow race)
+        # Asserts the Combo Trial Room wins when Stone Flow stacks reach the target in time
+        # (driven via Impact.add_flow, the hit path), and loses when the timer expires below it.
+        run: |
+          godot --headless --path . res://tests/ComboTrialRoomTest.tscn --quit-after 600 | tee combo.log
+          grep -q "COMBO_ROOM_VERDICT PASS" combo.log
+
+      - name: Run score-screen test (v0.15 KO + time result overlay)
+        # Asserts the end-of-battle ScoreScreen reveals on a result and its labels show the
+        # KO count, the elapsed time formatted m:ss, and the right VICTORY/DEFEAT word.
+        run: |
+          godot --headless --path . res://tests/ScoreScreenTest.tscn --quit-after 600 | tee score.log
+          grep -q "SCORE_UI_VERDICT PASS" score.log
+
+      - name: Run terrain-scenes test (placeable terrain building blocks)
+        # Asserts the placeable RiverZone drifts a loose body downstream + damps a fast body
+        # via drag, and the Fence is a solid StaticBody2D on the world layer with a shape.
+        run: |
+          godot --headless --path . res://tests/TerrainScenesTest.tscn --quit-after 600 | tee terrain_scenes.log
+          grep -q "TERRAIN_SCN_VERDICT PASS" terrain_scenes.log
+
+      - name: Run wave-spawner test (data-driven waves as a Resource)
+        # Asserts a WaveSpawner .tres materializes its waves by reusing the shared modules:
+        # a loose wave spawns N raiders via Spawner, a formation wave marches in via Formation,
+        # and a non-default team re-tags loose units onto the right side.
+        run: |
+          godot --headless --path . res://tests/WaveSpawnerTest.tscn --quit-after 600 | tee wavespawner.log
+          grep -q "WAVESPAWN_VERDICT PASS" wavespawner.log
+
+      - name: Run enemy variants test (new raider configs)
+        # Asserts the three pure-.tscn raider variants (Archer / Brute / Outrider) join the
+        # raider groups, build one Ability per `moves` id, act without error, and take damage.
+        run: |
+          godot --headless --path . res://tests/EnemyVariantsTest.tscn --quit-after 600 | tee variants.log
+          grep -q "VARIANTS_VERDICT PASS" variants.log

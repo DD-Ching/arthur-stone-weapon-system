@@ -40,7 +40,8 @@ can be collapsed, drifting **logs**.
   a `.tscn` of it: `LightSoldier`, `ShieldSoldier`, `Spearman`, `HeavyGuard`,
   `BannerBearer`, `Ally`. `Cavalry.gd` (+`WarCart.gd`) *extend* it with a charge brain. New
   raider archetypes are configs too: `Skirmisher` (javelin kiter), `Berserker` (leap pouncer),
-  `Marauder` (pound brute).
+  `Marauder` (pound brute), `Archer` (javelin ranged kiter), `Brute` (pound+bash mini-boss),
+  `Outrider` (lunge+slash fast flanker).
 - **Enemy navigation** — `scripts/ai/Steering.gd`: a stateless helper that whisker-raycasts the
   **world** layer so a unit flows *around* walls/fences (and unsticks toward the open side) in any
   level, no per-level wiring. `Enemy.gd` routes its march + approach direction through it.
@@ -50,10 +51,13 @@ can be collapsed, drifting **logs**.
   the legacy `attack_kind` exports, so old configs are unchanged.
 - **Terrain** — `scripts/terrain/TerrainZone.gd`: a reusable placeable `Area2D` rule
   (slow / current / drown-light / dangerous→avoid). The ford river + mud are instances.
+  `scenes/terrain/` now ships placeable building blocks: `RiverZone` / `MudZone` (configs
+  wrapping `TerrainZone.gd`) and `Fence` (`scripts/terrain/Fence.gd`, a solid `StaticBody2D` wall).
 - **Spawning** — `scripts/spawning/Spawner.gd`: shared helper to spawn a group of scenes
   across a lane (waves 1/4 + the ally line).
 - **Formations** — `scripts/formations/Formation.gd` + `scenes/formations/` (ShieldWall,
-  SpearPhalanx, OfficerGuard, **AlliedHost**): a placeable body of troops arranged in ranks.
+  SpearPhalanx, OfficerGuard, **AlliedHost**, **ChargeGroup** — a wide flanking-charge of
+  light chargers led by a Cavalry commander): a placeable body of troops arranged in ranks.
   Waves 2/3/5 arrive as raider formations; the allies deploy as `AlliedHost`.
 - **Allies** — `scenes/Ally.tscn` (Footman), `AllyShield`, `AllySpear`, `AllyKnight`
   (champion): `Enemy.gd` configs with `team="ally"`, blue. They fight raiders, take no
@@ -61,8 +65,10 @@ can be collapsed, drifting **logs**.
 - **Density** — `Battlefield.density` (default 2.5) scales BOTH armies (garrison + waves +
   allied host). Big battles cost web framerate; it's a tunable export.
 - **Objectives** — `scripts/objectives/` (`Objective` base + `RepelWaves` / `DefeatOfficer`
-  / `HoldLine`) + `scripts/systems/ObjectiveManager.gd`: a level composes its win/lose by
-  registering objectives (completable ones gate the win; constraints only gate losing).
+  / `HoldLine` / `ProtectBanner` — a constraint that loses if the warded allied banner dies,
+  the inverse of `DefeatOfficer` / `ClearRoom` — win once every placed enemy is defeated) +
+  `scripts/systems/ObjectiveManager.gd`: a level composes its win/lose by registering
+  objectives (completable ones gate the win; constraints only gate losing).
 - **Level** — `scripts/Battlefield.gd`: assembles the ford (terrain zones, fences, banner,
   goal), runs the 5-wave manager + log/bridge mechanics, and ticks the ObjectiveManager
   (win/lose is no longer hand-coded here).
@@ -77,6 +83,19 @@ can be collapsed, drifting **logs**.
   the mouse does and presses the `attack` action — so combat is identical; only the device
   changes. Hidden on desktop (`is_touchscreen_available()` + reveal-on-first-touch). Arthur
   reads it via the `touch_controls` group; `emulate_mouse_from_touch` is off.
+- **Challenge rooms** — `scripts/rooms/` + `scenes/rooms/`: small self-contained levels that
+  each teach one trick by reusing Arthur + `Enemy` + props + `Impact` + objectives —
+  `BowlingRoom` (chain-impact a packed cluster with one launched body), `WallCrushRoom` (pin
+  raiders to walls via `Impact.cushion`), `RockLauncherRoom` (clear every placed enemy), and
+  `ComboTrialRoom` (race a timer to a Stone Flow stack target).
+- **Score screen** — `scripts/ui/ScoreScreen.gd` + `scenes/ui/ScoreScreen.tscn`: a KO + time
+  end-of-level summary, shown on victory/defeat via a minimal hook in `Battlefield.gd`.
+- **WaveSpawner** — `scripts/spawning/WaveSpawner.gd` + `Wave.gd` + `scenes/data/SampleWaves.tres`:
+  data-driven waves that materialise by reusing `Spawner`/`Formation`. Additive — the ford
+  level is **not** rewired to use it yet (waves still live in `Battlefield.gd`).
+- **Enemy DRAW** now telegraphs more: per-`look` silhouettes (incl. a new `knight` look),
+  shield arcs + a distinct broken-shield state, spear thrust warning lines, lunge/leap charge
+  lanes, and an officer/morale-aura ring (additive `Enemy.gd` `_draw` work).
 
 ## Folder map
 
@@ -84,9 +103,9 @@ can be collapsed, drifting **logs**.
 CLAUDE.md, README, ROADMAP, CHANGELOG, CONTRIBUTING
 docs/        MEMORY, ARCHITECTURE, BATCH_PLAN, CONCEPT, DESIGN_GOALS, CONTROLS, BUILD
 devlog/      0001..0007 (dated narrative)
-scripts/     actors + systems (flat) + terrain/ + spawning/ + formations/ + objectives/ + ui/ + ai/ + abilities/
-scenes/      actor/prop/level scenes (flat) + terrain/ + formations/ + ui/
-tests/       headless *_test.gd + *.tscn (7 gate CI)
+scripts/     actors + systems (flat) + terrain/ + spawning/ + formations/ + objectives/ + ui/ + ai/ + abilities/ + rooms/
+scenes/      actor/prop/level scenes (flat) + terrain/ + formations/ + ui/ + rooms/ + data/
+tests/       headless *_test.gd + *.tscn (23 gate CI)
 .github/     validate.yml (tests), pages.yml (web deploy)
 ```
 
@@ -100,7 +119,7 @@ breaks `.tscn`/`.uid` references and risks the browser build).
 - One shared damage/force system (`Impact`) — don't add per-object damage.
 - Config + placement over new code. New enemy = a `.tscn`; new river = a `TerrainZone`.
 - Use Godot physics; don't hand-roll. Don't over-engineer.
-- Preserve the browser build; keep the 7 tests green.
+- Preserve the browser build; keep the 23 tests green.
 
 ## Known TODOs / next batches
 
@@ -111,6 +130,9 @@ breaks `.tscn`/`.uid` references and risks the browser build).
 - Optionally refactor the hand-placed garrison in `Battlefield.tscn` to `Formation`
   instances (kept hand-placed for now so `battle_test`'s `$ShieldWall` group still works),
   and add formation **break/morale** conditions.
-- A full `WaveSpawner` resource (waves still live in `Battlefield.gd`) + an `EnemyPool`.
-- KO + time **score screen**; a balance pass; the challenge rooms. See
-  [`../ROADMAP.md`](../ROADMAP.md).
+- ~~A full `WaveSpawner` resource~~ — **done**: `scripts/spawning/WaveSpawner.gd` + `Wave.gd`
+  + `scenes/data/SampleWaves.tres` (additive; **adopt it inside `Battlefield.gd`** — waves
+  still live there). Still open: an `EnemyPool` for a bigger crowd.
+- ~~KO + time **score screen**~~ — **done** (`scripts/ui/ScoreScreen.gd`). ~~The challenge
+  rooms~~ — **done** (`scripts/rooms/`: Bowling / Wall-Crush / Rock Launcher / Combo Trial).
+  Still open: per-ability VFX + cooldown UI; a balance pass. See [`../ROADMAP.md`](../ROADMAP.md).
