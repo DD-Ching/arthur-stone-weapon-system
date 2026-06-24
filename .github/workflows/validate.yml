@@ -207,3 +207,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/BattleMapTest.tscn --quit-after 600 | tee battlemap.log
           grep -q "MAP_VERDICT PASS" battlemap.log
+
+      - name: Run Changban test (escort map — protect the banner)
+        # Asserts the Changban (長坂坡) escort map: it sets a `_ward`, killing the ward fails
+        # the ProtectBanner constraint and loses; keeping the ward alive while every Wei wave
+        # is repelled wins (RepelWaves), with the banner still standing.
+        run: |
+          godot --headless --path . res://tests/ChangbanTest.tscn --quit-after 600 | tee changban.log
+          grep -q "CHANGBAN_VERDICT PASS" changban.log
