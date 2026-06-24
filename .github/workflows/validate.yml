@@ -87,6 +87,14 @@ jobs:
           godot --headless --path . res://tests/ObjectivesTest.tscn --quit-after 600 | tee objectives.log
           grep -q "OBJ_VERDICT PASS" objectives.log
 
+      - name: Run protect-banner test (ProtectBanner objective constraint)
+        # Asserts the reusable ProtectBanner constraint: it holds while the allied banner
+        # lives, fails (→ lose) once the ward is gone, never reports "done", and drives the
+        # ObjectiveManager to emit a loss when the ward dies.
+        run: |
+          godot --headless --path . res://tests/ProtectBannerTest.tscn --quit-after 600 | tee protectbanner.log
+          grep -q "PROTECT_OBJ_VERDICT PASS" protectbanner.log
+
       - name: Run formations test (v0.11 Formation module)
         # Asserts a placeable Formation spawns its configured roster on the right team with
         # the support rank arranged behind the front along the facing.
