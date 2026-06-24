@@ -116,3 +116,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/AbilitiesTest.tscn --quit-after 600 | tee abilities.log
           grep -q "ABIL_VERDICT PASS" abilities.log
+
+      - name: Run wave-spawner test (data-driven waves as a Resource)
+        # Asserts a WaveSpawner .tres materializes its waves by reusing the shared modules:
+        # a loose wave spawns N raiders via Spawner, a formation wave marches in via Formation,
+        # and a non-default team re-tags loose units onto the right side.
+        run: |
+          godot --headless --path . res://tests/WaveSpawnerTest.tscn --quit-after 600 | tee wavespawner.log
+          grep -q "WAVESPAWN_VERDICT PASS" wavespawner.log
