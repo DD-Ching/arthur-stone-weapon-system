@@ -66,6 +66,14 @@ jobs:
           godot --headless --path . res://tests/SpinTest.tscn --quit-after 600 | tee spin.log
           grep -q "SPIN_VERDICT PASS" spin.log
 
+      - name: Run musou test (rage gauge + screen-clearing ultimate)
+        # Asserts the musou gauge fills (musou_changed fires), the public ultimate
+        # trigger spawns a big shockwave that launches/damages a ring of enemies, and
+        # the gauge resets toward 0 after firing.
+        run: |
+          godot --headless --path . res://tests/MusouTest.tscn --quit-after 600 | tee musou.log
+          grep -q "MUSOU_VERDICT PASS" musou.log
+
       - name: Run ford test (v0.7 river current + water wheel)
         # Asserts the river current drifts a loose body downstream, the water wheel
         # bats a body placed in it far away, and the named audio events fire.

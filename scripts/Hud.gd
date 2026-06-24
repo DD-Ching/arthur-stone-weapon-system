@@ -16,6 +16,8 @@ extends CanvasLayer
 @onready var objective_label: Label = $Root/ObjectiveLabel
 @onready var banner_label: Label = $Root/BannerLabel
 @onready var ko_label: Label = $Root/KoLabel
+@onready var musou_fill: ColorRect = $Root/MusouBg/MusouFill
+@onready var musou_label: Label = $Root/MusouLabel
 
 const FILL_WIDTH := 312.0
 var _flash := 0.0       ## white flash on the stamina bar when a swing fizzles
@@ -25,6 +27,7 @@ var _flow_ratio := 0.0  ## smoothed flow bar fill
 var _flow_target := 0.0
 var _stacks := 0
 var _mode := false
+var _musou_ratio := 0.0   ## musou gauge fill 0..1 (full = ULTIMATE ready)
 var _t := 0.0
 
 func bind(arthur) -> void:
@@ -32,10 +35,12 @@ func bind(arthur) -> void:
 	arthur.weapon_state_changed.connect(_on_state_changed)
 	arthur.exhausted.connect(_on_exhausted)
 	arthur.health_changed.connect(_on_health_changed)
+	arthur.musou_changed.connect(_on_musou_changed)
 	Impact.flow_changed.connect(_on_flow_changed)
 	Impact.kills_changed.connect(_on_kills_changed)
 	_on_stamina_changed(arthur.stamina, arthur.max_stamina)
 	_on_health_changed(arthur.health, arthur.max_health)
+	_on_musou_changed(arthur.musou, arthur.max_musou)
 	_on_flow_changed(Impact.flow, Impact.stacks, Impact.flow_mode)
 	_on_kills_changed(Impact.kills, "")
 
@@ -69,6 +74,20 @@ func _on_health_changed(current: float, maximum: float) -> void:
 	health_fill.color = Color(0.85, 0.3, 0.3).lerp(Color(0.5, 0.85, 0.4), ratio)
 	health_label.text = "HEALTH  %d / %d" % [round(current), round(maximum)]
 
+## The musou rage gauge: a gold bar that fills as Arthur fights; at full it reads
+## "ULTIMATE READY!" and pulses (the pulse rides in _process so it animates).
+func _on_musou_changed(current: float, maximum: float) -> void:
+	if not musou_fill:
+		return
+	_musou_ratio = clampf(current / maxf(maximum, 0.001), 0.0, 1.0)
+	musou_fill.size.x = FILL_WIDTH * _musou_ratio
+	if _musou_ratio >= 1.0:
+		musou_label.text = "MUSOU  ULTIMATE READY!"
+	else:
+		musou_label.text = "MUSOU  %d / %d" % [round(current), round(maximum)]
+		# Dim gold while charging; the full-gauge pulse is applied in _process.
+		musou_fill.color = Color(0.7, 0.55, 0.18).lerp(Color(1.0, 0.84, 0.3), _musou_ratio)
+
 func _process(delta: float) -> void:
 	_t += delta
 	if _flash > 0.0:
@@ -86,6 +105,10 @@ func _process(delta: float) -> void:
 	_flow_ratio = move_toward(_flow_ratio, _flow_target, delta * 2.5)
 	flow_fill.size.x = FILL_WIDTH * _flow_ratio
 	flow_fill.color = _flow_color()
+	# A full musou gauge pulses bright gold so "ULTIMATE READY!" is unmissable.
+	if musou_fill and _musou_ratio >= 1.0:
+		var pulse := 0.65 + 0.35 * sin(_t * 12.0)
+		musou_fill.color = Color(1.0, 0.78, 0.25).lerp(Color(1.0, 0.95, 0.6), pulse)
 
 func _flow_color() -> Color:
 	var cool := Color(0.45, 0.7, 1.0)
