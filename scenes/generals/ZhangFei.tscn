@@ -1,0 +1,38 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/General.gd" id="1_general"]
+
+[sub_resource type="CircleShape2D" id="zhangfei_shape"]
+radius = 28.0
+
+[node name="ZhangFei" type="RigidBody2D"]
+collision_layer = 4
+collision_mask = 31
+mass = 5.2
+gravity_scale = 0.0
+linear_damp = 5.4
+angular_damp = 7.0
+lock_rotation = true
+contact_monitor = true
+max_contacts_reported = 6
+script = ExtResource("1_general")
+enemy_name = "Zhang Fei"
+look = "heavy"
+radius = 28.0
+base_color = Color(0.34, 0.52, 0.38, 1)
+faction = "shu"
+is_general = true
+max_health = 360.0
+stagger_threshold = 1450.0
+shield_break_threshold = 9999.0
+ai_enabled = true
+move_speed = 46.0
+move_accel = 580.0
+sight_range = 300.0
+moves = PackedStringArray("pound", "bash")
+warcry_cooldown = 5.0
+warcry_radius = 220.0
+warcry_stun = 1.2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("zhangfei_shape")
