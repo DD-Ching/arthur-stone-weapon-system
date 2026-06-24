@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.14.0 — Smarter enemies</strong> · placeholder art · raiders now path around walls and field varied move-sets (javelin kiters, leap pouncers, ground-pound brutes); command a host of shield guards, spears, and a knight champion holding a river crossing — built from reusable terrain / formation / objective / steering / ability modules, playable on desktop and phone</em></p>
+<p align="center"><em>Status: <strong>v0.15.0 — Challenge rooms &amp; modular content</strong> · placeholder art · four self-contained challenge rooms (chain-impact bowling, wall-crush training, rock launcher, combo trial) join the river-crossing battle; new raider variants (javelin Archer, ground-pound Brute, fast Outrider), a reusable charge formation, a protect-the-banner objective, placeable terrain scenes, a KO + time score screen, and sharper battlefield readability — all built from the reusable terrain / formation / objective / steering / ability modules, playable on desktop and phone</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>

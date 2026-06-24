@@ -8,7 +8,19 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ## [Unreleased]
 
-### Added — modular content batch (12 parallel agents, integrated on dev)
+### Planned
+- Enemy pooling (`EnemyPool`) for even bigger crowds, per-ability VFX + a cooldown UI,
+  formation break/morale, adopting `WaveSpawner` inside the ford level, and a balance pass.
+  See [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.15.0] — 2026-06-24
+
+**Challenge rooms & a modular content batch** — eleven additive units built by twelve
+parallel agents on the existing shared modules (no engine rewrite), then integrated on `dev`.
+
+### Added — modular content batch (12 parallel agents)
 **No engine rewrite — additive config + placement on the shared modules.** A 12-agent
 content batch that *adds content* (rooms, configs, resources, draw) on the existing
 `Enemy` / `Impact` / `Formation` / `Objective` / `TerrainZone` / `Spawner` seams.
@@ -38,11 +50,6 @@ content batch that *adds content* (rooms, configs, resources, draw) on the exist
   distinct broken-shield state, a spear thrust warning line, lunge/leap charge lanes, and
   an officer/morale-aura ring.
 - **Eleven new headless tests** — the CI suite grows from 12 to **23**.
-
-### Planned
-- Enemy pooling (`EnemyPool`) for even bigger crowds, per-ability VFX + a cooldown UI,
-  formation break/morale, adopting `WaveSpawner` inside the ford level, and a balance pass.
-  See [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
 
 ---
 
