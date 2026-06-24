@@ -65,7 +65,7 @@ func _ready() -> void:
 	# Compose the win from the reusable objective modules instead of hand-coding it: the room
 	# is won the instant the field is cleared.
 	_objectives = ObjectiveManager.new()
-	_objectives.add(ClearRoomObjective.new())
+	_objectives.add(ClearFieldObjective.new())
 	hud.bind(arthur)
 	Impact.popup("WALL-CRUSH TRAINING", arthur.global_position + Vector2(0, -110),
 		Color(1.0, 0.55, 0.25), 1.4)
@@ -206,7 +206,7 @@ func _draw() -> void:
 ## A thin level-local objective: the room is won the instant the field is cleared. Kept here
 ## (an inner class) because it is this room's only rule — every reusable bit lives in the
 ## modules it composes (`Objective`, `ObjectiveManager`).
-class ClearRoomObjective extends Objective:
+class ClearFieldObjective extends Objective:
 	func _init() -> void:
 		title = "Clear the room"
 		required = true
