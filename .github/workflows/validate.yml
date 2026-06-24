@@ -116,3 +116,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/AbilitiesTest.tscn --quit-after 600 | tee abilities.log
           grep -q "ABIL_VERDICT PASS" abilities.log
+
+      - name: Run rock-launcher-room test (challenge level #3)
+        # Asserts a Rock launched at speed into an enemy registers a real hit via
+        # Impact.collide (damage + knockback), and the room recognises "all enemies
+        # defeated -> win" through its composed ClearRoomObjective.
+        run: |
+          godot --headless --path . res://tests/RockLauncherRoomTest.tscn --quit-after 600 | tee rockroom.log
+          grep -q "ROCK_ROOM_VERDICT PASS" rockroom.log
