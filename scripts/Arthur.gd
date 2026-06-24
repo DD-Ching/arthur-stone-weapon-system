@@ -15,6 +15,11 @@ signal weapon_state_changed(state_name: String, charge: float)
 signal exhausted()
 signal health_changed(current: float, maximum: float)
 signal died()
+signal musou_changed(current: float, maximum: float)   ## the musou rage gauge — fills as you fight, for the HUD
+
+## The ULTIMATE reuses the slam's Shockwave (the one shared radial-launch path) — just
+## bigger: a huge radius + impulse + stun centred on Arthur clears the whole screen.
+const SHOCKWAVE := preload("res://scenes/Shockwave.tscn")
 
 @export_group("Movement")
 @export var max_speed := 158.0
@@ -32,8 +37,16 @@ signal died()
 @export var max_health := 140.0
 @export var invuln_time := 0.6   ## i-frames after a hit so a crowd can't chain-melt you
 
+@export_group("Musou")
+## The rage gauge. Fills from landing hits, scoring KOs, and taking damage; at full
+## it powers a screen-clearing ULTIMATE (a huge radial launch centred on Arthur).
+@export var max_musou := 200.0
+@export var musou_kill_gain := 14.0   ## gauge added per enemy you fell (the musou KO counter)
+@export var musou_hurt_gain := 18.0   ## gauge added when an enemy lands a hit on you (suffering feeds rage)
+
 var stamina := 0.0
 var health := 0.0
+var musou := 0.0               ## current rage charge, 0..max_musou
 var _regen_cooldown := 0.0
 var _hitstop_token := 0
 var _hurt := 0.0               ## red hit-flash, seconds remaining
@@ -42,6 +55,7 @@ var _steer := Vector2.ZERO     ## input-driven velocity (carries momentum)
 var _dash_vel := Vector2.ZERO  ## swing-lunge burst, decays on its own
 var _last_aim := 0.0           ## last drawn facing — redraw only when it changes
 var _touch_cache = null        ## the on-screen touch controls (mobile), or null on desktop
+var _last_kills := 0           ## previous Impact.kills, so each NEW KO feeds the musou gauge once
 
 @onready var weapon: StoneWeapon = $StoneWeapon
 @onready var camera = $Camera2D  ## untyped: GameCamera adds add_shake() at runtime
@@ -55,8 +69,11 @@ func _ready() -> void:
 	weapon.charge_changed.connect(_on_weapon_charge_changed)
 	weapon.too_tired.connect(_on_weapon_too_tired)
 	Impact.impact_fx.connect(_on_impact_fx)   # shake/hit-stop from props + bowling hits
+	Impact.kills_changed.connect(_on_kills_changed)   # each KO feeds the musou gauge
+	_last_kills = Impact.kills
 	stamina_changed.emit(stamina, max_stamina)
 	health_changed.emit(health, max_health)
+	musou_changed.emit(musou, max_musou)
 
 func _physics_process(delta: float) -> void:
 	if _hurt > 0.0:
@@ -81,6 +98,7 @@ func take_damage(amount: float, from_pos: Vector2 = Vector2.ZERO) -> bool:
 	health = maxf(0.0, health - amount)
 	_hurt = 0.35
 	_invuln = invuln_time
+	add_musou(musou_hurt_gain)   # suffering stokes the rage — taking a hit charges the gauge
 	Impact.note_damage()
 	if camera and camera.has_method("add_shake"):
 		camera.call("add_shake", 12.0)
@@ -111,6 +129,12 @@ func _touch_controls():
 	return _touch_cache
 
 func _handle_attack() -> void:
+	# A full musou gauge + the musou key = the screen-clearing ULTIMATE. Guard the
+	# action so this is a no-op on a build whose project.godot lacks it (returns false,
+	# no error spam). Fires before swing/slam so the same press can't also do both.
+	if musou >= max_musou and InputMap.has_action("musou") and Input.is_action_just_pressed("musou"):
+		trigger_musou_ultimate()
+		return
 	# Hold to whirl (the musou tornado); takes priority over swing/slam while held.
 	# The early return is load-bearing: holding spin must not also fire a swing/slam
 	# in the same frame. stop_spin() is idempotent — safe to call every frame.
@@ -182,9 +206,25 @@ func try_spend_stamina(cost: float) -> bool:
 	stamina_changed.emit(stamina, max_stamina)
 	return true
 
+## Add to the musou rage gauge (clamped 0..max), and announce the change to the HUD.
+## Only emits when the value actually moved, so it never spams a maxed/empty gauge.
+func add_musou(amount: float) -> void:
+	var before := musou
+	musou = clampf(musou + amount, 0.0, max_musou)
+	if not is_equal_approx(musou, before):
+		musou_changed.emit(musou, max_musou)
+
+## Each new KO (the shared Impact musou counter) feeds the gauge a little.
+func _on_kills_changed(k: int, _milestone: String) -> void:
+	if k > _last_kills:
+		add_musou(musou_kill_gain * float(k - _last_kills))
+	_last_kills = k
+
 func _on_weapon_hit(shake_strength: float, _count: int) -> void:
 	if camera and camera.has_method("add_shake"):
 		camera.call("add_shake", shake_strength)
+	# Landing a heavy hit feeds the musou gauge — bigger hits charge it faster.
+	add_musou(shake_strength * 0.5)
 	# The whirlwind hits constantly — a freeze per hit would stutter it to a crawl,
 	# so spin gets only the rumble, not the hit-stop.
 	if weapon.state != StoneWeapon.State.SPIN:
@@ -220,6 +260,30 @@ func _on_weapon_charge_changed(power: float) -> void:
 func _on_weapon_too_tired() -> void:
 	Impact.note_exhausted()   # running dry mid-combo breaks Stone Flow
 	exhausted.emit()
+
+## The musou ULTIMATE: a screen-clearing radial launch centred on Arthur. It empties
+## the gauge, then spawns one BIG Shockwave at his feet and detonates it — reusing the
+## exact slam/shockwave force path (radial impulse + real damage + stun, with falloff),
+## just scaled way up. Public so the HUD/input and the headless test can fire it directly.
+func trigger_musou_ultimate() -> void:
+	# Empty the gauge first so a re-press in the same frame can't double-fire.
+	musou = 0.0
+	musou_changed.emit(musou, max_musou)
+	var scene := get_tree().current_scene
+	if scene == null:
+		scene = get_parent()   # headless harnesses often add Arthur straight under the test root
+	if scene == null:
+		return
+	var wave = SHOCKWAVE.instantiate()   # untyped: it's a Node2D we position in the world
+	wave.radius = 360.0                  # a huge reach — clears the screen
+	wave.impulse = 1600.0                # launches the whole crowd hard
+	wave.stun_time = 1.5                 # and leaves them reeling
+	scene.add_child(wave)
+	wave.global_position = global_position
+	wave.detonate()                      # impulse AFTER positioning (see Shockwave.detonate)
+	if camera and camera.has_method("add_shake"):
+		camera.call("add_shake", 30.0)   # a big, screen-rattling shake
+	Audio.play("wall_crush", global_position)
 
 func _state_name(state: int) -> String:
 	match state:
