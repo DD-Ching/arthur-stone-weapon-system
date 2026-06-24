@@ -94,6 +94,13 @@ jobs:
           godot --headless --path . res://tests/FormationsTest.tscn --quit-after 600 | tee formations.log
           grep -q "FORM_VERDICT PASS" formations.log
 
+      - name: Run charge-group test (ChargeGroup formation config)
+        # Asserts the reusable ChargeGroup spawns a wide front rank of light chargers plus a
+        # Cavalry commander, all on the raider team, facing down toward the defenders.
+        run: |
+          godot --headless --path . res://tests/ChargeGroupTest.tscn --quit-after 600 | tee chargegroup.log
+          grep -q "CHARGE_GRP_VERDICT PASS" chargegroup.log
+
       - name: Run touch-controls test (v0.13 mobile play)
         # Asserts the virtual sticks produce an analog move vector + drive the existing
         # aim/attack so circling the right stick swings, and the SLAM/SPIN buttons press

@@ -1,0 +1,14 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/formations/Formation.gd" id="1_form"]
+[ext_resource type="PackedScene" path="res://scenes/LightSoldier.tscn" id="2_light"]
+[ext_resource type="PackedScene" path="res://scenes/Cavalry.tscn" id="3_cav"]
+
+[node name="ChargeGroup" type="Node2D"]
+script = ExtResource("1_form")
+front = ExtResource("2_light")
+front_count = 7
+commander = ExtResource("3_cav")
+spacing = 90.0
+team = "raiders"
+face = Vector2(0, 1)
