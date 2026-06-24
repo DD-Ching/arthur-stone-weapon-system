@@ -49,6 +49,7 @@ built/spawned at runtime by Battlefield:
 | `GameCamera.gd`    | Decaying screen shake                                                |
 | `Hud.gd`           | Stamina/health bars + weapon-state + Stone Flow + objective/banner/KO, from signals |
 | `Battlefield.gd`   | The **level**: assembles terrain zones + spawns, runs the 5-wave script, breach lose / wave win, bridge collapse, log hazards |
+| `rooms/*.gd`       | A **self-contained challenge level** each: places Arthur + `Enemy` configs + props and composes objectives (Bowling / Wall-Crush / Rock Launcher / Combo Trial) |
 | `Arena.gd`         | The older sandbox: floor/grid, interior walls, HUD binding, reset hotkey |
 
 ### Reusable modules (build once, reuse many)
@@ -60,6 +61,10 @@ built/spawned at runtime by Battlefield:
 | `spawning/Spawner.gd` | every spawn site. Static `spawn()/spawn_count()` place a group of scenes across a lane (used by the waves and the allied line). |
 | `ai/Steering.gd` | every unit's wall avoidance. Stateless whisker raycasts vs the **world** layer return an adjusted heading that flows *around* solid geometry (and a "most-open direction" for unsticking). `Enemy.gd` pipes its march + approach direction through it; works in any level for free. |
 | `abilities/Ability.gd` + `AbilityLibrary.gd` | every attack. A data-driven move (timings/ranges/damage + one `execute`) and a registry of them. A unit's `moves` list is picked-by-range each attack; a new move is a table row, a new fighter is a `.tscn` that lists ids. Empty `moves` → a synth move from the legacy `attack_*` exports (back-compat). |
+| `objectives/ClearRoomObjective.gd` + `ProtectBannerObjective.gd` | every room/level win-lose. `ClearRoom` completes once all placed enemies are defeated; `ProtectBanner` is a constraint that loses if the warded allied banner dies. Compose them via the `ObjectiveManager` like the other objectives. |
+| `spawning/WaveSpawner.gd` + `Wave.gd` | data-driven waves. A `WaveSpawner` runs a list of `Wave` resources (e.g. `scenes/data/SampleWaves.tres`), materialising each by reusing `Spawner`/`Formation`. Additive — the ford level isn't rewired to it yet. |
+| `ui/ScoreScreen.gd` | every level's end card. A KO + time summary shown on victory/defeat (a minimal hook in `Battlefield.gd`). |
+| `terrain/` placeable zones (`RiverZone` / `MudZone` / `Fence`) | drop-in terrain. `RiverZone`/`MudZone` are `.tscn` configs of `TerrainZone.gd`; `Fence` (`terrain/Fence.gd`) is a solid `StaticBody2D` wall. |
 | `Audio.gd` + `SoundBank.gd` | every sound. `Audio.play("event", pos)` fires one bus signal; `SoundBank` synthesises a procedural voice per event. |
 
 **How to add things** (see also [`MEMORY.md`](MEMORY.md)): a **new enemy** = a `.tscn`

@@ -8,10 +8,41 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ## [Unreleased]
 
+### Added — modular content batch (12 parallel agents, integrated on dev)
+**No engine rewrite — additive config + placement on the shared modules.** A 12-agent
+content batch that *adds content* (rooms, configs, resources, draw) on the existing
+`Enemy` / `Impact` / `Formation` / `Objective` / `TerrainZone` / `Spawner` seams.
+- **Four challenge rooms** (`scripts/rooms/` + `scenes/rooms/`, each a self-contained
+  level reusing Arthur + `Enemy` + props + `Impact` + objectives): **Bowling Room**
+  (chain-impact a packed cluster with one launched body), **Wall-Crush Training** (pin
+  raiders to walls via `Impact.cushion`), **Rock Launcher Room** (defeat every placed
+  enemy — also ships a reusable `objectives/ClearRoomObjective.gd`), and a **Combo Trial
+  Room** (race a timer to a Stone Flow stack target, listening to `Impact.flow_changed`).
+- **`scenes/formations/ChargeGroup.tscn`** — a reusable wide flanking-charge `Formation`
+  config (light chargers led by a Cavalry commander).
+- **`objectives/ProtectBannerObjective.gd`** — a reusable *constraint* objective (required,
+  non-completable): lose if the warded allied banner dies (the inverse of `DefeatOfficer`).
+- **Placeable terrain scenes** — `scenes/terrain/RiverZone.tscn`, `MudZone.tscn` (configs
+  wrapping `TerrainZone.gd`) and `Fence.tscn` (+ `scripts/terrain/Fence.gd`, a solid
+  `StaticBody2D` wall) — terrain building blocks you drop into a level.
+- **KO + time score screen** — `scenes/ui/ScoreScreen.tscn` + `scripts/ui/ScoreScreen.gd`,
+  shown on victory/defeat via a minimal hook in `Battlefield.gd`.
+- **`WaveSpawner` + `Wave` resources** — `scripts/spawning/WaveSpawner.gd` + `Wave.gd`
+  + `scenes/data/SampleWaves.tres`: data-driven waves that materialise by reusing
+  `Spawner`/`Formation`. Additive — the ford level is **not** rewired to use it yet.
+- **Three new raider variants** (pure `.tscn` configs of `Enemy.gd`): **Archer** (spear
+  look, javelin ranged kiter), **Brute** (heavy look, pound+bash mini-boss), and
+  **Outrider** (soldier look, lunge+slash fast flanker).
+- **Battlefield-readability draw enrichments** — additive `Enemy.gd` `_draw`/telegraph
+  work: richer per-`look` silhouettes (a new **`knight`** look), a clearer shield arc + a
+  distinct broken-shield state, a spear thrust warning line, lunge/leap charge lanes, and
+  an officer/morale-aura ring.
+- **Eleven new headless tests** — the CI suite grows from 12 to **23**.
+
 ### Planned
-- An `abilities/` data system (slash / bash / thrust / charge / aura) — plus a KO/time
-  score screen and enemy pooling for even bigger crowds. See
-  [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
+- Enemy pooling (`EnemyPool`) for even bigger crowds, per-ability VFX + a cooldown UI,
+  formation break/morale, adopting `WaveSpawner` inside the ford level, and a balance pass.
+  See [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
 
 ---
 

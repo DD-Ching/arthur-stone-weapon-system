@@ -29,9 +29,16 @@ The genuine hard-coding/duplication targeted by the refactor:
 | 5 | **Reusable spawner** — `Spawner` helper; the wave + ally spawns use it | ✅ v0.9.0 |
 | 8 | **Objective module** — `RepelWaves` / `DefeatOfficer` / `HoldLine` + an `ObjectiveManager`; win/lose lifted out of `Battlefield.gd` | ✅ v0.10.0 |
 | 7 | **Formation module** — `Formation` (front/support/commander ranks) + `ShieldWall` / `SpearPhalanx` / `OfficerGuard` scenes; the waves arrive as formations | ✅ v0.11.0 |
-| 6 | **Ability module** — slash / shield bash / spear thrust / charge / aura as data (wind-up/active/recover/cooldown/hit-area) | ⬜ next |
-| 9 | **Wave/spawn system** — a full `WaveSpawner` resource (timed waves, lanes, escalation) + optional `EnemyPool` for a bigger crowd | ⬜ next |
-| 10 | **Level data structure** — assemble levels from terrain + spawns + formations + objectives + props + params | ⬜ next |
+| 6 | **Ability module** — slash / shield bash / spear thrust / charge / aura as data (wind-up/active/recover/cooldown/hit-area) | ✅ v0.14 |
+| 9 | **Wave/spawn system** — a full `WaveSpawner` resource (timed waves, lanes, escalation) + optional `EnemyPool` for a bigger crowd | 🔶 (`WaveSpawner`+`Wave` resources shipped — `scripts/spawning/WaveSpawner.gd`+`Wave.gd`; `EnemyPool` still ⬜) |
+| 10 | **Level data structure** — assemble levels from terrain + spawns + formations + objectives + props + params | 🔶 (challenge rooms in `scripts/rooms/` + placeable `scenes/terrain/` scenes shipped; full level-from-data assembly still partial) |
+
+A **parallel content batch** (12 agents) then landed *additively* on these modules — no
+engine rewrite: four challenge rooms (`scripts/rooms/`), a `ChargeGroup` formation, a
+`ProtectBanner` objective, placeable `scenes/terrain/` zones (River/Mud/Fence), a KO+time
+score screen, the `WaveSpawner`+`Wave` resources, three new raider variants (Archer/Brute/
+Outrider), and battlefield-readability draw enrichments. It added 11 new headless tests (the
+CI suite is now 23).
 
 ## Conventions for the remaining batches
 
@@ -39,5 +46,5 @@ The genuine hard-coding/duplication targeted by the refactor:
   (`terrain/`, `spawning/`, later `formations/`, `objectives/`, `abilities/`).
 - Keep existing actor/prop files where they are — relocating them rewrites every
   `.tscn`/`.uid` reference and risks the web build.
-- Each batch: implement the smallest slice, keep the 7 headless tests green, run an
+- Each batch: implement the smallest slice, keep the 23 headless tests green, run an
   adversarial review of the new code, then ship on `dev`→`main` with a tag.

@@ -42,9 +42,11 @@ Live demo: <https://dd-ching.github.io/arthur-stone-weapon-system/>
 
 Headless, on Godot 4.3. Run one with:
 `godot --headless --path . res://tests/<Name>.tscn --quit-after 600` and grep the
-`*_VERDICT PASS` line. The suite (`.github/workflows/validate.yml`):
-`SwingSmokeTest`, `BehaviorTest`, `ImpactTest`, `BattleTest`, `SpinTest`, `FordTest`,
-`HoldFordTest`. Local dev Godot is newer (4.7); CI is the source of truth (4.3.0).
+`*_VERDICT PASS` line. **23 headless tests** now gate CI
+(`.github/workflows/validate.yml`) — the original `SwingSmokeTest` / `BehaviorTest` /
+`ImpactTest` / `BattleTest` / `SpinTest` / `FordTest` / `HoldFordTest` plus the
+formations / objectives / abilities / nav / touch / challenge-room / module suites. Local
+dev Godot is newer (4.7); CI is the source of truth (4.3.0).
 
 `--quit-after` counts *idle* frames, which outrun physics frames in headless — use 600,
 not a small number, or a test's report (fired on a physics-frame counter) won't run.
@@ -66,6 +68,9 @@ not a small number, or a test's report (fired on a physics-frame counter) won't 
 | **New tunable** | Add an `@export` (per-instance) or a `const` in `Impact.gd` (global combat numbers). |
 | **New audio** | Call `Audio.play("event", pos)`; add a procedural voice in `SoundBank.gd`. |
 | **New level** | A `Node2D` scene that places terrain zones, props, spawn points, formations, and a banner/goal; keep logic thin (see `Battlefield.gd`). |
+| **New challenge level** | A self-contained `scenes/rooms/<Name>.tscn` + `scripts/rooms/<Name>.gd` that reuses Arthur / `Enemy` / props / `Impact` / objectives (see `BowlingRoom`). |
+| **New objective** | A `scripts/objectives/<Name>Objective.gd` (extend `Objective`); set `required`/`completable` and register it with the `ObjectiveManager` (see `ProtectBannerObjective`, `ClearRoomObjective`). |
+| **New formation** | A `scenes/formations/<Name>.tscn` config of `Formation.gd` — tune the front/support/commander roster + spacing (see `ChargeGroup`). |
 
 Folder map and system list: [`docs/MEMORY.md`](docs/MEMORY.md). Refactor batches and
 status: [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md).
