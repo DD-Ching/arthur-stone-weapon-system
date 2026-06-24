@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="WaveSpawner" load_steps=5 format=3]
+
+; Sample WaveSpawner data — two waves that mirror Battlefield's mix:
+;   wave 0 = a loose mob of 5 LightSoldiers (Spawner path)
+;   wave 1 = a ShieldWall formation marching in as a block (Formation path)
+; A level loads this with load("res://scenes/data/SampleWaves.tres") and calls spawn_wave().
+
+[ext_resource type="Script" path="res://scripts/spawning/WaveSpawner.gd" id="1_spawner"]
+[ext_resource type="Script" path="res://scripts/spawning/Wave.gd" id="2_wave"]
+[ext_resource type="PackedScene" path="res://scenes/LightSoldier.tscn" id="3_light"]
+[ext_resource type="PackedScene" path="res://scenes/formations/ShieldWall.tscn" id="4_shieldwall"]
+
+[sub_resource type="Resource" id="Wave_0"]
+script = ExtResource("2_wave")
+label = "LIGHT RAIDERS"
+scenes = Array[PackedScene]([ExtResource("3_light")])
+count = 5
+lane_y = -490.0
+x_min = -380.0
+x_max = 380.0
+scatter = true
+team = "raiders"
+delay = 0.0
+
+[sub_resource type="Resource" id="Wave_1"]
+script = ExtResource("2_wave")
+label = "SHIELD WALL"
+scenes = Array[PackedScene]([])
+formation = ExtResource("4_shieldwall")
+count = 0
+lane_y = -390.0
+x_min = -300.0
+x_max = 300.0
+scatter = false
+team = "raiders"
+delay = 0.0
+
+[resource]
+script = ExtResource("1_spawner")
+waves = Array[Resource]([SubResource("Wave_0"), SubResource("Wave_1")])
