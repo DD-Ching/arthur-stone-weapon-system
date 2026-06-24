@@ -158,6 +158,15 @@ jobs:
           godot --headless --path . res://tests/BeautifyTest.tscn --quit-after 600 | tee beautify.log
           grep -q "BEAUTIFY_VERDICT PASS" beautify.log
 
+      - name: Run heavy-art test (heavy bruiser + grander general silhouette)
+        # Asserts the additive HeavyArt drawing: the shipped HeavyGuard ("heavy" look) draws over a
+        # few frames with no errors both as a normal bruiser and (is_general flipped on) as a grander
+        # general — horns/plume/faction war-cloak — across every faction, with the unit surviving
+        # every redraw. Purely visual — no gameplay change.
+        run: |
+          godot --headless --path . res://tests/HeavyArtTest.tscn --quit-after 600 | tee heavyart.log
+          grep -q "ART_HEAVY_VERDICT PASS" heavyart.log
+
       - name: Run bowling-room test (chain-impact challenge level)
         # Asserts the Bowling Room: a heavy striker launched into a packed wedge of pins chains
         # bowling impacts (Impact's enemy-to-enemy collisions) to knock multiple pins out, and
