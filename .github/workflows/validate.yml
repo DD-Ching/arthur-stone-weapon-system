@@ -207,3 +207,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/BattleMapTest.tscn --quit-after 600 | tee battlemap.log
           grep -q "MAP_VERDICT PASS" battlemap.log
+
+      - name: Run Hu Lao Gate test (虎牢關 gate-chokepoint map)
+        # Asserts the Hu Lao Gate BattleMap subclass boots (Arthur + HUD), the Wei raiders spawn
+        # through the gate funnel, and clearing the field drives all five waves + the officer
+        # down to victory (RepelWaves + DefeatOfficer through the shared BattleMap loop).
+        run: |
+          godot --headless --path . res://tests/HuLaoGateTest.tscn --quit-after 600 | tee hulao.log
+          grep -q "HULAO_VERDICT PASS" hulao.log
