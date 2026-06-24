@@ -116,3 +116,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/AbilitiesTest.tscn --quit-after 600 | tee abilities.log
           grep -q "ABIL_VERDICT PASS" abilities.log
+
+      - name: Run terrain-scenes test (placeable terrain building blocks)
+        # Asserts the placeable RiverZone drifts a loose body downstream + damps a fast body
+        # via drag, and the Fence is a solid StaticBody2D on the world layer with a shape.
+        run: |
+          godot --headless --path . res://tests/TerrainScenesTest.tscn --quit-after 600 | tee terrain_scenes.log
+          grep -q "TERRAIN_SCN_VERDICT PASS" terrain_scenes.log
