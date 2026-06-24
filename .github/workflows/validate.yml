@@ -149,6 +149,15 @@ jobs:
           godot --headless --path . res://tests/VisualReadabilityTest.tscn --quit-after 600 | tee visread.log
           grep -q "VISREAD_VERDICT PASS" visread.log
 
+      - name: Run soldier-art test (beautified light-footman silhouette)
+        # Asserts the beautified light-footman art (scripts/art/SoldierArt.gd): a real LightSoldier
+        # ("soldier" look) draws its enriched silhouette (sleek helm, short sword, buckler, tunic,
+        # faction sash) across every faction plus a faded copy, over a few frames with no errors,
+        # and survives with look "soldier". Purely visual — no gameplay change.
+        run: |
+          godot --headless --path . res://tests/SoldierArtTest.tscn --quit-after 600 | tee soldierart.log
+          grep -q "ART_SOLDIER_VERDICT PASS" soldierart.log
+
       - name: Run beautify test (faction colour theming + enriched silhouettes)
         # Asserts the additive faction-beautification drawing: every (look x faction) combo draws
         # over a few frames with no errors, faction_color() returns the expected hue per kingdom
