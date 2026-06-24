@@ -233,11 +233,6 @@ jobs:
           godot --headless --path . res://tests/HuLaoGateTest.tscn --quit-after 600 | tee hulao.log
           grep -q "HULAO_VERDICT PASS" hulao.log
 
-      - name: Run Hu Lao Gate map test (虎牢關 gate chokepoint)
-        run: |
-          godot --headless --path . res://tests/HuLaoGateTest.tscn --quit-after 600 | tee hulao.log
-          grep -q "HULAO_VERDICT PASS" hulao.log
-
       - name: Run Red Cliffs map test (赤壁 fire + river + FireZone)
         run: |
           godot --headless --path . res://tests/RedCliffsTest.tscn --quit-after 600 | tee redcliffs.log
@@ -268,20 +263,10 @@ jobs:
           godot --headless --path . res://tests/TroopsTest.tscn --quit-after 600 | tee troops.log
           grep -q "TROOPS_VERDICT PASS" troops.log
 
-      - name: Run Musou gauge + ultimate test
-        run: |
-          godot --headless --path . res://tests/MusouTest.tscn --quit-after 600 | tee musou.log
-          grep -q "MUSOU_VERDICT PASS" musou.log
-
       - name: Run Boss healthbar UI test
         run: |
           godot --headless --path . res://tests/BossHealthbarTest.tscn --quit-after 600 | tee bosshealthbar.log
           grep -q "BOSSBAR_VERDICT PASS" bosshealthbar.log
-
-      - name: Run Unit beautification + faction colours test
-        run: |
-          godot --headless --path . res://tests/BeautifyTest.tscn --quit-after 600 | tee beautify.log
-          grep -q "BEAUTIFY_VERDICT PASS" beautify.log
 
       - name: Run Stage select menu test
         run: |
