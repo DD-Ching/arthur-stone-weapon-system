@@ -15,6 +15,29 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.17.0] — 2026-06-25
+
+**Beautified the army — a dedicated agent per unit.** Each unit type got its own polished,
+faction-aware silhouette, built in parallel (one agent, one file) on a new per-unit art
+foundation. No gameplay changes; cheap code-`_draw` only, browser build stays single-threaded.
+
+### Added
+- **Per-unit art foundation** — `Enemy._draw_type()` now dispatches to `scripts/art/UnitArt.gd`,
+  with one art file per look (`SoldierArt` / `ShieldArt` / `HeavyArt` / `SpearArt` / `BannerArt` /
+  `KnightArt`), so a unit can be beautified in isolation without touching `Enemy.gd`.
+- **Beautified units** (faction-colour aware, allocation-light):
+  - **Soldier** — peaked helm, short sword, round buckler, cloak + faction sash.
+  - **Shield** — a plated kite shield with boss + faction emblem, and a distinctly *shattered* broken state.
+  - **Heavy** — armoured bruiser (pauldrons, great-helm, maul); **generals** get a horned helm + war-cloak.
+  - **Spear** — long reach with a leaf blade, faction pennon, buckler + helm.
+  - **Banner** — a tall officer's standard with a flowing faction pennant, finial + tassels.
+  - **Knight** — crested helm, swept sabre, ornate crossguard, faction cape; **generals** become
+    *legendary* (scaled up, halo ring + sunburst crown — 呂布 / 關羽 stand out).
+  - **Cavalry / WarCart** — a proper warhorse + lancer, and a wheeled chariot with a battering ram.
+- **7 new headless art tests** — CI suite grows to **43**.
+
+---
+
 ## [0.16.1] — 2026-06-24
 
 **Phone landscape (橫屏) play.** Make the web build properly playable on a phone in
