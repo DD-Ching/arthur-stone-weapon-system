@@ -193,6 +193,35 @@ tuned*, not copy-pasted. Full batch list + status: [`docs/BATCH_PLAN.md`](docs/B
 
 ---
 
+## Phase 8 — 三國無雙 / Dynasty-Warriors layer ✅🔶  → ships as **v0.16.0**, continues
+
+A whole Three-Kingdoms layer, built *additively* on the shared modules by a 12-agent batch —
+no engine rewrite, the browser build stays single-threaded. Full list:
+[`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md).
+
+- ✅ **BattleMap framework** — `scripts/maps/BattleMap.gd`: a reusable battle-map base; a new
+  map is a thin `extends BattleMap` (Arthur + HUD + score screen + boss-healthbar, a
+  `WaveSpawner`, an `ObjectiveManager`, KO/elapsed/breach tracking, win/lose). `Enemy.gd`
+  gains `faction` + `is_general` + `faction_color()`; a `musou` input (Q).
+- ✅ **Five Three-Kingdoms maps** — Hu Lao Gate (虎牢關, gate chokepoint vs Lu Bu), Red Cliffs
+  (赤壁, fire + river via a reusable `FireZone`), Guandu (官渡, base-raid via a reusable `Base`
+  + `CaptureBasesObjective`), Changban (長坂坡, escort via `ProtectBanner`), Yellow Turban
+  (黃巾之亂, survival horde via a reusable `SurviveObjective`)
+- ✅ **Named generals (武將)** — `scripts/General.gd` boss brain + LuBu / GuanYu / ZhangFei /
+  XiahouDun (`scenes/generals/`, 300–520 HP, signature war-cry); a **boss healthbar** UI
+  (`scenes/ui/GeneralHealthbar.tscn`) that auto-tracks the "generals" group
+- ✅ **Musou ultimate** — `Arthur.gd` rage gauge (fills on hits/KOs/damage) + a Q-triggered
+  screen-clearing ultimate (reuses the Shockwave radial path); a gold MUSOU gauge on the HUD
+- ✅ **Five new troop types** (`scenes/troops/`, pure `Enemy.gd` configs) + **faction-colour
+  theming** in `Enemy.gd` `_draw`, and **decor props** (`scenes/decor/`)
+- ✅ **Stage select** — `scenes/ui/StageSelect.tscn` is now the boot scene: Hold the Ford + the
+  4 challenge rooms + the 5 new maps
+- ⬜ More generals & **officer duels**; a **map-to-map campaign** flow
+- ⬜ An **`EnemyPool`** for the huge musou crowds (the web framerate ceiling)
+- ⬜ A **balance pass** across the new maps and the musou ultimate
+
+---
+
 ## Phase 4.5 — Public Demo 🔶  → ongoing
 
 Get it into other people's hands.

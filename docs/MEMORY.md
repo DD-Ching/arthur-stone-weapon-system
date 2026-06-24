@@ -17,7 +17,14 @@ into walls. Build **Stone Flow** combo on good hits. Slam (R-click), spin/tornad
 Manage **stamina**. On the battlefield: hold a line against waves, protect allies, knock
 enemies into terrain (river, mill wheel), break formations, defeat the officer.
 
-## Current level: Hold the Ford
+## Levels: a stage select of battles
+
+The game now **boots into a stage select** (`scenes/ui/StageSelect.tscn`) — a 三國無雙 battle
+picker. **Hold the Ford** (below) is one of several: it sits alongside the 4 challenge rooms
+and 5 Three-Kingdoms maps (Hu Lao Gate / Red Cliffs / Guandu / Changban / Yellow Turban),
+each a self-contained level reusing the shared modules. See the 三國無雙 layer above.
+
+### Hold the Ford
 
 A river crossing. Five escalating waves (raiders → shields → spears → cavalry+cart →
 officer) march to cross toward an **allied banner**; **allied footmen** fight at your
@@ -97,15 +104,44 @@ can be collapsed, drifting **logs**.
   shield arcs + a distinct broken-shield state, spear thrust warning lines, lunge/leap charge
   lanes, and an officer/morale-aura ring (additive `Enemy.gd` `_draw` work).
 
+### 三國無雙 / Dynasty-Warriors layer (v0.16, additive — no engine rewrite)
+
+- **BattleMap base** — `scripts/maps/BattleMap.gd`: a reusable battle-map base. A new map is a
+  thin `extends BattleMap` subclass — the base instantiates Arthur + HUD + score screen + a
+  boss-healthbar overlay, drives a `WaveSpawner`, runs an `ObjectiveManager`, tracks
+  KO/elapsed/breaches, and resolves win/lose. `Enemy.gd` gained `faction` (魏/蜀/吳/neutral
+  colour theming) + `is_general` (joins the "generals" group) exports + `faction_color()`.
+- **Five Three-Kingdoms maps** (`scenes/maps/` + `scripts/maps/`): **Hu Lao Gate (虎牢關)**
+  gate chokepoint (final wave is warlord 呂武 Lu Bu); **Red Cliffs (赤壁)** fire + river using
+  a reusable **`FireZone`** hazard (`scripts/hazards/`); **Guandu (官渡)** base-raid with a
+  reusable **`Base`** entity + **`CaptureBasesObjective`**; **Changban (長坂坡)** escort/protect
+  (reuses `ProtectBannerObjective`); **Yellow Turban (黃巾之亂)** survival horde with a reusable
+  **`SurviveObjective`**.
+- **Named generals (武將)** — `scripts/General.gd` (a boss brain) + `scenes/generals/`
+  (LuBu / GuanYu / ZhangFei / XiahouDun): `is_general=true`, 300–520 HP, a signature war-cry.
+- **Five new troop types** (`scenes/troops/`, pure `Enemy.gd` configs): Halberdier, Crossbow,
+  ShockTrooper, Drummer, StandardBearer.
+- **Musou gauge + ultimate** — `Arthur.gd` gains a rage gauge (fills on hits/KOs/damage) and a
+  Q-triggered (`musou`) screen-clearing ultimate (reuses the Shockwave radial-launch path);
+  `Hud.gd`/`Hud.tscn` show a gold MUSOU gauge.
+- **Boss healthbar** — `scenes/ui/GeneralHealthbar.tscn`: auto-tracks the "generals" group,
+  drawing faction-tinted boss HP bars; `BattleMap` shows it on every map.
+- **Faction theming** — `Enemy.gd` `_draw` tints units toward their faction colour with richer
+  per-look silhouettes.
+- **Stage-select boot menu** — `scenes/ui/StageSelect.tscn` (a 三國無雙 battle picker) is now
+  the boot scene (`project.godot run/main_scene`): Hold the Ford + the 4 challenge rooms + the
+  5 new maps (guarded by `ResourceLoader.exists`).
+- **Decor props** — `scenes/decor/` + `scripts/decor/`: FactionBanner, Brazier, GatePost, WarDrum.
+
 ## Folder map
 
 ```
 CLAUDE.md, README, ROADMAP, CHANGELOG, CONTRIBUTING
 docs/        MEMORY, ARCHITECTURE, BATCH_PLAN, CONCEPT, DESIGN_GOALS, CONTROLS, BUILD
 devlog/      0001..0007 (dated narrative)
-scripts/     actors + systems (flat) + terrain/ + spawning/ + formations/ + objectives/ + ui/ + ai/ + abilities/ + rooms/
-scenes/      actor/prop/level scenes (flat) + terrain/ + formations/ + ui/ + rooms/ + data/
-tests/       headless *_test.gd + *.tscn (23 gate CI)
+scripts/     actors + systems (flat) + terrain/ + spawning/ + formations/ + objectives/ + ui/ + ai/ + abilities/ + rooms/ + maps/ + hazards/ + decor/
+scenes/      actor/prop/level scenes (flat) + terrain/ + formations/ + ui/ (StageSelect + GeneralHealthbar) + rooms/ + data/ + maps/ + generals/ + troops/ + hazards/ + decor/
+tests/       headless *_test.gd + *.tscn (36 gate CI)
 .github/     validate.yml (tests), pages.yml (web deploy)
 ```
 
@@ -119,7 +155,7 @@ breaks `.tscn`/`.uid` references and risks the browser build).
 - One shared damage/force system (`Impact`) — don't add per-object damage.
 - Config + placement over new code. New enemy = a `.tscn`; new river = a `TerrainZone`.
 - Use Godot physics; don't hand-roll. Don't over-engineer.
-- Preserve the browser build; keep the 23 tests green.
+- Preserve the browser build; keep the 36 tests green.
 
 ## Known TODOs / next batches
 

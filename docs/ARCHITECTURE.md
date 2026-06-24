@@ -4,8 +4,8 @@ A guided tour of how the prototype is wired. It is built from small **reusable
 modules** + one **impact/combo brain**, so a new enemy is a `.tscn`, a new river is a
 placed `TerrainZone`, and a new level is a scene that assembles modules. See
 [`MEMORY.md`](MEMORY.md) for the quick map and [`BATCH_PLAN.md`](BATCH_PLAN.md) for the
-refactor status. `Battlefield.tscn` is the **main scene** (the "Hold the Ford" level);
-`Arena.tscn` is the older sandbox.
+refactor status. `scenes/ui/StageSelect.tscn` is now the **main scene** (a 三國無雙 battle
+picker); `Battlefield.tscn` is the "Hold the Ford" level and `Arena.tscn` is the older sandbox.
 
 ## Scene tree (Battlefield — the current level)
 
@@ -39,7 +39,7 @@ built/spawned at runtime by Battlefield:
 | Script             | Owns                                                                 |
 | ------------------ | ------------------------------------------------------------------- |
 | `Impact.gd`        | **The one tuning hub**: all impact numbers, the scoring formula, the Stone Flow combo, the wall-crush raycast, and the floating-label / shake feedback |
-| `Arthur.gd`        | Body: momentum movement, stamina, slam input, hit-stop, Stone-Flow mobility, routing weapon → camera/HUD |
+| `Arthur.gd`        | Body: momentum movement, stamina, slam input, hit-stop, Stone-Flow mobility, the **musou** rage gauge + its Q-triggered screen-clearing ultimate (reuses the Shockwave radial path), routing weapon → camera/HUD |
 | `StoneWeapon.gd`   | The visual, the swing + slam state machine, charge, the hitbox + the passive stone body; runs each swing hit through `Impact` |
 | `Enemy.gd`         | A configurable `RigidBody2D` enemy: take-hit / knockback / shield block / stun / defeat, and **bowling** (scores when flung into another enemy) |
 | `Rock.gd`          | A `RigidBody2D` prop/projectile (rock or crate): launches when hit, and scores when it hits an enemy |
@@ -47,9 +47,11 @@ built/spawned at runtime by Battlefield:
 | `PressurePlate.gd` | A weight-it-to-open-the-gate puzzle (plate Area2D + gate StaticBody2D) |
 | `FloatingText.gd`  | A rising, fading hit label (drawn in code)                          |
 | `GameCamera.gd`    | Decaying screen shake                                                |
-| `Hud.gd`           | Stamina/health bars + weapon-state + Stone Flow + objective/banner/KO, from signals |
+| `Hud.gd`           | Stamina/health bars + weapon-state + Stone Flow + a gold **MUSOU** gauge + objective/banner/KO, from signals |
 | `Battlefield.gd`   | The **level**: assembles terrain zones + spawns, runs the 5-wave script, breach lose / wave win, bridge collapse, log hazards |
 | `rooms/*.gd`       | A **self-contained challenge level** each: places Arthur + `Enemy` configs + props and composes objectives (Bowling / Wall-Crush / Rock Launcher / Combo Trial) |
+| `maps/BattleMap.gd`| A **reusable battle-map base**: wires Arthur + HUD + score screen + boss-healthbar, drives a `WaveSpawner`, runs an `ObjectiveManager`, tracks KO/elapsed/breaches, win/lose. The 5 Three-Kingdoms maps (`maps/HuLaoGate`/`RedCliffs`/`Guandu`/`Changban`/`YellowTurban`) are thin `extends BattleMap` |
+| `General.gd`       | A named-general boss brain (`scenes/generals/` LuBu/GuanYu/ZhangFei/XiahouDun): `is_general=true`, 300–520 HP, a signature war-cry; joins the "generals" group |
 | `Arena.gd`         | The older sandbox: floor/grid, interior walls, HUD binding, reset hotkey |
 
 ### Reusable modules (build once, reuse many)
@@ -62,9 +64,15 @@ built/spawned at runtime by Battlefield:
 | `ai/Steering.gd` | every unit's wall avoidance. Stateless whisker raycasts vs the **world** layer return an adjusted heading that flows *around* solid geometry (and a "most-open direction" for unsticking). `Enemy.gd` pipes its march + approach direction through it; works in any level for free. |
 | `abilities/Ability.gd` + `AbilityLibrary.gd` | every attack. A data-driven move (timings/ranges/damage + one `execute`) and a registry of them. A unit's `moves` list is picked-by-range each attack; a new move is a table row, a new fighter is a `.tscn` that lists ids. Empty `moves` → a synth move from the legacy `attack_*` exports (back-compat). |
 | `objectives/ClearRoomObjective.gd` + `ProtectBannerObjective.gd` | every room/level win-lose. `ClearRoom` completes once all placed enemies are defeated; `ProtectBanner` is a constraint that loses if the warded allied banner dies. Compose them via the `ObjectiveManager` like the other objectives. |
-| `spawning/WaveSpawner.gd` + `Wave.gd` | data-driven waves. A `WaveSpawner` runs a list of `Wave` resources (e.g. `scenes/data/SampleWaves.tres`), materialising each by reusing `Spawner`/`Formation`. Additive — the ford level isn't rewired to it yet. |
-| `ui/ScoreScreen.gd` | every level's end card. A KO + time summary shown on victory/defeat (a minimal hook in `Battlefield.gd`). |
+| `objectives/CaptureBasesObjective.gd` + `SurviveObjective.gd` | more win conditions. `CaptureBases` completes once the placed `Base` (`scripts/Base.gd`, `scenes/Base.tscn`) entities are taken (Guandu); `Survive` completes by outlasting a timer/horde (Yellow Turban). |
+| `maps/BattleMap.gd` | every Three-Kingdoms map. A reusable level base — a new map is a thin `extends BattleMap` that places terrain/spawns/objectives; the base wires Arthur + HUD + score screen + boss-healthbar, the `WaveSpawner`, the `ObjectiveManager`, and win/lose. |
+| `hazards/FireZone.gd` | every fire field. A placeable area hazard (Red Cliffs) that damages bodies inside it, composed like a `TerrainZone`. |
+| `spawning/WaveSpawner.gd` + `Wave.gd` | data-driven waves. A `WaveSpawner` runs a list of `Wave` resources (e.g. `scenes/data/SampleWaves.tres`), materialising each by reusing `Spawner`/`Formation`. Drives every `BattleMap`. |
+| `ui/ScoreScreen.gd` | every level's end card. A KO + time summary shown on victory/defeat (a minimal hook in `Battlefield.gd` / `BattleMap`). |
+| `ui/GeneralHealthbar.gd` | every boss bar. `scenes/ui/GeneralHealthbar.tscn` auto-tracks the "generals" group, drawing faction-tinted boss HP bars; `BattleMap` shows it on every map. |
+| `ui/StageSelect.gd` | the **new main scene** (`project.godot run/main_scene`): a 三國無雙 battle picker listing Hold the Ford + the 4 challenge rooms + the 5 new maps (guarded by `ResourceLoader.exists`). |
 | `terrain/` placeable zones (`RiverZone` / `MudZone` / `Fence`) | drop-in terrain. `RiverZone`/`MudZone` are `.tscn` configs of `TerrainZone.gd`; `Fence` (`terrain/Fence.gd`) is a solid `StaticBody2D` wall. |
+| `decor/` props (`FactionBanner` / `Brazier` / `GatePost` / `WarDrum`) | drop-in faction decor. `scenes/decor/` + `scripts/decor/` — placed for theming, no gameplay rules. |
 | `Audio.gd` + `SoundBank.gd` | every sound. `Audio.play("event", pos)` fires one bus signal; `SoundBank` synthesises a procedural voice per event. |
 
 **How to add things** (see also [`MEMORY.md`](MEMORY.md)): a **new enemy** = a `.tscn`
