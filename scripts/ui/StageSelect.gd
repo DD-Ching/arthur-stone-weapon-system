@@ -30,7 +30,7 @@ const CANDIDATES := [
 ]
 
 const TITLE_TEXT := "三國無雙 — SELECT YOUR BATTLE"
-const HINT_TEXT := "W/S or ↑/↓ to choose   ·   Space / Enter to deploy"
+const HINT_TEXT := "W/S or ↑/↓ · Space/Enter to deploy   ·   or TAP a battle"
 
 const BG_COL := Color(0.08, 0.07, 0.10, 1.0)
 const TITLE_COL := Color(0.96, 0.82, 0.42)
@@ -123,6 +123,17 @@ func _input(event: InputEvent) -> void:
 				_launch()
 			else:
 				selected = hit
+				_redraw()
+			_consume()
+	elif event is InputEventScreenTouch and event.pressed:
+		# Phones (emulate_mouse_from_touch is off) — tap a battle row to select it, tap the
+		# highlighted row to deploy. Same hit-test the mouse path uses.
+		var hit_t := _row_at(event.position)
+		if hit_t >= 0:
+			if hit_t == selected:
+				_launch()
+			else:
+				selected = hit_t
 				_redraw()
 			_consume()
 

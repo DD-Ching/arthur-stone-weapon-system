@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.16.0 — 三國無雙 (Dynasty Warriors)</strong> · placeholder art · a stage-select of Three-Kingdoms battles (Hu Lao Gate / Red Cliffs / Guandu / Changban / Yellow Turban) with named generals (武將), a Q-triggered musou ultimate, faction colours, and more troop types — all built from the reusable BattleMap / terrain / formation / objective / ability modules, playable on desktop and phone</em></p>
+<p align="center"><em>Status: <strong>v0.16.0 — 三國無雙 (Dynasty Warriors)</strong> · placeholder art · a stage-select of Three-Kingdoms battles (Hu Lao Gate / Red Cliffs / Guandu / Changban / Yellow Turban) with named generals (武將), a Q-triggered musou ultimate, faction colours, and more troop types — all built from the reusable BattleMap / terrain / formation / objective / ability modules, playable on desktop and on a phone in landscape (橫屏)</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
