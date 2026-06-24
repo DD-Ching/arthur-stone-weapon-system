@@ -116,3 +116,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/AbilitiesTest.tscn --quit-after 600 | tee abilities.log
           grep -q "ABIL_VERDICT PASS" abilities.log
+
+      - name: Run score-screen test (v0.15 KO + time result overlay)
+        # Asserts the end-of-battle ScoreScreen reveals on a result and its labels show the
+        # KO count, the elapsed time formatted m:ss, and the right VICTORY/DEFEAT word.
+        run: |
+          godot --headless --path . res://tests/ScoreScreenTest.tscn --quit-after 600 | tee score.log
+          grep -q "SCORE_UI_VERDICT PASS" score.log

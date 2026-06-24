@@ -67,6 +67,7 @@ const SHIELD_WALL := preload("res://scenes/formations/ShieldWall.tscn")
 const SPEAR_PHALANX := preload("res://scenes/formations/SpearPhalanx.tscn")
 const OFFICER_GUARD := preload("res://scenes/formations/OfficerGuard.tscn")
 const ALLIED_HOST := preload("res://scenes/formations/AlliedHost.tscn")
+const SCORE_SCREEN := preload("res://scenes/ui/ScoreScreen.tscn")
 
 @onready var arthur = $Arthur
 @onready var hud = $Hud
@@ -87,6 +88,8 @@ var _bridge_zone: TerrainZone = null   ## deep water over the gap, enabled when 
 var _crossing: Node2D = null
 var _log_cd := 6.0
 var _objectives: ObjectiveManager = null   ## this level's win/lose, composed from modules
+var _elapsed := 0.0                  ## battle time, frozen at the win/lose result
+var _score_screen: CanvasLayer = null   ## end-of-battle KO + time overlay
 
 func _ready() -> void:
 	Impact.reset()
@@ -117,6 +120,8 @@ func _ready() -> void:
 		.add(HoldLineObjective.new())
 	arthur.died.connect(_on_arthur_died)
 	hud.bind(arthur)
+	_score_screen = SCORE_SCREEN.instantiate()
+	add_child(_score_screen)
 	Impact.popup("THE FORD OF THE STONE KING", arthur.global_position + Vector2(0, -120),
 		Color(0.85, 0.8, 0.6), 1.4)
 	_evaluate_objectives()
@@ -207,6 +212,7 @@ func _repeat(scenes: Array, count: int) -> Array:
 
 func _physics_process(delta: float) -> void:
 	if not (_won or _lost):
+		_elapsed += delta
 		_wave_cd -= delta
 		_log_cd -= delta
 	# Run the slow systems a few times a second — they change only on a spawn/defeat.
@@ -305,12 +311,20 @@ func _victory() -> void:
 	hud.show_banner("THE FORD HOLDS!", Color(0.5, 0.95, 0.55))
 	Impact.popup("VICTORY — THE FORD IS YOURS", arthur.global_position + Vector2(0, -64),
 		Color(1.0, 0.85, 0.3), 1.6)
+	_show_score(true)
 
 func _defeat_ford() -> void:
 	if _won or _lost:
 		return
 	_lost = true
 	hud.show_banner("THE FORD IS LOST", Color(0.95, 0.45, 0.4))
+	_show_score(false)
+
+## Reveal the end-of-battle KO + time overlay with the live Impact KO count and the
+## elapsed battle time. Minimal hook for the score-screen unit; the panel owns its own UI.
+func _show_score(victory: bool) -> void:
+	if _score_screen:
+		_score_screen.show_result(victory, Impact.kills, _elapsed)
 
 # ── bridge (a level-specific destructible) ──────────────────────────────────
 
@@ -356,6 +370,7 @@ func _on_arthur_died() -> void:
 		return
 	_lost = true
 	hud.show_banner("ARTHUR HAS FALLEN", Color(0.95, 0.4, 0.4))
+	_show_score(false)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("reset_arena"):
