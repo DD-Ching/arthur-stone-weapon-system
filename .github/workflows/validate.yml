@@ -207,3 +207,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/BattleMapTest.tscn --quit-after 600 | tee battlemap.log
           grep -q "MAP_VERDICT PASS" battlemap.log
+
+      - name: Run boss-healthbar test (named-general HP overlay)
+        # Asserts the self-tracking GeneralHealthbar overlay: a named general (is_general)
+        # makes the bar visible and report its name + a full ratio, halving its health halves
+        # the tracked ratio, and freeing the general hides the bar (no generals tracked).
+        run: |
+          godot --headless --path . res://tests/BossHealthbarTest.tscn --quit-after 600 | tee bossbar.log
+          grep -q "BOSSBAR_VERDICT PASS" bossbar.log
