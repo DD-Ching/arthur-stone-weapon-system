@@ -1,0 +1,87 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/rooms/ComboTrialRoom.gd" id="1_room"]
+[ext_resource type="PackedScene" path="res://scenes/Arthur.tscn" id="2_arthur"]
+
+[sub_resource type="RectangleShape2D" id="wall_h"]
+size = Vector2(1320, 40)
+
+[sub_resource type="RectangleShape2D" id="wall_v"]
+size = Vector2(40, 760)
+
+[node name="ComboTrialRoom" type="Node2D"]
+script = ExtResource("1_room")
+
+[node name="Walls" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Top" type="CollisionShape2D" parent="Walls"]
+position = Vector2(0, -380)
+shape = SubResource("wall_h")
+
+[node name="Bottom" type="CollisionShape2D" parent="Walls"]
+position = Vector2(0, 380)
+shape = SubResource("wall_h")
+
+[node name="Left" type="CollisionShape2D" parent="Walls"]
+position = Vector2(-660, 0)
+shape = SubResource("wall_v")
+
+[node name="Right" type="CollisionShape2D" parent="Walls"]
+position = Vector2(660, 0)
+shape = SubResource("wall_v")
+
+[node name="Arthur" parent="." instance=ExtResource("2_arthur")]
+position = Vector2(0, 200)
+
+[node name="RoomHud" type="CanvasLayer" parent="."]
+
+[node name="Root" type="Control" parent="RoomHud"]
+layout_mode = 3
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="TimeLabel" type="Label" parent="RoomHud/Root"]
+offset_left = 24.0
+offset_top = 22.0
+offset_right = 360.0
+offset_bottom = 56.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 26
+text = "TIME  30.0"
+
+[node name="StackLabel" type="Label" parent="RoomHud/Root"]
+offset_left = 24.0
+offset_top = 58.0
+offset_right = 360.0
+offset_bottom = 90.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 22
+text = "STACKS  0 / 4"
+
+[node name="Hint" type="Label" parent="RoomHud/Root"]
+offset_left = 24.0
+offset_top = 92.0
+offset_right = 640.0
+offset_bottom = 116.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 16
+text = "COMBO TRIAL: keep landing heavy hits to stack Stone Flow before time runs out"
+
+[node name="BannerLabel" type="Label" parent="RoomHud/Root"]
+visible = false
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -60.0
+offset_right = 380.0
+offset_bottom = 60.0
+mouse_filter = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 44
+text = ""

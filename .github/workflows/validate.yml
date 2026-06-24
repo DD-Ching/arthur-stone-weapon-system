@@ -116,3 +116,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/AbilitiesTest.tscn --quit-after 600 | tee abilities.log
           grep -q "ABIL_VERDICT PASS" abilities.log
+
+      - name: Run combo trial room test (challenge level — Stone Flow race)
+        # Asserts the Combo Trial Room wins when Stone Flow stacks reach the target in time
+        # (driven via Impact.add_flow, the hit path), and loses when the timer expires below it.
+        run: |
+          godot --headless --path . res://tests/ComboTrialRoomTest.tscn --quit-after 600 | tee combo.log
+          grep -q "COMBO_ROOM_VERDICT PASS" combo.log
