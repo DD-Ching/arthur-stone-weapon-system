@@ -158,6 +158,15 @@ jobs:
           godot --headless --path . res://tests/BeautifyTest.tscn --quit-after 600 | tee beautify.log
           grep -q "BEAUTIFY_VERDICT PASS" beautify.log
 
+      - name: Run banner-art test (beautified officer standard silhouette)
+        # Asserts the BannerArt morale-unit standard: the shipped BannerBearer (look "banner")
+        # draws its tall pole + finial + crossbar + flowing pennant over several frames with no
+        # errors, for both the neutral (warm-default cloth) and a Wei (faction-blue) standard.
+        # Purely visual — no gameplay change.
+        run: |
+          godot --headless --path . res://tests/BannerArtTest.tscn --quit-after 600 | tee bannerart.log
+          grep -q "ART_BANNER_VERDICT PASS" bannerart.log
+
       - name: Run bowling-room test (chain-impact challenge level)
         # Asserts the Bowling Room: a heavy striker launched into a packed wedge of pins chains
         # bowling impacts (Impact's enemy-to-enemy collisions) to knock multiple pins out, and
