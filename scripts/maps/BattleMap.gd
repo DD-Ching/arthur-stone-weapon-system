@@ -15,6 +15,7 @@ extends Node2D
 const ARTHUR := preload("res://scenes/Arthur.tscn")
 const HUD := preload("res://scenes/Hud.tscn")
 const SCORE_SCREEN := preload("res://scenes/ui/ScoreScreen.tscn")
+const GENERAL_HEALTHBAR := preload("res://scenes/ui/GeneralHealthbar.tscn")
 
 @export_group("Battle Tuning")
 @export var density := 1.6                 ## scales wave counts (web-framerate dial)
@@ -61,6 +62,8 @@ func _ready() -> void:
 	hud.bind(arthur)
 	_score_screen = SCORE_SCREEN.instantiate()
 	add_child(_score_screen)
+	# A boss healthbar overlay that auto-tracks any named generals (武將) on the field.
+	add_child(GENERAL_HEALTHBAR.instantiate())
 	_spawn_allies()
 	_objectives = _compose_objectives()
 	_waves = _build_wave_spawner()

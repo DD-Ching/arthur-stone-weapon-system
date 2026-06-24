@@ -232,3 +232,63 @@ jobs:
         run: |
           godot --headless --path . res://tests/HuLaoGateTest.tscn --quit-after 600 | tee hulao.log
           grep -q "HULAO_VERDICT PASS" hulao.log
+
+      - name: Run Hu Lao Gate map test (虎牢關 gate chokepoint)
+        run: |
+          godot --headless --path . res://tests/HuLaoGateTest.tscn --quit-after 600 | tee hulao.log
+          grep -q "HULAO_VERDICT PASS" hulao.log
+
+      - name: Run Red Cliffs map test (赤壁 fire + river + FireZone)
+        run: |
+          godot --headless --path . res://tests/RedCliffsTest.tscn --quit-after 600 | tee redcliffs.log
+          grep -q "CHIBI_VERDICT PASS" redcliffs.log
+
+      - name: Run Guandu map test (官渡 base capture)
+        run: |
+          godot --headless --path . res://tests/GuanduTest.tscn --quit-after 600 | tee guandu.log
+          grep -q "GUANDU_VERDICT PASS" guandu.log
+
+      - name: Run Changban map test (長坂坡 escort/protect)
+        run: |
+          godot --headless --path . res://tests/ChangbanTest.tscn --quit-after 600 | tee changban.log
+          grep -q "CHANGBAN_VERDICT PASS" changban.log
+
+      - name: Run Yellow Turban map test (黃巾 survival + SurviveObjective)
+        run: |
+          godot --headless --path . res://tests/YellowTurbanTest.tscn --quit-after 600 | tee yellowturban.log
+          grep -q "YELLOWTURBAN_VERDICT PASS" yellowturban.log
+
+      - name: Run Named generals test (武將 boss units)
+        run: |
+          godot --headless --path . res://tests/GeneralsTest.tscn --quit-after 600 | tee generals.log
+          grep -q "GENERALS_VERDICT PASS" generals.log
+
+      - name: Run New troop types test
+        run: |
+          godot --headless --path . res://tests/TroopsTest.tscn --quit-after 600 | tee troops.log
+          grep -q "TROOPS_VERDICT PASS" troops.log
+
+      - name: Run Musou gauge + ultimate test
+        run: |
+          godot --headless --path . res://tests/MusouTest.tscn --quit-after 600 | tee musou.log
+          grep -q "MUSOU_VERDICT PASS" musou.log
+
+      - name: Run Boss healthbar UI test
+        run: |
+          godot --headless --path . res://tests/BossHealthbarTest.tscn --quit-after 600 | tee bosshealthbar.log
+          grep -q "BOSSBAR_VERDICT PASS" bosshealthbar.log
+
+      - name: Run Unit beautification + faction colours test
+        run: |
+          godot --headless --path . res://tests/BeautifyTest.tscn --quit-after 600 | tee beautify.log
+          grep -q "BEAUTIFY_VERDICT PASS" beautify.log
+
+      - name: Run Stage select menu test
+        run: |
+          godot --headless --path . res://tests/StageSelectTest.tscn --quit-after 600 | tee stageselect.log
+          grep -q "STAGESELECT_VERDICT PASS" stageselect.log
+
+      - name: Run Faction banners + decor props test
+        run: |
+          godot --headless --path . res://tests/DecorTest.tscn --quit-after 600 | tee decor.log
+          grep -q "DECOR_VERDICT PASS" decor.log

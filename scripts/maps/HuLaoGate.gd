@@ -19,6 +19,7 @@ const CHARGE_GROUP := preload("res://scenes/formations/ChargeGroup.tscn")
 const OFFICER_GUARD := preload("res://scenes/formations/OfficerGuard.tscn")
 const ALLIED_HOST := preload("res://scenes/formations/AlliedHost.tscn")
 const LIGHT_SOLDIER := preload("res://scenes/LightSoldier.tscn")
+const LU_BU := preload("res://scenes/generals/LuBu.tscn")
 
 const GATE_GAP := 150.0          ## width of the funnel mouth the raiders pour through
 
@@ -94,6 +95,7 @@ func _build_wave_spawner() -> WaveSpawner:
 		_formation_wave("SPEARS & SHIELDS", SPEAR_PHALANX, lane),
 		_formation_wave("CAVALRY CHARGE", CHARGE_GROUP, lane),
 		_formation_wave("OFFICER GUARD", OFFICER_GUARD, lane),
+		_loose_wave("WARLORD 呂布 LU BU", LU_BU, 1, lane),
 	]
 	return ws
 
