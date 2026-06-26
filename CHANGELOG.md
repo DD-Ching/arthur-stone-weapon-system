@@ -10,8 +10,53 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ### Planned
 - Enemy pooling (`EnemyPool`) for even bigger crowds, per-ability VFX + a cooldown UI,
-  a balance pass, more named generals & officer duels, and a map-to-map campaign flow.
+  more named generals & officer duels, and rank-and-file Saxon/Briton troop looks.
   See [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.20.0] — 2026-06-26
+
+**The convergence.** The scattered battles become one connected campaign you can actually
+live in — a story spine, a way home, troops on the field from the first breath, harder and
+fairer fights, and a lobby that finally fits the screen. Built reuse-first on the shared
+modules; no systems were rewritten.
+
+### Added
+- **A connected campaign** (`Campaign` autoload) — an ordered story-stage table (the Arthurian
+  legend as the spine, then the Ford & Trials, then the Three-Kingdoms bonus), with a short
+  story beat between battles, per-section unlock progression, and a cleared-set persisted to
+  `user://campaign.cfg`. One source of truth the lobby, pause menu and score screen all read.
+- **Return to the lobby, any time** — a reusable `PauseMenu` (Esc / mobile **MENU** →
+  **Resume · Restart · Return to Lobby**) on every battle and challenge room, built on a new
+  shared `MenuList` navigation component. No more refreshing the page to leave a fight.
+- **Campaign-aware results** — the score screen now offers **Next Battle / Retry / Return to
+  Lobby** and shows the next chapter's story beat, threading the battles into one arc.
+- **Troops from the first breath** — every map now opens already populated (`_spawn_standing_host`)
+  and reinforcements **fade/march in** instead of popping into being, giving the battle a
+  sense of a timeline rather than waves teleporting in and out.
+- **Real battlefields** — Defend Camelot gains a gate→courtyard **main street** with barricades
+  and cover; Guandu becomes a **walled-depot conquest** (stockades with reachable gates +
+  relief waves); the Lady of the Lake **funnels** its mere through crossings; Mount Badon,
+  Camlann and Yellow Turban gain flank scenery — all from existing props, placement-only.
+- A responsive, **container-based lobby** with stage **cards** (LOCKED / NEW / CLEARED badges),
+  a scrollable battle list, and DEPLOY / QUICK START — replacing the hand-painted menu.
+
+### Changed
+- **Boss fights actually gate the win.** A reusable `DefeatGeneralObjective` means a battle is
+  not won until the named boss falls — no more clearing the waves and winning while Mordred /
+  Cerdic / the Black Knight still stand. `RepelWaves` drops the magic `alive<=2` for a tunable
+  threshold + a guard that kills the frame-0 / no-wave instant win.
+- **Harder, fairer combat.** Spin is no longer a free screen-clear — it costs real stamina,
+  ticks slower, and is **interrupted** when an enemy hits you (a shield/spear wall now punishes
+  standing-and-spinning). Low stamina is a readable **taper**, not a silent cliff, telegraphed
+  on the HUD. Squishy raiders are tougher (no more one-shots) and the field is denser.
+- **Allies advance.** A standing ally line now marches toward the front from frame 0 instead of
+  standing idle until an enemy strays into range.
+
+### Tests
+- Suite grows to **65 headless tests** gating CI on Godot 4.3.0 (Campaign / MenuList / PauseMenu /
+  WinRules / SpinBalance / StaminaFeel / Difficulty added).
 
 ---
 
