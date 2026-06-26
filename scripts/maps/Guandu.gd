@@ -1,14 +1,18 @@
 extends BattleMap
 ## Guandu (官渡) — the granary raid. Yuan Shao's 魏 Wei army holds three supply depots
-## (granaries) across the field, each ringed by a garrison of raiders. Arthur and his
-## 蜀 Shu / 吳 Wu allies must storm each depot and clear its garrison to CAPTURE it; take
-## all the granaries and Cao Cao wins the campaign — the historical turning point where
-## burning Yuan Shao's grain decided the war.
+## (granaries) across the field, each ringed by a partial wooden STOCKADE and held by a
+## garrison of raiders. Arthur and his 蜀 Shu / 吳 Wu allies must storm each depot through
+## its one open gate and clear its garrison to CAPTURE it; take all the granaries and Cao
+## Cao wins the campaign — the historical turning point where burning Yuan Shao's grain
+## decided the war.
 ##
-## A THIN BattleMap subclass: it places `Base` instances (the reusable capture mechanic) and
-## spawns each garrison directly with the shared `Spawner`, then reports `bases_total` /
-## `bases_captured` through `_extra_context` so the reusable `CaptureBasesObjective` can win.
-## A small reinforcement wave keeps `_build_wave_spawner` honest (RepelWaves is optional).
+## A THIN BattleMap subclass: it places `Base` instances (the reusable capture mechanic),
+## rings each with a PARTIAL stockade (placed `Fence` / `GatePost` scenes left OPEN on the
+## side facing Arthur, so garrison and hero can both reach the capture circle), dresses each
+## depot with banners / drums / crates, and spawns each garrison directly with the shared
+## `Spawner`. It reports `bases_total` / `bases_captured` through `_extra_context` so the
+## reusable `CaptureBasesObjective` can win, and adds a required `RepelWavesObjective` so the
+## relief column must also be broken — you can't win by ignoring the fight.
 
 const LIGHT := preload("res://scenes/LightSoldier.tscn")
 const SHIELD := preload("res://scenes/ShieldSoldier.tscn")
@@ -16,6 +20,11 @@ const BASE := preload("res://scenes/Base.tscn")
 const ALLY := preload("res://scenes/Ally.tscn")
 const ALLY_SHIELD := preload("res://scenes/AllyShield.tscn")
 const ALLY_SPEAR := preload("res://scenes/AllySpear.tscn")
+const FENCE := preload("res://scenes/terrain/Fence.tscn")
+const GATE_POST := preload("res://scenes/decor/GatePost.tscn")
+const BANNER := preload("res://scenes/decor/FactionBanner.tscn")
+const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
+const CRATE := preload("res://scenes/Crate.tscn")
 
 ## Centre of each depot (granary). 2–3 bases, spread across the field.
 const DEPOTS: Array[Vector2] = [
@@ -24,6 +33,12 @@ const DEPOTS: Array[Vector2] = [
 	Vector2(0.0, -360.0),
 ]
 const DEPOT_RADIUS := 150.0
+## Stockade ring radius — kept WELL OUTSIDE DEPOT_RADIUS so the palisade never overlaps the
+## capture circle (a fence inside it could trap raiders out / block the garrison and stall the
+## capture forever). The gate gap on the open side lets the garrison AND Arthur cross freely.
+const STOCKADE_RADIUS := 192.0
+## Half-width of the OPEN gate gap, in radians of the ring — wide enough for bodies to file in.
+const GATE_HALF := 0.62
 
 func _map_title() -> String:
 	return "GUANDU (官渡)"
@@ -36,6 +51,65 @@ func _arthur_start() -> Vector2:
 
 func _world_bounds() -> Rect2:
 	return Rect2(-680.0, -560.0, 1360.0, 1040.0)
+
+# ── walls: a bounding frame, then a partial stockade around each depot ─────────
+func _build_walls() -> void:
+	# Foundation contract: frame the world FIRST, then add our own walls onto the same body.
+	_frame_walls(_world_bounds())
+	for centre in DEPOTS:
+		_ring_stockade(centre)
+
+## Ring a depot with a PARTIAL palisade: solid fence segments around the arc EXCEPT a gate gap
+## on the side facing Arthur's approach (downfield / +y). The gap is framed by a pair of stone
+## GatePosts so it reads as a real gateway. Every segment sits on STOCKADE_RADIUS (> capture
+## radius), so the capture circle is always reachable through the gate.
+func _ring_stockade(centre: Vector2) -> void:
+	# Gate faces Arthur: he marches UP the field from +y, so the opening points toward him.
+	var gate_dir := (_arthur_start() - centre).normalized()
+	var gate_ang := gate_dir.angle()
+	# Eight tangent slots around the ring; skip any whose centre falls within the gate gap,
+	# AND any that would poke past the world frame (a depot near the edge — e.g. the northern
+	# granary — would otherwise embed its back-arc fences INTO the boundary wall).
+	var slots := 8
+	for i in slots:
+		var ang := TAU * float(i) / float(slots)
+		if absf(_ang_delta(ang, gate_ang)) < GATE_HALF:
+			continue   # leave the gate side open
+		var pos := centre + Vector2(cos(ang), sin(ang)) * STOCKADE_RADIUS
+		if not _in_field(pos):
+			continue   # would clip the frame wall — drop it (back side, against the edge)
+		_fence_segment(centre, ang)
+	# Two gate posts flanking the open side, just at the edge of the gap.
+	_gate_post(centre, gate_ang - GATE_HALF)
+	_gate_post(centre, gate_ang + GATE_HALF)
+
+## True when `pos` sits inside the playfield with enough room for a placed fence/post — the
+## bounds inset by a fence's half-span, so a segment centred here can't reach the frame wall.
+func _in_field(pos: Vector2) -> bool:
+	var margin := 112.0   # ~half the 220px fence diagonal, so its OBB stays off the frame wall
+	return _world_bounds().grow(-margin).has_point(pos)
+
+## One fence segment laid tangent to the ring at angle `ang` (a chord of the palisade).
+## Fence/GatePost are their own StaticBody2D scenes (layer 1), so they're placed under the
+## map like every other dropped-in scene — not nested inside the frame's `_walls` body.
+func _fence_segment(centre: Vector2, ang: float) -> void:
+	var f := FENCE.instantiate()
+	add_child(f)
+	f.global_position = centre + Vector2(cos(ang), sin(ang)) * STOCKADE_RADIUS
+	f.rotation = ang + PI * 0.5   # tangent: long axis perpendicular to the radius
+
+## A stone gate post planted on the ring at angle `ang` (one jamb of the gateway).
+func _gate_post(centre: Vector2, ang: float) -> void:
+	var p := GATE_POST.instantiate()
+	add_child(p)
+	p.global_position = centre + Vector2(cos(ang), sin(ang)) * STOCKADE_RADIUS
+
+## Signed smallest angular difference a-b, wrapped to (-PI, PI].
+func _ang_delta(a: float, b: float) -> float:
+	var d := fmod(a - b + PI, TAU)
+	if d < 0.0:
+		d += TAU
+	return d - PI
 
 # ── allies: a small 蜀/吳 retinue that fights for Arthur ──────────────────────
 func _spawn_allies() -> void:
@@ -61,8 +135,9 @@ func _tint_faction(unit, name: String) -> void:
 
 # ── depots + garrisons ───────────────────────────────────────────────────────
 func _build_decor() -> void:
-	# Place each capturable Base and ring it with a 魏 Wei garrison. Done in _build_decor so
-	# the bases exist before the first objective evaluation (they're static field furniture).
+	# Place each capturable Base, ring it with a 魏 Wei garrison, and dress the depot with
+	# standards / drums / supply crates. Done in _build_decor so the bases exist before the
+	# first objective evaluation (they're static field furniture).
 	for idx in DEPOTS.size():
 		_place_depot(DEPOTS[idx], idx)
 
@@ -74,6 +149,7 @@ func _place_depot(centre: Vector2, idx: int) -> void:
 		b.radius = DEPOT_RADIUS
 	if "label" in b:
 		b.label = "DEPOT %d" % (idx + 1)
+	_dress_depot(centre)
 	# A garrison of raiders ringing the granary — they hold the depot until defeated. The
 	# count scales with the map density dial (web framerate), like every other spawn site.
 	var count: int = _scale(3)
@@ -90,13 +166,40 @@ func _place_depot(centre: Vector2, idx: int) -> void:
 		_tint_faction(e, "wei")          # Yuan Shao's depot guards — cosmetic 魏 blue
 		# team stays "raiders" (the default) → they join "targets", so the Base counts them.
 
-# ── objectives: capture every depot (waves are a bonus) ──────────────────────
+## Dress a depot centre with a 魏 Wei standard + war drum, and a small ring of supply crates
+## for cover. Pure placement of existing scenes — the banner/drum are decor, the crates are
+## physics props (cover Arthur can shove). All kept inside the capture circle (off-centre) so
+## they never sit on the gate path or the stockade line.
+func _dress_depot(centre: Vector2) -> void:
+	var banner := BANNER.instantiate()
+	add_child(banner)
+	banner.global_position = centre + Vector2(-22.0, -8.0)
+	if "faction" in banner:
+		banner.faction = "wei"
+	var drum := WAR_DRUM.instantiate()
+	add_child(drum)
+	drum.global_position = centre + Vector2(28.0, 14.0)
+	if "faction" in drum:
+		drum.faction = "wei"
+	# A small supply pile — crates as cover, set off-centre so they don't seal the gate.
+	var crate_offsets: Array[Vector2] = [
+		Vector2(-60.0, -44.0), Vector2(-44.0, -68.0), Vector2(60.0, -44.0),
+	]
+	for off in crate_offsets:
+		var c := CRATE.instantiate()
+		add_child(c)
+		c.global_position = centre + off
+
+# ── objectives: capture every depot AND break the relief column ──────────────
 func _compose_objectives() -> ObjectiveManager:
 	var mgr := ObjectiveManager.new()
 	mgr.add(CaptureBasesObjective.new("Capture the granaries"))
+	# A second REQUIRED goal so the field is never empty and you can't win by sneaking captures
+	# while a relief column still stands — the 魏 Wei relief wave must be repelled too.
+	mgr.add(RepelWavesObjective.new("Repel the relief"))
 	return mgr
 
-# ── a light reinforcement wave so the wave machinery is wired (RepelWaves not required) ──
+# ── a light relief column so RepelWaves has a real fight to resolve ──────────
 func _build_wave_spawner() -> WaveSpawner:
 	var ws := WaveSpawner.new()
 	var w := Wave.new()

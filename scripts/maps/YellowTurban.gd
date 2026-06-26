@@ -18,6 +18,15 @@ const LIGHT := preload("res://scenes/LightSoldier.tscn")
 const SKIRMISHER := preload("res://scenes/Skirmisher.tscn")
 const OUTRIDER := preload("res://scenes/Outrider.tscn")
 
+# Light flank scenery — existing reusable props, PLACED not coded. Crates + rocks the mob can
+# barge, fences along the outer flanks, and a rebel war drum + standard out on each wing. The
+# CENTRAL lane (Arthur's stand) stays clear so the swarm always has an open path in.
+const CRATE := preload("res://scenes/Crate.tscn")
+const ROCK := preload("res://scenes/Rock.tscn")
+const FENCE := preload("res://scenes/terrain/Fence.tscn")
+const BANNER := preload("res://scenes/decor/FactionBanner.tscn")
+const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
+
 ## How long the last-stand lasts, and the body-count that also wins it (either bar fills → win).
 @export var survive_seconds := 90.0
 @export var ko_target := 120
@@ -47,6 +56,52 @@ func _compose_objectives() -> ObjectiveManager:
 	mgr.add(SurviveObjective.new(survive_seconds, ko_target,
 		"Survive the Yellow Turban horde"))
 	return mgr
+
+# ── decor: light interactive scenery on the FLANKS (central lane kept clear) ──
+func _build_decor() -> void:
+	## Pure PLACEMENT of existing reusable props out on the two wings (x past the spawn lanes,
+	## inside the ±700 walls) — a rebel war drum + standard mark each wing, a fence rails the outer
+	## edge, and a few shovable crates/rocks litter the flank. Nothing sits in the central corridor
+	## around Arthur's stand, so the mob always has an open path to close in (survival pressure
+	## unchanged). The data IS the scenery — adding more is editing this list, not writing code.
+	for side in [-1.0, 1.0]:
+		# Rebel camp dressing on the wing (FactionBanner/WarDrum use the wei/shu/wu/neutral enum;
+		# "neutral" reads the grey/ochre mob look, matching the yellow-turban rabble).
+		_place_decor(BANNER, Vector2(560.0 * side, -260.0), "neutral")
+		_place_decor(WAR_DRUM, Vector2(620.0 * side, -200.0), "neutral")
+		_place_decor(BANNER, Vector2(560.0 * side, 280.0), "neutral")
+		# A fence railing the outer flank (a low vertical rail, resized from the default shape).
+		_place_fence(Vector2(650.0 * side, 0.0), Vector2(28.0, 260.0))
+		# Shovable props scattered on the wing — the mob barges through them as it pours in.
+		_place_prop(CRATE, Vector2(540.0 * side, -60.0))
+		_place_prop(CRATE, Vector2(560.0 * side, 120.0))
+		_place_prop(ROCK, Vector2(600.0 * side, 40.0))
+		_place_prop(ROCK, Vector2(500.0 * side, 200.0))
+
+## Drop a code-drawn decor prop (FactionBanner / WarDrum) at a spot, tinting it to a faction.
+func _place_decor(scene: PackedScene, pos: Vector2, faction: String) -> void:
+	var d = scene.instantiate()
+	add_child(d)
+	d.global_position = pos
+	if "faction" in d:
+		d.faction = faction
+
+## Drop a shovable RigidBody prop (Crate / Rock) at a spot — no config, just placement.
+func _place_prop(scene: PackedScene, pos: Vector2) -> void:
+	var p = scene.instantiate()
+	add_child(p)
+	p.global_position = pos
+
+## Place a Fence (world-layer obstacle) and resize its collision shape so the drawn rail follows.
+func _place_fence(pos: Vector2, size: Vector2) -> void:
+	var f = FENCE.instantiate()
+	add_child(f)
+	f.global_position = pos
+	for c in f.get_children():
+		if c is CollisionShape2D and c.shape is RectangleShape2D:
+			var rect := RectangleShape2D.new()
+			rect.size = size
+			c.shape = rect
 
 func _build_wave_spawner() -> WaveSpawner:
 	## An escalating rebel flood: each wave is bigger and a touch meaner than the last, arriving

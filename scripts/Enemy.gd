@@ -70,6 +70,7 @@ var _stun := 0.0          ## stun / stagger seconds remaining (vulnerable, can't
 var _t := 0.0
 var _dead := false
 var _alpha := 1.0
+var _spawn_in := 0.0      ## >0 = fading IN on spawn (units march on, they don't pop into being)
 var _chain := 0
 var _shield_broken := 0.0 ## seconds the shield is overwhelmed
 var _player = null        ## current FOE to attack (Arthur/ally for raiders; a raider for allies)
@@ -90,6 +91,7 @@ var _stuck_t := 0.0       ## seconds spent trying-but-failing to move (wall/jam)
 var _danger_zones: Array = []    ## cached "danger_terrain" (deep water) to route around
 var _crossings: Array = []       ## cached "crossing" markers (bridges/fords) to aim at
 var _goal_node = null            ## cached march goal (the ford banner), refreshed on retarget
+var _ally_goal = null            ## cached ally muster marker (the front), refreshed on retarget
 var _rerouting := false          ## currently steering around danger, not pursuing the foe
 var _space: PhysicsDirectSpaceState2D = null  ## world physics space, refreshed on the retarget tick
 
@@ -137,6 +139,11 @@ func _ready() -> void:
 		})]
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
+	# Fade in on spawn (the inverse of the death fade) so reinforcements + the opening host arrive
+	# as a quick "materialise" rather than popping into being at full opacity. Cosmetic only — it
+	# touches _alpha, never physics, groups, or hit maths, so every .tscn behaves the same.
+	_spawn_in = 0.3
+	_alpha = 0.0
 
 # ── taking a hit ────────────────────────────────────────────────────────────
 
@@ -204,6 +211,7 @@ func _defeat() -> void:
 	# Objectives count the defeat IMMEDIATELY, not after the ~0.6s fade-out.
 	remove_from_group("shieldwall")
 	remove_from_group("officers")        # so DefeatOfficer sees the kill the instant it lands
+	remove_from_group("generals")        # so DefeatGeneral (boss-gated win) registers immediately
 	Impact.popup("DOWN!", global_position + Vector2(0, -28), Color(1.0, 0.9, 0.4), 1.1)
 	# A fallen ALLY costs you nothing (no KO/flow); only raiders feed the counter.
 	if team == "raiders":
@@ -261,6 +269,10 @@ func _physics_process(delta: float) -> void:
 			_crossings = get_tree().get_nodes_in_group("crossing")
 		if team == "raiders":
 			_goal_node = get_tree().get_first_node_in_group("ford_goal")
+		else:
+			# Allies aim at the muster marker by the enemy lane, so a pre-placed line ADVANCES
+			# toward the front from frame 0 instead of standing idle until a raider strays near.
+			_ally_goal = get_tree().get_first_node_in_group("ally_goal")
 	elif _player != null and not is_instance_valid(_player):
 		_player = null
 
@@ -529,7 +541,13 @@ func _goal_position() -> Vector2:
 			return _goal_node.global_position
 		var p = get_tree().get_first_node_in_group("player")
 		return p.global_position if p != null else global_position
-	return _player.global_position if is_instance_valid(_player) else global_position
+	# Ally: chase the nearest raider if one is in reach, else MARCH to the muster marker at the
+	# front (cached on the retarget tick) so a standing line advances instead of freezing in place.
+	if is_instance_valid(_player):
+		return _player.global_position
+	if is_instance_valid(_ally_goal):
+		return _ally_goal.global_position
+	return global_position
 
 ## A small push away from nearby same-team units so a crowd spreads instead of stacking
 ## into one pile (recomputed a few times a second, not every frame).
@@ -561,6 +579,9 @@ func _process(delta: float) -> void:
 		_alpha = maxf(0.0, _alpha - delta * 1.6)
 		if _alpha <= 0.0:
 			queue_free()
+	elif _spawn_in > 0.0:
+		_spawn_in = maxf(0.0, _spawn_in - delta)
+		_alpha = clampf(1.0 - _spawn_in / 0.3, 0.0, 1.0)
 	# AI enemies animate (facing, telegraphs) so they redraw each frame; passive
 	# dummies only redraw when something visible changes (keeps the web build light).
 	# A support unit also redraws so its morale-aura ring keeps pulsing (few of them, cheap).

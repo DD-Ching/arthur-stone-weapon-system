@@ -28,7 +28,11 @@ var _flow_target := 0.0
 var _stacks := 0
 var _mode := false
 var _musou_ratio := 0.0   ## musou gauge fill 0..1 (full = ULTIMATE ready)
+var _stamina_ratio := 1.0   ## smoothed-source stamina fill 0..1 (drives the LOW-stamina pulse)
+var _stamina_base_col := Color(0.35, 0.85, 0.45)   ## the bar's resting colour, re-tinted each frame while low
 var _t := 0.0
+
+const STAMINA_LOW := 0.25   ## below this, the stamina bar pulses + desaturates as a low-stamina warning
 
 func bind(arthur) -> void:
 	arthur.stamina_changed.connect(_on_stamina_changed)
@@ -92,6 +96,14 @@ func _process(delta: float) -> void:
 	_t += delta
 	if _flash > 0.0:
 		_flash = maxf(0.0, _flash - delta * 3.0)
+	# Keep the LOW-stamina pulse animating: _on_stamina_changed only fires on a CHANGE, so
+	# while the pool sits low/empty (or the exhausted flash decays) the bar would otherwise
+	# freeze — re-tint it every frame from the remembered resting colour. Cosmetic only.
+	if stamina_fill and (_stamina_ratio < STAMINA_LOW or _flash > 0.0):
+		var base := _stamina_base_col
+		if _flash > 0.0:
+			base = base.lerp(Color(1, 1, 1), _flash)
+		stamina_fill.color = _stamina_pulsed(base)
 	# KO milestone flash: shout RAMPAGE! etc. in gold, then fall back to the count.
 	if _ko_flash > 0.0 and ko_label:
 		_ko_flash = maxf(0.0, _ko_flash - delta)
@@ -122,12 +134,26 @@ func _flow_color() -> Color:
 
 func _on_stamina_changed(current: float, maximum: float) -> void:
 	var ratio := clampf(current / maximum, 0.0, 1.0)
+	_stamina_ratio = ratio
 	stamina_fill.size.x = FILL_WIDTH * ratio
 	var col := Color(0.85, 0.25, 0.25).lerp(Color(0.35, 0.85, 0.45), ratio)
+	_stamina_base_col = col   # remember the resting tint so the LOW-stamina pulse (in _process) can ride on top
 	if _flash > 0.0:
 		col = col.lerp(Color(1, 1, 1), _flash)
-	stamina_fill.color = col
+	stamina_fill.color = _stamina_pulsed(col)
 	stamina_label.text = "STAMINA  %d / %d" % [round(current), round(maximum)]
+
+## Telegraph a LOW stamina pool through the EXISTING bar: below STAMINA_LOW it pulses and
+## desaturates (a readable "almost out" warning), reusing _t and the exhausted _flash. A
+## no-op above the threshold, so a healthy pool looks exactly as before. Cosmetic only.
+func _stamina_pulsed(col: Color) -> Color:
+	if _stamina_ratio >= STAMINA_LOW:
+		return col
+	# Stronger warning the closer to empty: pulse brightness + drain saturation toward grey.
+	var sev := 1.0 - clampf(_stamina_ratio / STAMINA_LOW, 0.0, 1.0)
+	var pulse := 0.6 + 0.4 * sin(_t * 14.0)
+	var dim := col.lerp(Color(0.45, 0.42, 0.4), 0.5 * sev)   # desaturate toward a tired grey
+	return dim.lerp(Color(1.0, 0.85, 0.4), sev * 0.35 * pulse)
 
 func _on_state_changed(state_name: String, power: float) -> void:
 	if power > 0.01:

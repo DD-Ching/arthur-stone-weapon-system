@@ -118,8 +118,14 @@ func _press(index: int, p: Vector2) -> void:
 		return
 	if p.distance_to(_menu_c) <= MENU_R:
 		# Back to the stage select — the mobile way to leave a battle and pick another.
-		_fingers[index] = {"role": "menu"}
-		get_tree().change_scene_to_file(STAGE_SELECT)
+		# Open the in-battle pause overlay (Resume / Restart / Return to Lobby) — the mobile
+		# equivalent of pressing Escape. Falls back to the stage select on any screen with no
+		# pause menu, so the MENU button always does something.
+		var pm := get_tree().get_first_node_in_group("pause_menu")
+		if pm and pm.has_method("open"):
+			pm.open()
+		else:
+			get_tree().change_scene_to_file(STAGE_SELECT)
 		return
 	if p.x < _vp.x * 0.5:
 		if not _has_role("move"):

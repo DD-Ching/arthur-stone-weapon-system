@@ -415,3 +415,57 @@ jobs:
         run: |
           godot --headless --path . res://tests/BlackKnightArtTest.tscn --quit-after 600 | tee blackknightart.log
           grep -q "ART_BLACKKNIGHT_VERDICT PASS" blackknightart.log
+
+      - name: Run CampaignTest (story-progression backbone)
+        # Asserts the Campaign autoload: an ordered stage table led by the Arthurian legend, the
+        # legend unlocking in order (clear a battle to open the next) while the bonus stays open,
+        # mark_completed/next_path/reset, and a story blurb per stage.
+        run: |
+          godot --headless --path . res://tests/CampaignTest.tscn --quit-after 600 | tee campaign.log
+          grep -q "CAMPAIGN_VERDICT PASS" campaign.log
+
+      - name: Run MenuListTest (reusable overlay navigation)
+        # Asserts the shared MenuList component (PauseMenu + ScoreScreen lean on it): set_items,
+        # wrapping focus, and activate() emitting chosen(id).
+        run: |
+          godot --headless --path . res://tests/MenuListTest.tscn --quit-after 600 | tee menulist.log
+          grep -q "MENULIST_VERDICT PASS" menulist.log
+
+      - name: Run PauseMenuTest (return-to-lobby overlay)
+        # Asserts the reusable PauseMenu: runs while paused (ALWAYS) + joins "pause_menu", offers
+        # Resume/Restart/Return-to-Lobby, open() pauses + reveals, close() unpauses, lock() disables.
+        run: |
+          godot --headless --path . res://tests/PauseMenuTest.tscn --quit-after 600 | tee pausemenu.log
+          grep -q "PAUSE_VERDICT PASS" pausemenu.log
+
+      - name: Run WinRulesTest (boss-gated, no instant win)
+        # Asserts the win-rule fixes: DefeatGeneralObjective gates the win on the named boss,
+        # RepelWaves' `started` guard kills the frame-0/no-wave instant win, and a composed manager
+        # holds victory open until the boss is down.
+        run: |
+          godot --headless --path . res://tests/WinRulesTest.tscn --quit-after 600 | tee winrules.log
+          grep -q "WINRULE_VERDICT PASS" winrules.log
+
+      - name: Run SpinBalanceTest (anti spin-to-win)
+        # Asserts the spin nerf + interrupt: an enemy hit landing while the stone whirls forces
+        # the weapon OUT of the SPIN state (take_damage → stop_spin), and spin_speed_ref is now
+        # well below the old free-screen-clear value (< 1000).
+        run: |
+          godot --headless --path . res://tests/SpinBalanceTest.tscn --quit-after 600 | tee spinbal.log
+          grep -q "SPINBAL_VERDICT PASS" spinbal.log
+
+      - name: Run StaminaFeelTest (soft low-stamina band)
+        # Asserts running low on stamina is a readable TAPER, not a hard stop: below
+        # low_stamina_threshold _speed_multiplier() is reduced but strictly > 0 (a crawl, not a
+        # freeze), and even an empty pool stays above zero.
+        run: |
+          godot --headless --path . res://tests/StaminaFeelTest.tscn --quit-after 600 | tee stamfeel.log
+          grep -q "STAMFEEL_VERDICT PASS" stamfeel.log
+
+      - name: Run difficulty test (tougher raiders — no one-shot squishies)
+        # Asserts the raider-toughness stat pass: LightSoldier.tscn now boots with
+        # max_health >= 30 and survives ONE modest sub-lethal hit (health > 0, not dead),
+        # proving a single flat swing no longer one-shots the squishiest raider.
+        run: |
+          godot --headless --path . res://tests/DifficultyTest.tscn --quit-after 600 | tee difficulty.log
+          grep -q "DIFFIC_VERDICT PASS" difficulty.log
