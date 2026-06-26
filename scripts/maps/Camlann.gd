@@ -21,9 +21,14 @@ const CAVALRY := preload("res://scenes/Cavalry.tscn")
 const OFFICER_GUARD := preload("res://scenes/formations/OfficerGuard.tscn")
 const MORDRED := preload("res://scenes/villains/Mordred.tscn")
 
-const ALLY_KNIGHT := preload("res://scenes/AllyKnight.tscn")
 const ALLY := preload("res://scenes/Ally.tscn")
-const ALLY_SHIELD := preload("res://scenes/AllyShield.tscn")
+# The Knights of the Round Table stand with Arthur at his last battle (the radiant "excalibur" look),
+# and Morgan le Fay (the "sorceress") rides with Mordred's host.
+const LANCELOT := preload("res://scenes/knights/Lancelot.tscn")
+const GAWAIN := preload("res://scenes/knights/Gawain.tscn")
+const PERCIVAL := preload("res://scenes/knights/Percival.tscn")
+const BEDIVERE := preload("res://scenes/knights/Bedivere.tscn")
+const MORGAN := preload("res://scenes/villains/MorganLeFay.tscn")
 
 # ── theme ──────────────────────────────────────────────────────────────────────
 func _map_title() -> String:
@@ -44,7 +49,7 @@ func _spawn_allies() -> void:
 	# A short loyal line just ahead of Arthur — they hunt the nearest rebel. The shared Spawner
 	# takes a roster of SCENES (not instances) and lays them along the lane; we stamp the
 	# Camelot gold colour so the loyal host reads against Mordred's black-purple rebels.
-	var roster: Array = [ALLY_SHIELD, ALLY_KNIGHT, ALLY, ALLY_KNIGHT, ALLY_SHIELD]
+	var roster: Array = [BEDIVERE, LANCELOT, ALLY, GAWAIN, PERCIVAL]
 	var line: Array = Spawner.spawn(self, roster, 360.0, -240.0, 240.0, false, true)
 	for a in line:
 		if is_instance_valid(a) and "faction" in a:
@@ -67,6 +72,7 @@ func _build_wave_spawner() -> WaveSpawner:
 		_loose_wave([HEAVY, BRUTE, SHIELD], 12, "REBEL HEAVY HOST", lane),
 		_loose_wave([BRUTE, CAVALRY, SPEARMAN, SHIELD], 14, "REBEL CHARGE", lane),
 		_officer_wave("MORDRED'S BANNER GUARD", lane),
+		_boss_wave(MORGAN, "MORGAN LE FAY", lane),
 		_boss_wave(MORDRED, "MORDRED, THE TRAITOR", lane),
 	]
 	return ws

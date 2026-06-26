@@ -15,6 +15,15 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.18.2] — 2026-06-26
+
+**Camlann showcases the new art.** Wired the freshly-beautified Arthurian units into the final
+battle so they actually appear in play: the **Knights of the Round Table** (Lancelot / Gawain /
+Percival with the radiant *excalibur* look, Bedivere) now stand with Arthur as his loyal line,
+and **Morgan le Fay** (the *sorceress*) rides in alongside **Mordred** as a second named boss.
+
+---
+
 ## [0.18.1] — 2026-06-26
 
 **Arthurian unit art + full phone play.**
