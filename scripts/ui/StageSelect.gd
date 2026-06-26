@@ -58,7 +58,7 @@ const SECTION_TAGS := {
 
 ## Title MUST contain both "STONE" and "ARTHUR" (and never "三國") — asserted by the Arthur test.
 const TITLE_TEXT := "THE STONE KING — ARTHUR'S CAMPAIGN"
-const HINT_TEXT := "W/S or ↑/↓ to choose   ·   Space / Enter to deploy   ·   or TAP a battle"
+const HINT_TEXT := "W/S or Up/Down to choose   ·   Space / Enter to deploy   ·   or TAP a battle"
 
 # --- Arthurian palette (reused for the code-built Theme + the cards) ----------
 const BG_COL := Color(0.10, 0.09, 0.14, 1.0)       ## deep night-violet backdrop
@@ -242,7 +242,7 @@ func _build_ui() -> void:
 	footer.add_child(quick)
 
 	var deploy := Button.new()
-	deploy.text = "DEPLOY ▶"
+	deploy.text = "DEPLOY"
 	deploy.custom_minimum_size = Vector2(190, 52)
 	deploy.focus_mode = Control.FOCUS_NONE
 	deploy.add_theme_stylebox_override("normal", _flat(DEPLOY_BG, CARD_BORDER_SEL))

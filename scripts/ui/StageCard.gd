@@ -82,15 +82,15 @@ func setup(title: String, tag: String, badge: String, palette: Dictionary) -> vo
 func _apply_badge(badge: String, palette: Dictionary) -> void:
 	match badge:
 		BADGE_LOCKED:
-			_badge.text = "🔒 LOCKED"
+			_badge.text = "LOCKED"
 			_badge.add_theme_color_override("font_color", palette.get("badge_locked", Color.GRAY))
 			_title_label.add_theme_color_override("font_color",
 				palette.get("card_title", Color.WHITE) * Color(1, 1, 1, 0.62))
 		BADGE_CLEARED:
-			_badge.text = "✔ CLEARED"
+			_badge.text = "CLEARED"
 			_badge.add_theme_color_override("font_color", palette.get("badge_cleared", Color.GREEN))
 		BADGE_NEW:
-			_badge.text = "◆ NEW"
+			_badge.text = "NEW"
 			_badge.add_theme_color_override("font_color", palette.get("badge_new", Color.YELLOW))
 		_:
 			_badge.text = ""
