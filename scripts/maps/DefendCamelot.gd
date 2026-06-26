@@ -24,10 +24,21 @@ const BRUTE := preload("res://scenes/Brute.tscn")
 const ALLY := preload("res://scenes/Ally.tscn")
 const ALLY_SHIELD := preload("res://scenes/AllyShield.tscn")
 const BLACK_KNIGHT := preload("res://scenes/villains/BlackKnight.tscn")
+# Reusable props placed in _build_decor (placement + config, no new scenes).
+const GATE_POST := preload("res://scenes/decor/GatePost.tscn")
+const FENCE := preload("res://scenes/terrain/Fence.tscn")
+const CRATE := preload("res://scenes/Crate.tscn")
+const WAR_CART := preload("res://scenes/WarCart.tscn")
+const FACTION_BANNER := preload("res://scenes/decor/FactionBanner.tscn")
+const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
 
 const GATE_GAP := 160.0          ## width of the castle-gate gap the besiegers pour through
 const WALL_Y_OFFSET := 150.0     ## how far below the top frame the castle wall sits
 const TOWER := 64.0              ## side of each square corner tower block
+const STREET_HALF := 130.0       ## half-width of the MAIN STREET lane (kept > GATE_GAP*0.5 so it never narrows the gate)
+const STREET_T := 22.0           ## thickness of each MAIN STREET kerb wall
+const STREET_END_Y := 130.0      ## y where the street walls stop — well short of the allies/goal so the lane stays open
+const ALLEY_GAP := 120.0         ## width of the side-alley break cut into the right kerb
 
 # ── theme ─────────────────────────────────────────────────────────────────────
 func _map_title() -> String:
@@ -63,6 +74,21 @@ func _build_walls() -> void:
 	# Two corner towers — solid square blocks anchoring the curtain wall at the bounds corners.
 	_wall(Rect2(b.position.x, wall_y - TOWER * 0.5, TOWER, TOWER))
 	_wall(Rect2(b.end.x - TOWER, wall_y - TOWER * 0.5, TOWER, TOWER))
+	# ── MAIN STREET: two parallel kerb walls running the gate INTO the courtyard. ──
+	# The lane is STREET_HALF*2 = 260 wide — WIDER than GATE_GAP (160) so it never pinches
+	# the gate, and it stops at STREET_END_Y (well above the allies/defence-line/ford_goal) so
+	# the raider march to ford_goal is never sealed. The street begins just below the gate jambs.
+	var street_top := wall_y + jamb_h          # connect to the funnel throat
+	var street_h: float = STREET_END_Y - street_top
+	# Left kerb: one solid run.
+	_wall(Rect2(-STREET_HALF - STREET_T, street_top, STREET_T, street_h))
+	# Right kerb: a SIDE-ALLEY gap breaks it into two segments (a flanking side-street the
+	# besiegers can peel into), but the central lane stays open straight to the goal.
+	var alley_top: float = street_top + (street_h - ALLEY_GAP) * 0.5
+	var upper_h: float = alley_top - street_top
+	_wall(Rect2(STREET_HALF, street_top, STREET_T, upper_h))
+	var lower_top: float = alley_top + ALLEY_GAP
+	_wall(Rect2(STREET_HALF, lower_top, STREET_T, STREET_END_Y - lower_top))
 
 func _build_terrain() -> void:
 	# Churned siege mud just inside the gate mouth slows the storming rush (drag < 1). It only
@@ -70,6 +96,62 @@ func _build_terrain() -> void:
 	var b := _world_bounds()
 	var mud := Rect2(-GATE_GAP * 0.7, b.position.y + WALL_Y_OFFSET + 110.0, GATE_GAP * 1.4, 120.0)
 	_add_zone(mud, 0.6, Vector2.ZERO, false, false, 4)
+
+# ── decor: dress the gate, the street, and the muster with reusable props ─────
+# Pure PLACEMENT + CONFIG of existing scenes — gate posts, a fence barricade, courtyard cover
+# (a hurlable crate + an inert war-cart hulk), and a faction banner + war drum at the muster.
+func _build_decor() -> void:
+	var b := _world_bounds()
+	var wall_y := b.position.y + WALL_Y_OFFSET
+	var half_gap := GATE_GAP * 0.5
+	# Flank the gate gap with a pair of solid stone gate posts (one per jamb side).
+	for sx in [-1.0, 1.0]:
+		var gp := GATE_POST.instantiate()
+		gp.position = Vector2((half_gap + 24.0) * sx, wall_y + 30.0)
+		add_child(gp)
+	# A timber barricade ACROSS the main street, split to leave a central gap the storm must
+	# funnel through. Two short fence segments, each with its own shape (never mutate a shared one).
+	var barricade_y := wall_y + 220.0
+	var fence_seg := 150.0
+	var fence_gap := 110.0
+	for sx2 in [-1.0, 1.0]:
+		var fn := FENCE.instantiate()
+		_resize_fence(fn, Vector2(fence_seg, 26.0))
+		fn.position = Vector2((fence_gap * 0.5 + fence_seg * 0.5) * sx2, barricade_y)
+		add_child(fn)
+	# Cover in the open courtyard below the street kerbs (kerbs end at STREET_END_Y), clear of the
+	# lane and the garrison: a light CRATE Arthur can actually fling (it is a "props"-group prop the
+	# stone launches), and a heavy WAR-CART hulk to fight around — AI-off and team-neutralised so it
+	# is an inert barricade body, never a live besieger that joins "targets" / a wave / the test.
+	var cover_y := STREET_END_Y + 70.0
+	var crate = CRATE.instantiate()
+	crate.position = Vector2(-200.0, cover_y)
+	add_child(crate)
+	var cart = WAR_CART.instantiate()
+	cart.team = "neutral"   # inert hulk: out of "targets", never wave/objective-counted
+	cart.ai_enabled = false
+	cart.position = Vector2(200.0, cover_y)
+	add_child(cart)
+	# The besiegers' MUSTER up by the spawn lane (north): a faction banner + a war drum.
+	var lane_y := b.position.y + 70.0
+	var banner := FACTION_BANNER.instantiate()
+	banner.faction = "neutral"
+	banner.position = Vector2(-200.0, lane_y)
+	add_child(banner)
+	var drum := WAR_DRUM.instantiate()
+	drum.faction = "neutral"
+	drum.position = Vector2(200.0, lane_y)
+	add_child(drum)
+
+## Give a Fence its OWN RectangleShape2D sized to `size` (the .tscn ships a shared sub-resource;
+## mutating that in place would resize every fence). The Fence draws itself to its shape.
+func _resize_fence(fence, size: Vector2) -> void:
+	for c in fence.get_children():
+		if c is CollisionShape2D:
+			var shape := RectangleShape2D.new()
+			shape.size = size
+			c.shape = shape
+			return
 
 # ── allies: the castle garrison holds the courtyard ───────────────────────────
 func _spawn_allies() -> void:
@@ -99,6 +181,8 @@ func _compose_objectives() -> ObjectiveManager:
 	var mgr := ObjectiveManager.new()
 	mgr.add(RepelWavesObjective.new("Repel the siege"))
 	mgr.add(DefeatOfficerObjective.new("Fell the siege commander"))
+	# Gate the win on the named boss: the Black Knight (final wave, is_general) must fall.
+	mgr.add(DefeatGeneralObjective.new("Fell the Black Knight"))
 	mgr.add(HoldLineObjective.new("Hold the gate"))
 	return mgr
 
