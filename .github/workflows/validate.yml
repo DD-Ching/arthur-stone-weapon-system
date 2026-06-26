@@ -351,6 +351,11 @@ jobs:
           godot --headless --path . res://tests/CavalryArtTest.tscn --quit-after 600 | tee cavalryart.log
           grep -q "ART_CAVALRY_VERDICT PASS" cavalryart.log
 
+      - name: Run SorceressArtTest (per-unit art beautification — Morgan le Fay)
+        run: |
+          godot --headless --path . res://tests/SorceressArtTest.tscn --quit-after 600 | tee sorceressart.log
+          grep -q "ART_SORCERESS_VERDICT PASS" sorceressart.log
+
       - name: Run Defend Camelot map test (castle siege — hold the gate)
         # Asserts the Defend Camelot BattleMap subclass boots (Arthur + HUD), the besiegers spawn
         # through the castle-gate funnel, and clearing the field drives every siege wave + the
