@@ -20,6 +20,7 @@ const SPEARMAN := preload("res://scenes/Spearman.tscn")
 const HEAVY := preload("res://scenes/HeavyGuard.tscn")
 const BRUTE := preload("res://scenes/Brute.tscn")
 const OFFICER_GUARD := preload("res://scenes/formations/OfficerGuard.tscn")
+const SAXON_WARLORD := preload("res://scenes/villains/SaxonWarlord.tscn")
 const ALLIED_HOST := preload("res://scenes/formations/AlliedHost.tscn")
 
 ## How long the hilltop hold lasts, and the body-count that also wins it (either bar fills → win).
@@ -97,8 +98,23 @@ func _build_wave_spawner() -> WaveSpawner:
 		_horde_wave("SAXON HOUSECARLS", 3, _scale(16), lane),
 		_horde_wave("THE GREAT HORDE", 4, _scale(20), lane),
 		_warlord_wave(lane),
+		_boss_wave(SAXON_WARLORD, "CERDIC, THE SAXON WARLORD", lane),
 	]
 	return ws
+
+## The true last foe: the Saxon Warlord himself (a named general — the boss healthbar tracks him).
+## Exactly ONE, centred, no density scaling — a single climactic duel after his guard is broken.
+func _boss_wave(scene: PackedScene, label: String, lane: float) -> Wave:
+	var w := Wave.new()
+	w.label = label
+	var arr: Array[PackedScene] = [scene]
+	w.scenes = arr
+	w.count = 1
+	w.lane_y = lane
+	w.x_min = -10.0
+	w.x_max = 10.0
+	w.team = "raiders"
+	return w
 
 ## One escalating Saxon horde wave. Early idx is raw LightSoldier ceorls; Spearmen stiffen the
 ## mid waves; HeavyGuards and Brutes pile onto the late tide. A mixed roster repeated up to ~n

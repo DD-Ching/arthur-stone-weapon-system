@@ -18,5 +18,8 @@ static func draw_type(e) -> void:
 		"knight": KnightArt.draw(e)
 		"excalibur": ExcaliburArt.draw(e)   # Camelot champions wielding a radiant Excalibur
 		"sorceress": SorceressArt.draw(e)   # Morgan le Fay and her dark magic
+		"mordred": MordredArt.draw(e)       # the traitor prince
+		"black_knight": BlackKnightArt.draw(e)  # the dread mercenary champion
+		"warlord": WarlordArt.draw(e)       # the Saxon axe-lord
 		# "dummy" and any other look draw no extra silhouette here. Cavalry/WarCart override
 		# Enemy._draw_type() entirely with their own mounted draw, so they never reach this.

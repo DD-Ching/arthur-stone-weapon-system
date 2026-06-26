@@ -23,6 +23,7 @@ const LIGHT_SOLDIER := preload("res://scenes/LightSoldier.tscn")
 const BRUTE := preload("res://scenes/Brute.tscn")
 const ALLY := preload("res://scenes/Ally.tscn")
 const ALLY_SHIELD := preload("res://scenes/AllyShield.tscn")
+const BLACK_KNIGHT := preload("res://scenes/villains/BlackKnight.tscn")
 
 const GATE_GAP := 160.0          ## width of the castle-gate gap the besiegers pour through
 const WALL_Y_OFFSET := 150.0     ## how far below the top frame the castle wall sits
@@ -112,6 +113,7 @@ func _build_wave_spawner() -> WaveSpawner:
 		_loose_wave("BATTERING BRUTES", BRUTE, _scale(4), lane),
 		_formation_wave("CAVALRY CHARGE", CHARGE_GROUP, lane),
 		_formation_wave("MORDRED'S GUARD", OFFICER_GUARD, lane),
+		_loose_wave("THE BLACK KNIGHT", BLACK_KNIGHT, 1, lane),
 	]
 	return ws
 
