@@ -19,6 +19,7 @@ const HEAVY := preload("res://scenes/HeavyGuard.tscn")
 const BRUTE := preload("res://scenes/Brute.tscn")
 const CAVALRY := preload("res://scenes/Cavalry.tscn")
 const OFFICER_GUARD := preload("res://scenes/formations/OfficerGuard.tscn")
+const MORDRED := preload("res://scenes/villains/Mordred.tscn")
 
 const ALLY_KNIGHT := preload("res://scenes/AllyKnight.tscn")
 const ALLY := preload("res://scenes/Ally.tscn")
@@ -65,9 +66,24 @@ func _build_wave_spawner() -> WaveSpawner:
 		_loose_wave([SPEARMAN, SHIELD, HEAVY], 10, "REBEL SHIELD LINE", lane),
 		_loose_wave([HEAVY, BRUTE, SHIELD], 12, "REBEL HEAVY HOST", lane),
 		_loose_wave([BRUTE, CAVALRY, SPEARMAN, SHIELD], 14, "REBEL CHARGE", lane),
-		_officer_wave("MORDRED, THE TRAITOR", lane),
+		_officer_wave("MORDRED'S BANNER GUARD", lane),
+		_boss_wave(MORDRED, "MORDRED, THE TRAITOR", lane),
 	]
 	return ws
+
+## The true final foe: the traitor Mordred himself (a named general — the boss healthbar tracks
+## him). Exactly ONE, centred, no density scaling — a single climactic duel after his guard falls.
+func _boss_wave(scene: PackedScene, label: String, lane: float) -> Wave:
+	var w := Wave.new()
+	w.label = label
+	var arr: Array[PackedScene] = [scene]
+	w.scenes = arr
+	w.count = 1
+	w.lane_y = lane
+	w.x_min = -10.0
+	w.x_max = 10.0
+	w.team = "raiders"
+	return w
 
 ## A loose rebel mob: a roster spread wide across the northern lane, scaled by the density dial.
 func _loose_wave(roster: Array, n: int, label: String, lane: float) -> Wave:

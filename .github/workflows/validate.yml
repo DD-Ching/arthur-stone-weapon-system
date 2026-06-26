@@ -358,3 +358,28 @@ jobs:
         run: |
           godot --headless --path . res://tests/DefendCamelotTest.tscn --quit-after 600 | tee camelot.log
           grep -q "CAMELOT_VERDICT PASS" camelot.log
+
+      - name: Run MountBadonTest (Arthurian re-theme)
+        run: |
+          godot --headless --path . res://tests/MountBadonTest.tscn --quit-after 600 | tee badon.log
+          grep -q "BADON_VERDICT PASS" badon.log
+
+      - name: Run CamlannTest (Arthurian re-theme)
+        run: |
+          godot --headless --path . res://tests/CamlannTest.tscn --quit-after 600 | tee camlann.log
+          grep -q "CAMLANN_VERDICT PASS" camlann.log
+
+      - name: Run KnightsTest (Arthurian re-theme)
+        run: |
+          godot --headless --path . res://tests/KnightsTest.tscn --quit-after 600 | tee knights.log
+          grep -q "KNIGHTS_VERDICT PASS" knights.log
+
+      - name: Run ArthurTroopsTest (Arthurian re-theme)
+        run: |
+          godot --headless --path . res://tests/ArthurTroopsTest.tscn --quit-after 600 | tee arthurtroops.log
+          grep -q "ARTHURTROOPS_VERDICT PASS" arthurtroops.log
+
+      - name: Run ArthurDecorTest (Arthurian re-theme)
+        run: |
+          godot --headless --path . res://tests/ArthurDecorTest.tscn --quit-after 600 | tee arthurdecor.log
+          grep -q "ARTHURDECOR_VERDICT PASS" arthurdecor.log

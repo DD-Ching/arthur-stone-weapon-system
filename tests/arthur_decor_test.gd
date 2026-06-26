@@ -20,7 +20,7 @@ const ROUND_TABLE := preload("res://scenes/decor/RoundTable.tscn")
 const CAMELOT_BANNER := preload("res://scenes/decor/CamelotBanner.tscn")
 const TORCH := preload("res://scenes/decor/Torch.tscn")
 
-var _sword: SwordInStone
+var _sword: SwordInStoneProp
 var _table: RoundTable
 var _camelot: CamelotBanner
 var _saxon: CamelotBanner

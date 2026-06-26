@@ -1,4 +1,4 @@
-class_name SwordInStone
+class_name SwordInStoneProp
 extends Node2D
 ## The Sword in the Stone — the game's emblem. A grey stone anvil-block with a cross-hilt
 ## sword half-sunk into it, catching a faint gleam. Arthur could not pull the sword, so he
