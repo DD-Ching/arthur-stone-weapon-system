@@ -445,3 +445,19 @@ jobs:
         run: |
           godot --headless --path . res://tests/WinRulesTest.tscn --quit-after 600 | tee winrules.log
           grep -q "WINRULE_VERDICT PASS" winrules.log
+
+      - name: Run SpinBalanceTest (anti spin-to-win)
+        # Asserts the spin nerf + interrupt: an enemy hit landing while the stone whirls forces
+        # the weapon OUT of the SPIN state (take_damage → stop_spin), and spin_speed_ref is now
+        # well below the old free-screen-clear value (< 1000).
+        run: |
+          godot --headless --path . res://tests/SpinBalanceTest.tscn --quit-after 600 | tee spinbal.log
+          grep -q "SPINBAL_VERDICT PASS" spinbal.log
+
+      - name: Run StaminaFeelTest (soft low-stamina band)
+        # Asserts running low on stamina is a readable TAPER, not a hard stop: below
+        # low_stamina_threshold _speed_multiplier() is reduced but strictly > 0 (a crawl, not a
+        # freeze), and even an empty pool stays above zero.
+        run: |
+          godot --headless --path . res://tests/StaminaFeelTest.tscn --quit-after 600 | tee stamfeel.log
+          grep -q "STAMFEEL_VERDICT PASS" stamfeel.log
