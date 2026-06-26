@@ -291,6 +291,15 @@ jobs:
           godot --headless --path . res://tests/StageSelectTest.tscn --quit-after 600 | tee stageselect.log
           grep -q "STAGESELECT_VERDICT PASS" stageselect.log
 
+      - name: Run Arthurian stage-select test (legend-first menu + sections)
+        # Asserts the King-Arthur re-theme of the boot menu: the Arthurian title is set, the
+        # battles regroup into sections (Arthur legend → ford/trials → 三國 BONUS), the still-
+        # missing Arthurian maps are guarded/skipped, and navigation only ever lands on a real
+        # selectable battle (never a section header) while still wrapping correctly.
+        run: |
+          godot --headless --path . res://tests/StageArthurTest.tscn --quit-after 600 | tee stagearthur.log
+          grep -q "STAGEARTHUR_VERDICT PASS" stagearthur.log
+
       - name: Run Faction banners + decor props test
         run: |
           godot --headless --path . res://tests/DecorTest.tscn --quit-after 600 | tee decor.log
