@@ -15,6 +15,24 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.19.0] — 2026-06-26
+
+**A named villain for every battle.** Each major Arthurian battle now climaxes on a distinct,
+beautified boss with its own healthbar — no more generic placeholder commanders.
+
+### Added
+- **Three new villain looks** (per-unit art): **Mordred** (the traitor prince — a broken spiked
+  crown, rebel-purple plate, a violet-edged blade, an aura of treachery), the **Black Knight**
+  (faction-independent black plate, a horned great-helm with a glowing red eye-slit, a tattered
+  mantle, a malice-glow blade), and the **Saxon Warlord** Cerdic (a horned iron helm, a fur
+  mantle, a great two-handed Dane axe).
+- **A named boss per battle** — the **Saxon Warlord** now ends **Mount Badon**, the **Black
+  Knight** ends **Defend Camelot**, and **Mordred + Morgan** end **Camlann** — each arriving as a
+  single climactic general with a boss healthbar after their guard falls.
+- CI suite grows to **58** headless tests.
+
+---
+
 ## [0.18.2] — 2026-06-26
 
 **Camlann showcases the new art.** Wired the freshly-beautified Arthurian units into the final
