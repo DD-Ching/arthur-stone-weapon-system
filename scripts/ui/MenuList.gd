@@ -123,7 +123,7 @@ func _draw() -> void:
 		var is_f := i == focused
 		draw_rect(r, Color(accent, 0.30 if is_f else 0.12), true)
 		draw_rect(r, Color(accent, 0.95 if is_f else 0.40), false, 2.0)
-		var label := ("▶  " if is_f else "") + String(items[i]["label"])
+		var label := String(items[i]["label"])
 		var fs := 26
 		var sz := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs)
 		var col := Color(1, 1, 1, 0.97) if is_f else Color(0.82, 0.82, 0.88, 0.9)

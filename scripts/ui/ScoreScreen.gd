@@ -49,7 +49,7 @@ func show_result(victory: bool, kos: int, seconds: float, next_path := "", blurb
 	var items: Array = []
 	if victory:
 		if next_path != "":
-			items.append({"id": "next", "label": "Next Battle  ▶"})
+			items.append({"id": "next", "label": "Next Battle"})
 		items.append({"id": "lobby", "label": "Return to Lobby"})
 	else:
 		items.append({"id": "retry", "label": "Retry Battle"})
