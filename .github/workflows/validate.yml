@@ -391,3 +391,8 @@ jobs:
         run: |
           godot --headless --path . res://tests/ArthurDecorTest.tscn --quit-after 600 | tee arthurdecor.log
           grep -q "ARTHURDECOR_VERDICT PASS" arthurdecor.log
+
+      - name: Run SorceressArtTest (Arthurian unit art)
+        run: |
+          godot --headless --path . res://tests/SorceressArtTest.tscn --quit-after 600 | tee sorceressart.log
+          grep -q "ART_SORCERESS_VERDICT PASS" sorceressart.log

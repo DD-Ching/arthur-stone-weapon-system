@@ -125,6 +125,9 @@ func _build_status_label() -> void:
 	_status.add_theme_font_size_override("font_size", 22)
 	_status.add_theme_color_override("font_color", Color(0.9, 0.85, 0.65))
 	layer.add_child(_status)
+	# Mobile: this room builds its own status layer (not the shared Hud), so add the touch
+	# controls here too — otherwise the trial has no joysticks on a phone.
+	layer.add_child(preload("res://scenes/ui/TouchControls.tscn").instantiate())
 
 ## Stock the supply pile beside Arthur: rocks + crates to launch. They sit on Arthur's side
 ## of the chasm so the obvious move is to swing/slam them across into the raider line.
