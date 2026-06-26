@@ -271,6 +271,14 @@ jobs:
           godot --headless --path . res://tests/YellowTurbanTest.tscn --quit-after 600 | tee yellowturban.log
           grep -q "YELLOWTURBAN_VERDICT PASS" yellowturban.log
 
+      - name: Run Camlann map test (the final Arthurian battle — defeat Mordred)
+        # Asserts the Camlann BattleMap subclass boots (Arthur + HUD), Mordred's rebel raiders
+        # spawn, and clearing the field drives all the escalating waves + the final OfficerGuard
+        # boss (its BannerBearer = Mordred) down to victory (RepelWaves + DefeatOfficer).
+        run: |
+          godot --headless --path . res://tests/CamlannTest.tscn --quit-after 600 | tee camlann.log
+          grep -q "CAMLANN_VERDICT PASS" camlann.log
+
       - name: Run Named generals test (武將 boss units)
         run: |
           godot --headless --path . res://tests/GeneralsTest.tscn --quit-after 600 | tee generals.log
