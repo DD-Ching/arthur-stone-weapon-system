@@ -27,6 +27,7 @@ const CANDIDATES := [
 	{"title": "Guandu", "path": "res://scenes/maps/Guandu.tscn"},
 	{"title": "Changban", "path": "res://scenes/maps/Changban.tscn"},
 	{"title": "Yellow Turban Rebellion", "path": "res://scenes/maps/YellowTurban.tscn"},
+	{"title": "Defend Camelot", "path": "res://scenes/maps/DefendCamelot.tscn"},
 ]
 
 const TITLE_TEXT := "三國無雙 — SELECT YOUR BATTLE"
