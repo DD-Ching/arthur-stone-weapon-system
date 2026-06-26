@@ -1,0 +1,39 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/Enemy.gd" id="1_enemy"]
+
+[sub_resource type="CircleShape2D" id="bedivere_shape"]
+radius = 20.0
+
+[node name="Bedivere" type="RigidBody2D"]
+collision_layer = 4
+collision_mask = 31
+mass = 3.6
+gravity_scale = 0.0
+linear_damp = 3.6
+angular_damp = 7.0
+lock_rotation = true
+contact_monitor = true
+max_contacts_reported = 5
+script = ExtResource("1_enemy")
+team = "ally"
+enemy_name = "Bedivere"
+look = "shield"
+radius = 20.0
+base_color = Color(0.70, 0.62, 0.34, 1)
+faction = "camelot"
+max_health = 180.0
+shielded = true
+shield_angle = 0.0
+shield_break_threshold = 1600.0
+stagger_threshold = 900.0
+ai_enabled = true
+move_speed = 86.0
+move_accel = 640.0
+sight_range = 360.0
+control_regain = 220.0
+moves = PackedStringArray("bash")
+guard_range = 74.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("bedivere_shape")

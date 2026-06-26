@@ -1,0 +1,39 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/Enemy.gd" id="1_enemy"]
+
+[sub_resource type="CircleShape2D" id="morgan_shape"]
+radius = 22.0
+
+[node name="MorganLeFay" type="RigidBody2D"]
+collision_layer = 4
+collision_mask = 31
+mass = 3.0
+gravity_scale = 0.0
+linear_damp = 5.0
+angular_damp = 6.0
+lock_rotation = true
+contact_monitor = true
+max_contacts_reported = 6
+script = ExtResource("1_enemy")
+enemy_name = "Morgan le Fay"
+look = "banner"
+radius = 22.0
+base_color = Color(0.46, 0.22, 0.52, 1)
+faction = "rebel"
+is_general = true
+is_support = true
+morale_radius = 300.0
+team = "raiders"
+max_health = 320.0
+shielded = false
+stagger_threshold = 900.0
+shield_break_threshold = 9999.0
+ai_enabled = true
+move_speed = 48.0
+move_accel = 520.0
+sight_range = 280.0
+keep_distance = 200.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("morgan_shape")

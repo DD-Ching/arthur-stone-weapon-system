@@ -1,0 +1,40 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/General.gd" id="1_general"]
+
+[sub_resource type="CircleShape2D" id="blackknight_shape"]
+radius = 29.0
+
+[node name="BlackKnight" type="RigidBody2D"]
+collision_layer = 4
+collision_mask = 31
+mass = 6.0
+gravity_scale = 0.0
+linear_damp = 5.6
+angular_damp = 7.0
+lock_rotation = true
+contact_monitor = true
+max_contacts_reported = 8
+script = ExtResource("1_general")
+enemy_name = "Black Knight"
+look = "heavy"
+radius = 29.0
+base_color = Color(0.16, 0.16, 0.19, 1)
+faction = "neutral"
+is_general = true
+team = "raiders"
+max_health = 360.0
+shielded = false
+stagger_threshold = 1500.0
+shield_break_threshold = 9999.0
+ai_enabled = true
+move_speed = 42.0
+move_accel = 560.0
+sight_range = 300.0
+moves = PackedStringArray("bash", "pound")
+warcry_cooldown = 5.5
+warcry_radius = 220.0
+warcry_stun = 1.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("blackknight_shape")

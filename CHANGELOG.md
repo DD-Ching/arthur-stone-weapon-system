@@ -15,6 +15,34 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.18.0] — 2026-06-26
+
+**The Legend of King Arthur.** Re-themed the game around its true identity — Arthur lifted the
+whole *stone* instead of the sword — with an Arthurian stage-select, five legend battles, the
+Knights of the Round Table, and a rogues' gallery of villains. The Three Kingdoms content from
+v0.16–0.17 stays as a bonus section. Built additively on the shared modules (no engine rewrite);
+ten units in parallel, one agent each.
+
+### Added
+- **Five Arthurian battles** (`scenes/maps/`, thin `BattleMap` configs): **The Sword in the
+  Stone** (prove you are king), **Mount Badon** (hold the hill vs a Saxon horde), **Defend
+  Camelot** (castle-gate siege), **The Battle of Camlann** (the final battle — duel the traitor
+  **Mordred**, who arrives as a named boss with his own healthbar), and **The Lady of the Lake**
+  (claim Excalibur from the misty Avalon waters — shrines to hold, a lake that drowns the light).
+- **Knights of the Round Table** (Camelot allies): **Lancelot, Gawain, Percival, Bedivere**.
+- **Villain bosses** (named generals): **Mordred**, the **Black Knight**, a **Saxon Warlord**
+  (Cerdic), and the sorceress **Morgan le Fay**.
+- **Merlin** (a Camelot morale/aura support) + Saxon raiders/axemen and Briton levies/archers.
+- **Three Arthurian factions** — Camelot gold, Saxon moss-green, Mordred's rebels black-purple
+  (alongside the bonus Wei/Shu/Wu).
+- **Re-themed stage select** — "**THE STONE KING — CHOOSE YOUR BATTLE**", with the Arthurian
+  battles first and the Three Kingdoms maps demoted to a bonus section.
+- **Arthurian decor** — the Round Table, the Sword-in-the-Stone emblem, the Camelot/Pendragon
+  banner, a wall torch.
+- **Ten new headless tests** — CI suite grows to **53**.
+
+---
+
 ## [0.17.0] — 2026-06-25
 
 **Beautified the army — a dedicated agent per unit.** Each unit type got its own polished,
