@@ -23,7 +23,7 @@ extends RigidBody2D
 ## Three-Kingdoms allegiance, used only for COLOUR theming (魏 Wei blue / 蜀 Shu green /
 ## 吳 Wu red / neutral grey). It does NOT change targeting — `team` ("raiders"/"ally") still
 ## decides who hunts whom; faction is pure readability flavour.
-@export_enum("neutral", "wei", "shu", "wu") var faction := "neutral"
+@export_enum("neutral", "camelot", "saxon", "rebel", "wei", "shu", "wu") var faction := "neutral"
 ## A named general (武將), a boss-tier unit: joins the "generals" group so the boss-healthbar
 ## UI can track it. Otherwise it is an ordinary configurable Enemy.
 @export var is_general := false
@@ -93,10 +93,14 @@ var _goal_node = null            ## cached march goal (the ford banner), refresh
 var _rerouting := false          ## currently steering around danger, not pursuing the foe
 var _space: PhysicsDirectSpaceState2D = null  ## world physics space, refreshed on the retarget tick
 
-## The faction's banner colour (魏 Wei blue / 蜀 Shu green / 吳 Wu red / neutral grey). The
-## drawing pass tints a unit with this so the three kingdoms read at a glance; no gameplay effect.
+## The faction's banner colour, used by the drawing pass to tint a unit so allegiance reads at a
+## glance (no gameplay effect). Arthurian: Camelot gold / Saxon moss-green / Mordred's rebels
+## black-purple. Three Kingdoms (the bonus maps): Wei blue / Shu green / Wu red. Else neutral grey.
 func faction_color() -> Color:
 	match faction:
+		"camelot": return Color(0.92, 0.78, 0.30)
+		"saxon": return Color(0.40, 0.46, 0.27)
+		"rebel": return Color(0.52, 0.33, 0.60)
 		"wei": return Color(0.30, 0.52, 0.95)
 		"shu": return Color(0.36, 0.78, 0.42)
 		"wu": return Color(0.86, 0.36, 0.34)
