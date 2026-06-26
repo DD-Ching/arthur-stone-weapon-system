@@ -14,7 +14,7 @@ extends RigidBody2D
 
 @export_group("Identity")
 @export var enemy_name := "Dummy"
-@export_enum("dummy", "soldier", "shield", "heavy", "spear", "banner", "knight") var look := "dummy"
+@export_enum("dummy", "soldier", "shield", "heavy", "spear", "banner", "knight", "excalibur", "sorceress") var look := "dummy"
 @export var radius := 16.0
 @export var base_color := Color(0.78, 0.32, 0.33)
 ## "raiders" = the warband attacking across the ford (Arthur's foe). "ally" = a footman
