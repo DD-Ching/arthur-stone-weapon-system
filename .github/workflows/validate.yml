@@ -320,3 +320,12 @@ jobs:
         run: |
           godot --headless --path . res://tests/CavalryArtTest.tscn --quit-after 600 | tee cavalryart.log
           grep -q "ART_CAVALRY_VERDICT PASS" cavalryart.log
+
+      - name: Run Arthurian troops test (Merlin + Saxon/Briton rank-and-file configs)
+        # Asserts the five pure-.tscn Arthurian configs (Merlin / SaxonRaider / SaxonAxeman /
+        # BritonLevy / BritonArcher) join the right targeting groups by team (raiders→targets,
+        # ally→allies), build one Ability per `moves` id, with Merlin flagged is_support, and that
+        # each non-support unit takes damage from apply_hit.
+        run: |
+          godot --headless --path . res://tests/ArthurTroopsTest.tscn --quit-after 600 | tee arthurtroops.log
+          grep -q "ARTHURTROOPS_VERDICT PASS" arthurtroops.log
