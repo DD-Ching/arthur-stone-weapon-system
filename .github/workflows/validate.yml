@@ -396,3 +396,13 @@ jobs:
         run: |
           godot --headless --path . res://tests/SorceressArtTest.tscn --quit-after 600 | tee sorceressart.log
           grep -q "ART_SORCERESS_VERDICT PASS" sorceressart.log
+
+      - name: Run BlackKnightArtTest (dread mercenary champion art)
+        # Asserts the beautified Black Knight art (scripts/art/BlackKnightArt.gd): the shipped
+        # res://scenes/villains/BlackKnight.tscn (look "black_knight") draws his pure-black plate /
+        # horned great-helm + red eye / pauldrons / tattered mantle / wicked blade across factions
+        # and facings, and through the general boss branch + the defeat-fade alpha, with no errors,
+        # keeping its look. He is faction-INDEPENDENT — every side must draw him fine.
+        run: |
+          godot --headless --path . res://tests/BlackKnightArtTest.tscn --quit-after 600 | tee blackknightart.log
+          grep -q "ART_BLACKKNIGHT_VERDICT PASS" blackknightart.log
