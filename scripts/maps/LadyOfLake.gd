@@ -20,6 +20,14 @@ const ALLY_KNIGHT := preload("res://scenes/AllyKnight.tscn")
 const ALLY_SHIELD := preload("res://scenes/AllyShield.tscn")
 const ALLY_SPEAR := preload("res://scenes/AllySpear.tscn")
 
+# Light flank scenery — existing reusable props, PLACED not coded. A few crates + rocks the
+# warband can shove, fences flanking the shore lanes, and a faction standard + war drum per camp.
+const CRATE := preload("res://scenes/Crate.tscn")
+const ROCK := preload("res://scenes/Rock.tscn")
+const FENCE := preload("res://scenes/terrain/Fence.tscn")
+const BANNER := preload("res://scenes/decor/FactionBanner.tscn")
+const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
+
 # Bodies (Arthur + units + props) ride the enemy/arthur/prop layers; mask 14 = those layers,
 # matching RedCliffs' water so the lake's drift/drown acts on the same bodies the river did.
 const _WATER_MASK := 14
@@ -55,6 +63,14 @@ func _build_terrain() -> void:
 	# removes the lightest units that stray into it — the chokepoint that funnels the fight onto
 	# the shore where the shrines sit.
 	_add_zone(_LAKE, 0.9, Vector2(14.0, 8.0), true, true, _WATER_MASK)
+	# The shore GAPS: open ground left + right of the lake (x beyond its ±360 edges, inside the
+	# ±640 world walls). When the deep water blocks a raider's straight line south, its nav steers
+	# to the nearest "crossing" marker — so the warband FUNNELS around the mere through these flank
+	# lanes toward the shrines, instead of routing arbitrarily across the drowning deep. Two per
+	# side (across the deep belt) so the redirect holds the whole way around the water.
+	for cy in [-200.0, 0.0]:
+		_mark_crossing(Vector2(-500.0, cy))   # west shore gap
+		_mark_crossing(Vector2(500.0, cy))    # east shore gap
 
 # ── shrines + guardians ──────────────────────────────────────────────────────
 func _build_decor() -> void:
@@ -63,6 +79,59 @@ func _build_decor() -> void:
 	# like Guandu's depots.
 	for idx in SHRINES.size():
 		_place_shrine(SHRINES[idx], idx)
+	_place_flank_scenery()
+
+## Light interactive scenery on the flank shore lanes (the gaps the crossings funnel through),
+## keeping the lake + shrine approaches clear. Pure PLACEMENT of existing reusable props — a war
+## drum + standard mark each camp, a short fence walls the outer lane, and a couple of shovable
+## crates/rocks give the warband something to barge through as it rounds the mere.
+func _place_flank_scenery() -> void:
+	for side in [-1.0, 1.0]:
+		var faction := "wu" if side < 0.0 else "wei"   # decor colour flavour only (existing enum)
+		# Camp standard + war drum just outside the lake on each shore lane.
+		_place_decor(BANNER, Vector2(560.0 * side, -120.0), faction)
+		_place_decor(WAR_DRUM, Vector2(560.0 * side, -40.0), faction)
+		# A short fence along the outer edge of the lane (resize its shape to a low rail).
+		_place_fence(Vector2(575.0 * side, 110.0), Vector2(28.0, 170.0))
+		# Shovable props strewn in the lane the warband rounds the lake through. Kept clear of the
+		# shrine capture rings (centres ±440,300 r150) so nothing crowds a capture point.
+		_place_prop(CRATE, Vector2(520.0 * side, 120.0))
+		_place_prop(ROCK, Vector2(540.0 * side, 60.0))
+		_place_prop(ROCK, Vector2(470.0 * side, -90.0))
+
+## Drop a code-drawn decor prop (FactionBanner / WarDrum) at a spot, tinting it to a kingdom.
+func _place_decor(scene: PackedScene, pos: Vector2, faction: String) -> void:
+	var d = scene.instantiate()
+	add_child(d)
+	d.global_position = pos
+	if "faction" in d:
+		d.faction = faction
+
+## Drop a shovable RigidBody prop (Crate / Rock) at a spot — no config, just placement.
+func _place_prop(scene: PackedScene, pos: Vector2) -> void:
+	var p = scene.instantiate()
+	add_child(p)
+	p.global_position = pos
+
+## Place a Fence (world-layer obstacle) and resize its collision shape so the drawn rail follows.
+func _place_fence(pos: Vector2, size: Vector2) -> void:
+	var f = FENCE.instantiate()
+	add_child(f)
+	f.global_position = pos
+	for c in f.get_children():
+		if c is CollisionShape2D and c.shape is RectangleShape2D:
+			var rect := RectangleShape2D.new()
+			rect.size = size
+			c.shape = rect
+
+## A "crossing" marker the raider nav aims at when deep water blocks the straight line — funnels
+## the warband around the mere through the shore gaps (reuses Enemy's avoid_danger nav, exactly as
+## RedCliffs' ford does).
+func _mark_crossing(pos: Vector2) -> void:
+	var m := Node2D.new()
+	m.add_to_group("crossing")
+	m.global_position = pos
+	add_child(m)
 
 func _place_shrine(centre: Vector2, idx: int) -> void:
 	var b := BASE.instantiate()
