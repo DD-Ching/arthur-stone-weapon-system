@@ -261,6 +261,11 @@ jobs:
           godot --headless --path . res://tests/GuanduTest.tscn --quit-after 600 | tee guandu.log
           grep -q "GUANDU_VERDICT PASS" guandu.log
 
+      - name: Run Lady of the Lake map test (Avalon shrine-capture + lake)
+        run: |
+          godot --headless --path . res://tests/LadyOfLakeTest.tscn --quit-after 600 | tee ladyoflake.log
+          grep -q "AVALON_VERDICT PASS" ladyoflake.log
+
       - name: Run Changban map test (長坂坡 escort/protect)
         run: |
           godot --headless --path . res://tests/ChangbanTest.tscn --quit-after 600 | tee changban.log
