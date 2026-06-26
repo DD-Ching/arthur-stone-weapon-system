@@ -23,6 +23,13 @@ const OFFICER_GUARD := preload("res://scenes/formations/OfficerGuard.tscn")
 const SAXON_WARLORD := preload("res://scenes/villains/SaxonWarlord.tscn")
 const ALLIED_HOST := preload("res://scenes/formations/AlliedHost.tscn")
 
+# Light scenery props (shared scenes) dressed onto the slopes/flanks — placement + config only.
+const CRATE := preload("res://scenes/Crate.tscn")
+const ROCK := preload("res://scenes/Rock.tscn")
+const FENCE := preload("res://scenes/terrain/Fence.tscn")
+const FACTION_BANNER := preload("res://scenes/decor/FactionBanner.tscn")
+const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
+
 ## How long the hilltop hold lasts, and the body-count that also wins it (either bar fills → win).
 ## Exported so a headless test can drive a short, deterministic survival window.
 @export var survive_seconds := 75.0
@@ -65,6 +72,58 @@ func _build_terrain() -> void:
 	_add_zone(Rect2(b.end.x - 40.0 - flank_w, slope_y, flank_w, slope_h),
 		0.62, Vector2.ZERO, false, false, 4)
 
+# ── flank dressing: light scenery on the slopes, central lane kept clear ───────
+func _build_decor() -> void:
+	## Dress the two slope flanks with EXISTING shared props (placement + config, no new art):
+	## Saxon war-drums + standards crowning the horde's side above the crest, a Briton banner at
+	## the host's back, and a little muster clutter (rocks, a crate, a fence rail) on each flank.
+	## Everything sits out on the wings (|x| large) so the centre push-lane onto the crest stays
+	## open and the boss duel reads clean.
+	super._build_decor()
+	# Saxon war-drums driving the horde, high on each flank above the crest (their side).
+	_drum(Vector2(-470.0, 120.0))
+	_drum(Vector2(470.0, 120.0))
+	# Saxon standards planted on the upper slopes, neutral-grey (the foe's muster markers).
+	_banner(Vector2(-360.0, 95.0), "neutral", 74.0)
+	_banner(Vector2(360.0, 95.0), "neutral", 74.0)
+	# A Briton blue standard at the host's back, below the crest (our rally point).
+	_banner(Vector2(-150.0, 420.0), "wei", 84.0)
+	# A rail of fencing low on each flank — a bit of field furniture that never blocks the lane.
+	_fence(Vector2(-470.0, 250.0))
+	_fence(Vector2(470.0, 250.0))
+	# Scattered muster clutter (rocks + a crate) on the slope flanks for texture.
+	for p in [Vector2(-420.0, 175.0), Vector2(-330.0, 215.0), Vector2(420.0, 175.0),
+			Vector2(330.0, 215.0)]:
+		_prop(ROCK, p)
+	_prop(CRATE, Vector2(-500.0, 200.0))
+	_prop(CRATE, Vector2(500.0, 200.0))
+
+func _drum(at: Vector2) -> void:
+	var d = WAR_DRUM.instantiate()
+	if "faction" in d:
+		d.faction = "wu"          # ring it Saxon-red (the horde's drum)
+	d.position = at
+	add_child(d)
+
+func _banner(at: Vector2, fac: String, h: float) -> void:
+	var bn = FACTION_BANNER.instantiate()
+	if "faction" in bn:
+		bn.faction = fac
+	if "pole_height" in bn:
+		bn.pole_height = h
+	bn.position = at
+	add_child(bn)
+
+func _fence(at: Vector2) -> void:
+	var f = FENCE.instantiate()
+	f.position = at
+	add_child(f)
+
+func _prop(scene: PackedScene, at: Vector2) -> void:
+	var p = scene.instantiate()
+	p.position = at
+	add_child(p)
+
 # ── allies: a Briton host holds the crest at Arthur's back ─────────────────────
 func _spawn_allies() -> void:
 	var host = ALLIED_HOST.instantiate()
@@ -76,11 +135,15 @@ func _spawn_allies() -> void:
 		if is_instance_valid(u) and "faction" in u:
 			u.faction = "camelot"
 
-# ── objectives: hold the hill (survive) AND don't let it be overrun (hold line) ─
+# ── objectives: hold the hill (survive), don't be overrun (hold line), AND fell Cerdic ─
 func _compose_objectives() -> ObjectiveManager:
 	var mgr := ObjectiveManager.new()
 	mgr.add(SurviveObjective.new(survive_seconds, ko_target, "Hold Mount Badon"))
 	mgr.add(HoldLineObjective.new("Don't let the hill be overrun"))
+	# The named-boss gate: outlasting the clock isn't enough — the Saxon Warlord himself (the
+	# final wave's is_general Cerdic) must fall before the hill is truly won (reads the "generals"
+	# group the base surfaces as ctx["generals"]).
+	mgr.add(DefeatGeneralObjective.new("Fell Cerdic"))
 	return mgr
 
 # ── waves: escalating Saxon hordes climbing the hill, a Warlord in the last ────
