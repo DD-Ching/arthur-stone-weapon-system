@@ -271,6 +271,14 @@ jobs:
           godot --headless --path . res://tests/YellowTurbanTest.tscn --quit-after 600 | tee yellowturban.log
           grep -q "YELLOWTURBAN_VERDICT PASS" yellowturban.log
 
+      - name: Run Sword in the Stone map test (Arthur's origin trial — RepelWaves + DefeatOfficer)
+        # Asserts The Sword in the Stone BattleMap subclass boots (Arthur + HUD), the doubting
+        # lords (Mordred's rebels) spawn through the chapel doorway, and clearing the field drives
+        # all five waves + the rival lord's officer down to victory through the shared loop.
+        run: |
+          godot --headless --path . res://tests/SwordInStoneTest.tscn --quit-after 600 | tee swordstone.log
+          grep -q "SWORDSTONE_VERDICT PASS" swordstone.log
+
       - name: Run Named generals test (武將 boss units)
         run: |
           godot --headless --path . res://tests/GeneralsTest.tscn --quit-after 600 | tee generals.log
