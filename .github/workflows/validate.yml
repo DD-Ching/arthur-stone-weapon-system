@@ -396,3 +396,12 @@ jobs:
         run: |
           godot --headless --path . res://tests/SorceressArtTest.tscn --quit-after 600 | tee sorceressart.log
           grep -q "ART_SORCERESS_VERDICT PASS" sorceressart.log
+
+      - name: Run WarlordArtTest (Saxon Warlord boss silhouette)
+        # Asserts the beautified Saxon-Warlord art (scripts/art/WarlordArt.gd): the shipped
+        # res://scenes/villains/SaxonWarlord.tscn (look "warlord", a general) draws Cerdic — horned
+        # helm, fur mantle, braided beard, great Dane axe, war-totem — across facings and through the
+        # defeat-fade alpha without error, keeps its look, and survives. Purely visual — no gameplay.
+        run: |
+          godot --headless --path . res://tests/WarlordArtTest.tscn --quit-after 600 | tee warlordart.log
+          grep -q "ART_WARLORD_VERDICT PASS" warlordart.log
