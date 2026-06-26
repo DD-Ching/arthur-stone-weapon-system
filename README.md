@@ -10,7 +10,7 @@ enough.
 The result is not a sword. It is a giant **stone-hammer / sword-stone hybrid**.
 It is devastatingly powerful, and almost unusable. That tension *is* the game.
 
-<p align="center"><em>Status: <strong>v0.17.0 — 三國無雙 (Dynasty Warriors)</strong> · placeholder art, now with beautified per-unit silhouettes (soldiers, shields, spears, bruisers, banners, knights, cavalry — generals stand out) · a stage-select of Three-Kingdoms battles (Hu Lao Gate / Red Cliffs / Guandu / Changban / Yellow Turban) with named generals (武將), a Q-triggered musou ultimate, faction colours, and more troop types — all built from the reusable BattleMap / art / terrain / formation / objective / ability modules, playable on desktop and on a phone in landscape (橫屏)</em></p>
+<p align="center"><em>Status: <strong>v0.18.0 — The Legend of King Arthur</strong> · placeholder art · a stage-select of Arthurian battles (the Sword in the Stone / Mount Badon / Defend Camelot / Camlann / the Lady of the Lake) with the Knights of the Round Table and villains (Mordred, the Black Knight, a Saxon Warlord, Morgan le Fay, Merlin), Camelot-vs-Saxon-vs-rebel faction colours, beautified per-unit art, and a musou ultimate — with the Three Kingdoms (三國無雙) battles kept as a bonus section. Built from the reusable BattleMap / art / terrain / formation / objective / ability modules, playable on desktop and on a phone in landscape</em></p>
 
 <p align="center">
   <a href="https://dd-ching.github.io/arthur-stone-weapon-system/"><strong>▶ Play it in your browser</strong></a>
