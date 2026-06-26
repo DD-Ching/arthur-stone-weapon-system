@@ -15,6 +15,24 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.18.1] — 2026-06-26
+
+**Arthurian unit art + full phone play.**
+
+### Added / Fixed
+- **Two Arthurian-specific unit looks** (per-unit art, dispatched by `UnitArt`): **excalibur** —
+  a Camelot champion (Lancelot / Gawain / Percival) wielding a radiant Excalibur (white-blue
+  blade in a golden holy glow, a crown/halo for general-champions); and **sorceress** — Morgan
+  le Fay (dark-violet robes, a hooded face with glowing eyes, a staff with an arcane orb,
+  swirling runes).
+- **Full phone playability** — the Rock Launcher and Combo Trial rooms built their own HUD
+  (not the shared `Hud`), so they had no on-screen joysticks; the touch controls are now added
+  to every battle. A new **MENU** touch button returns to the stage select, completing the
+  mobile loop (menu → battle → back → another battle).
+- CI suite grows to **55** headless tests.
+
+---
+
 ## [0.18.0] — 2026-06-26
 
 **The Legend of King Arthur.** Re-themed the game around its true identity — Arthur lifted the
