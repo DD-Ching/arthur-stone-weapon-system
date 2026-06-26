@@ -396,3 +396,22 @@ jobs:
         run: |
           godot --headless --path . res://tests/SorceressArtTest.tscn --quit-after 600 | tee sorceressart.log
           grep -q "ART_SORCERESS_VERDICT PASS" sorceressart.log
+
+      - name: Run MordredArtTest (traitor-prince final-boss silhouette)
+        # Asserts the beautified Mordred art (scripts/art/MordredArt.gd): the shipped final-boss
+        # res://scenes/villains/Mordred.tscn (look "mordred", is_general) draws across many facings,
+        # as BOTH a legendary general and a demoted rank-and-file, and through the defeat-fade alpha,
+        # all without error, keeping its look. Purely visual — no gameplay change.
+        run: |
+          godot --headless --path . res://tests/MordredArtTest.tscn --quit-after 600 | tee mordredart.log
+          grep -q "ART_MORDRED_VERDICT PASS" mordredart.log
+
+      - name: Run WarlordArtTest (Arthurian villain art)
+        run: |
+          godot --headless --path . res://tests/WarlordArtTest.tscn --quit-after 600 | tee warlordart.log
+          grep -q "ART_WARLORD_VERDICT PASS" warlordart.log
+
+      - name: Run BlackKnightArtTest (Arthurian villain art)
+        run: |
+          godot --headless --path . res://tests/BlackKnightArtTest.tscn --quit-after 600 | tee blackknightart.log
+          grep -q "ART_BLACKKNIGHT_VERDICT PASS" blackknightart.log
