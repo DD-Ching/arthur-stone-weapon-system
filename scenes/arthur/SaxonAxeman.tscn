@@ -1,0 +1,34 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/Enemy.gd" id="1_enemy"]
+
+[sub_resource type="CircleShape2D" id="saxonaxeman_shape"]
+radius = 21.0
+
+[node name="SaxonAxeman" type="RigidBody2D"]
+collision_layer = 4
+collision_mask = 31
+mass = 3.0
+gravity_scale = 0.0
+linear_damp = 5.0
+angular_damp = 7.0
+lock_rotation = true
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_enemy")
+team = "raiders"
+faction = "saxon"
+enemy_name = "Saxon Axeman"
+look = "heavy"
+radius = 21.0
+base_color = Color(0.5, 0.32, 0.3, 1)
+max_health = 70.0
+move_speed = 56.0
+sight_range = 300.0
+attack_range = 60.0
+moves = PackedStringArray("bash", "pound")
+stagger_threshold = 1050.0
+shield_break_threshold = 9999.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("saxonaxeman_shape")
