@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+; The Round Table — a circular wood top with a gold rim and radial seat marks. Camelot's
+; symbol of equal fellowship. Pure decor, no physics, no image assets.
+
+[ext_resource type="Script" path="res://scripts/decor/RoundTable.gd" id="1_roundtable"]
+
+[node name="RoundTable" type="Node2D"]
+script = ExtResource("1_roundtable")
