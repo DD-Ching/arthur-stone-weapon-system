@@ -405,3 +405,13 @@ jobs:
         run: |
           godot --headless --path . res://tests/MordredArtTest.tscn --quit-after 600 | tee mordredart.log
           grep -q "ART_MORDRED_VERDICT PASS" mordredart.log
+
+      - name: Run WarlordArtTest (Arthurian villain art)
+        run: |
+          godot --headless --path . res://tests/WarlordArtTest.tscn --quit-after 600 | tee warlordart.log
+          grep -q "ART_WARLORD_VERDICT PASS" warlordart.log
+
+      - name: Run BlackKnightArtTest (Arthurian villain art)
+        run: |
+          godot --headless --path . res://tests/BlackKnightArtTest.tscn --quit-after 600 | tee blackknightart.log
+          grep -q "ART_BLACKKNIGHT_VERDICT PASS" blackknightart.log
