@@ -289,6 +289,14 @@ jobs:
           godot --headless --path . res://tests/GeneralsTest.tscn --quit-after 600 | tee generals.log
           grep -q "GENERALS_VERDICT PASS" generals.log
 
+      - name: Run Villain generals test (Arthurian boss enemies)
+        # Asserts the four Arthurian villain bosses (Mordred / Black Knight / Saxon Warlord /
+        # Morgan le Fay) join "generals" + the raider groups, build their moveset (or, for the
+        # support sorceress Morgan, join "officers"), act without error near a foe, and take damage.
+        run: |
+          godot --headless --path . res://tests/VillainsTest.tscn --quit-after 600 | tee villains.log
+          grep -q "VILLAINS_VERDICT PASS" villains.log
+
       - name: Run New troop types test
         run: |
           godot --headless --path . res://tests/TroopsTest.tscn --quit-after 600 | tee troops.log
