@@ -461,3 +461,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/StaminaFeelTest.tscn --quit-after 600 | tee stamfeel.log
           grep -q "STAMFEEL_VERDICT PASS" stamfeel.log
+
+      - name: Run difficulty test (tougher raiders — no one-shot squishies)
+        # Asserts the raider-toughness stat pass: LightSoldier.tscn now boots with
+        # max_health >= 30 and survives ONE modest sub-lethal hit (health > 0, not dead),
+        # proving a single flat swing no longer one-shots the squishiest raider.
+        run: |
+          godot --headless --path . res://tests/DifficultyTest.tscn --quit-after 600 | tee difficulty.log
+          grep -q "DIFFIC_VERDICT PASS" difficulty.log
