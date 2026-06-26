@@ -320,3 +320,12 @@ jobs:
         run: |
           godot --headless --path . res://tests/CavalryArtTest.tscn --quit-after 600 | tee cavalryart.log
           grep -q "ART_CAVALRY_VERDICT PASS" cavalryart.log
+
+      - name: Run Arthur-decor test (Arthurian atmosphere props)
+        # Asserts the Arthurian decor props (SwordInStone emblem / RoundTable / CamelotBanner /
+        # Torch) instantiate, join the "decor" group, draw a few frames without error, and that
+        # the colour helpers read the right hue (Camelot gold / Saxon moss-green / rebel purple,
+        # the Pendragon blazon red). Pure code-drawn decor — no assets, no physics, no threads.
+        run: |
+          godot --headless --path . res://tests/ArthurDecorTest.tscn --quit-after 600 | tee arthurdecor.log
+          grep -q "ARTHURDECOR_VERDICT PASS" arthurdecor.log

@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+; The Sword in the Stone — a grey stone anvil-block with a cross-hilt sword half-sunk in it
+; and a faint travelling gleam. The game's emblem. Pure decor, no physics, no image assets.
+
+[ext_resource type="Script" path="res://scripts/decor/SwordInStone.gd" id="1_swordstone"]
+
+[node name="SwordInStone" type="Node2D"]
+script = ExtResource("1_swordstone")
