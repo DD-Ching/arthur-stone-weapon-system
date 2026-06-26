@@ -37,7 +37,7 @@ const ROCK := preload("res://scenes/Rock.tscn")
 @export var inertia_gain := 1.1        ## how much Arthur's movement sloshes the head around
 @export var max_avel := 28.0           ## cap on angular speed (rad/s)
 @export var drag_gain := 5.2           ## mouse-DRAG torque while swinging — how hard a whip builds speed
-@export var swing_stamina_rate := 22.0 ## stamina drained per second while actively dragging a swing
+@export var swing_stamina_rate := 26.0 ## stamina drained per second while actively dragging a swing (just above regen, so held swinging isn't effectively free)
 @export var hit_speed_min := 420.0     ## head speed below which contact only PUSHES (no scored hit)
 @export var solid_off_speed := 400.0   ## above this the solid stone steps aside so the impulse hits
 @export var hit_interval := 0.3        ## a fast head re-hits the same target this often (seconds)
@@ -61,11 +61,11 @@ const ROCK := preload("res://scenes/Rock.tscn")
 @export_group("Spin (musou whirlwind)")
 @export var spin_rate := 17.0          ## angular speed of the whirl (rad/s) — a few turns a second
 @export var spin_accel := 42.0         ## how fast it winds up to spin_rate
-@export var spin_cost := 40.0          ## stamina drained PER SECOND while spinning
-@export var spin_min_stamina := 12.0   ## won't start below this
-@export var spin_hit_interval := 0.26  ## how often each enemy can be re-hit by the whirl
+@export var spin_cost := 28.0          ## stamina drained PER SECOND while spinning (a full whirl lasts ~3.6s — a taper, not an abrupt cliff)
+@export var spin_min_stamina := 30.0   ## won't start below this — the real brake on spin-spam: you can't instantly re-enter spin after running dry
+@export var spin_hit_interval := 0.5   ## how often each enemy can be re-hit by the whirl (slower ticks)
 @export var spin_stretch := 12.0       ## extra head reach while spinning
-@export var spin_speed_ref := 1300.0   ## relative_speed fed to the impact formula during spin
+@export var spin_speed_ref := 620.0    ## relative_speed fed to the impact formula during spin — a spin tick scores like a medium swing, not a free screen-clear
 
 @export_group("Cost")
 # Knockback / shake magnitudes live in Impact.gd (the one tuning hub). What stays

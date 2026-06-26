@@ -32,10 +32,11 @@ const SHOCKWAVE := preload("res://scenes/Shockwave.tscn")
 @export var max_stamina := 100.0
 @export var stamina_regen := 24.0
 @export var regen_delay := 0.65  ## pause before stamina starts coming back after a swing
+@export var low_stamina_threshold := 25.0  ## below this, a readable SOFT slowdown tapers in (not a hard stop) — running dry should sap you, not cliff
 
 @export_group("Health")
 @export var max_health := 140.0
-@export var invuln_time := 0.6   ## i-frames after a hit so a crowd can't chain-melt you
+@export var invuln_time := 0.45  ## i-frames after a hit so a crowd can't chain-melt you (short enough that a shield/spear wall can land the spin interrupt)
 
 @export_group("Musou")
 ## The rage gauge. Fills from landing hits, scoring KOs, and taking damage; at full
@@ -98,6 +99,11 @@ func take_damage(amount: float, from_pos: Vector2 = Vector2.ZERO) -> bool:
 	health = maxf(0.0, health - amount)
 	_hurt = 0.35
 	_invuln = invuln_time
+	# Spin INTERRUPT: a hit landing while you're whirling knocks you out of the spin, so
+	# standing-and-spinning into a shield/spear wall is punished instead of being free.
+	# stop_spin() is idempotent — a no-op unless we're actually in SPIN.
+	if weapon and weapon.state == StoneWeapon.State.SPIN:
+		weapon.stop_spin()
 	add_musou(musou_hurt_gain)   # suffering stokes the rage — taking a hit charges the gauge
 	Impact.note_damage()
 	if camera and camera.has_method("add_shake"):
@@ -172,7 +178,16 @@ func lunge(impulse: Vector2) -> void:
 	_dash_vel = (_dash_vel + impulse).limit_length(max_dash_speed)
 
 ## While the weapon is busy you are far less mobile — that is the cost of power.
+## On TOP of that, running low on stamina saps your speed: a readable SOFT slowdown
+## that tapers in below `low_stamina_threshold` instead of an abrupt cliff, so a near-
+## empty pool feels like wading rather than a sudden, un-fun stop.
 func _speed_multiplier() -> float:
+	var base := _weapon_speed_multiplier()
+	return base * _low_stamina_taper()
+
+## The weapon-state mobility penalty — the cost of power. (Split out so the low-stamina
+## taper composes cleanly and the per-state numbers stay readable.)
+func _weapon_speed_multiplier() -> float:
 	match weapon.state:
 		StoneWeapon.State.SPIN:
 			return 0.7    # a moving tornado — slower, but you're not rooted
@@ -186,6 +201,17 @@ func _speed_multiplier() -> float:
 			return 0.2    # planted, wide open
 		_:
 			return 1.0   # IDLE
+
+## A soft low-stamina slowdown: 1.0 at/above the threshold, tapering DOWN toward a small
+## non-zero crawl as the pool empties (so a tired Arthur wades, he doesn't freeze). Even a
+## truly empty pool only reaches LOW_STAMINA_FLOOR — running dry saps your speed, it never
+## stops you dead. A readable slope, not an abrupt cliff.
+const LOW_STAMINA_FLOOR := 0.45   ## slowest the taper alone ever drags you (at empty) — a crawl, never a freeze
+func _low_stamina_taper() -> float:
+	if stamina >= low_stamina_threshold:
+		return 1.0
+	var t := clampf(stamina / maxf(low_stamina_threshold, 0.001), 0.0, 1.0)
+	return lerpf(LOW_STAMINA_FLOOR, 1.0, t)
 
 func _handle_stamina(delta: float) -> void:
 	if _regen_cooldown > 0.0:
