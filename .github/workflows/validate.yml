@@ -351,6 +351,14 @@ jobs:
           godot --headless --path . res://tests/CavalryArtTest.tscn --quit-after 600 | tee cavalryart.log
           grep -q "ART_CAVALRY_VERDICT PASS" cavalryart.log
 
+      - name: Run ExcaliburArtTest (radiant Excalibur champion silhouette)
+        # Asserts the beautified Excalibur-champion art (scripts/art/ExcaliburArt.gd): the shipped
+        # res://scenes/knights/Lancelot.tscn (look "excalibur") draws across factions/facings and as
+        # a LEGENDARY general without error, keeps its look, and survives. Purely visual — no gameplay.
+        run: |
+          godot --headless --path . res://tests/ExcaliburArtTest.tscn --quit-after 600 | tee excaliburart.log
+          grep -q "ART_EXCALIBUR_VERDICT PASS" excaliburart.log
+
       - name: Run Defend Camelot map test (castle siege — hold the gate)
         # Asserts the Defend Camelot BattleMap subclass boots (Arthur + HUD), the besiegers spawn
         # through the castle-gate funnel, and clearing the field drives every siege wave + the
@@ -383,3 +391,8 @@ jobs:
         run: |
           godot --headless --path . res://tests/ArthurDecorTest.tscn --quit-after 600 | tee arthurdecor.log
           grep -q "ARTHURDECOR_VERDICT PASS" arthurdecor.log
+
+      - name: Run SorceressArtTest (Arthurian unit art)
+        run: |
+          godot --headless --path . res://tests/SorceressArtTest.tscn --quit-after 600 | tee sorceressart.log
+          grep -q "ART_SORCERESS_VERDICT PASS" sorceressart.log

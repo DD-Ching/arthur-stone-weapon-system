@@ -46,6 +46,9 @@ func _ready() -> void:
 	Impact.reset()
 	_refill_enemies()
 	_on_flow_changed(Impact.flow, Impact.stacks, Impact.flow_mode)
+	# Mobile: this room builds its own RoomHud (not the shared Hud), so add the touch controls
+	# here too — otherwise the trial has no joysticks on a phone.
+	$RoomHud.add_child(preload("res://scenes/ui/TouchControls.tscn").instantiate())
 	queue_redraw()
 
 ## The room leases one connection to the autoload combo meter; drop it when the room leaves

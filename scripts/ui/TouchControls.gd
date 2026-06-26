@@ -41,10 +41,13 @@ var _slam_c := Vector2.ZERO      ## button centres + radii, recomputed on resize
 var _spin_c := Vector2.ZERO
 var _reset_c := Vector2.ZERO
 var _musou_c := Vector2.ZERO     ## MUSOU ultimate (ULT) button — phone access to the Q ultimate
+var _menu_c := Vector2.ZERO      ## MENU button — back to the stage select (the mobile way to leave a battle)
 const SLAM_R := 56.0
 const SPIN_R := 48.0
 const RESET_R := 28.0
 const MUSOU_R := 50.0
+const MENU_R := 30.0
+const STAGE_SELECT := "res://scenes/ui/StageSelect.tscn"
 
 func _ready() -> void:
 	add_to_group("touch_controls")
@@ -62,6 +65,7 @@ func _layout() -> void:
 	_spin_c = Vector2(_vp.x - 222.0, _vp.y - 78.0)    # just left of SLAM
 	_reset_c = Vector2(_vp.x - 52.0, 52.0)            # top-right (mostly for after win/lose)
 	_musou_c = Vector2(_vp.x - 110.0, _vp.y - 212.0)  # above the SLAM/SPIN cluster
+	_menu_c = Vector2(56.0, 52.0)                      # top-left: back to the battle menu
 	queue_redraw()
 
 # --- input ------------------------------------------------------------------
@@ -111,6 +115,11 @@ func _press(index: int, p: Vector2) -> void:
 		_fingers[index] = {"role": "musou"}
 		Input.action_press("musou")   # Arthur only fires when the gauge is full; a premature tap is safely ignored
 		queue_redraw()
+		return
+	if p.distance_to(_menu_c) <= MENU_R:
+		# Back to the stage select — the mobile way to leave a battle and pick another.
+		_fingers[index] = {"role": "menu"}
+		get_tree().change_scene_to_file(STAGE_SELECT)
 		return
 	if p.x < _vp.x * 0.5:
 		if not _has_role("move"):
@@ -191,6 +200,7 @@ func _draw() -> void:
 	_draw_button(_spin_c, SPIN_R, "SPIN", _has_role("spin"), Color(0.42, 0.62, 0.95))
 	_draw_button(_musou_c, MUSOU_R, "ULT", _has_role("musou"), Color(1.0, 0.84, 0.3))
 	_draw_button(_reset_c, RESET_R, "R", false, Color(0.72, 0.72, 0.78))
+	_draw_button(_menu_c, MENU_R, "MENU", false, Color(0.66, 0.74, 0.7))
 	for index in _fingers:
 		var f: Dictionary = _fingers[index]
 		if f.role == "move":
