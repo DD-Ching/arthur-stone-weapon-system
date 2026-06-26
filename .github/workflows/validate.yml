@@ -320,3 +320,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/CavalryArtTest.tscn --quit-after 600 | tee cavalryart.log
           grep -q "ART_CAVALRY_VERDICT PASS" cavalryart.log
+
+      - name: Run Knights of the Round Table test (Camelot ally champions)
+        # Asserts the four pure-.tscn Camelot champions (Lancelot / Gawain / Percival / Bedivere)
+        # join the ally groups, read as faction "camelot", build one Ability per `moves` id, act
+        # without error near a foe, and take damage.
+        run: |
+          godot --headless --path . res://tests/KnightsTest.tscn --quit-after 600 | tee knights.log
+          grep -q "KNIGHTS_VERDICT PASS" knights.log
