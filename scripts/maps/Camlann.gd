@@ -30,6 +30,13 @@ const PERCIVAL := preload("res://scenes/knights/Percival.tscn")
 const BEDIVERE := preload("res://scenes/knights/Bedivere.tscn")
 const MORGAN := preload("res://scenes/villains/MorganLeFay.tscn")
 
+# Light scenery props (shared scenes) dressed onto the flanks — placement + config only.
+const CRATE := preload("res://scenes/Crate.tscn")
+const ROCK := preload("res://scenes/Rock.tscn")
+const FENCE := preload("res://scenes/terrain/Fence.tscn")
+const FACTION_BANNER := preload("res://scenes/decor/FactionBanner.tscn")
+const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
+
 # ── theme ──────────────────────────────────────────────────────────────────────
 func _map_title() -> String:
 	return "THE BATTLE OF CAMLANN"
@@ -44,6 +51,58 @@ func _arthur_start() -> Vector2:
 func _world_bounds() -> Rect2:
 	return Rect2(-680.0, -480.0, 1360.0, 980.0)
 
+# ── flank dressing: light scenery on the wings, central clash-lane kept clear ──
+func _build_decor() -> void:
+	## Dress the doomed field's flanks with EXISTING shared props (placement + config, no new art):
+	## a rebel war-drum + standard on each northern wing (Mordred's host), Arthur's blue standard at
+	## the loyal line's back, a fence rail on each flank, and a little battle-clutter of rocks + a
+	## crate. All sit out on the wings (|x| large) so the centre lane the bosses march down stays
+	## open and the final duel reads clean (the toppled banner in _draw stays at centre-north).
+	super._build_decor()
+	# Rebel war-drums on the northern wings, driving Mordred's host down the field.
+	_drum(Vector2(-500.0, -360.0))
+	_drum(Vector2(500.0, -360.0))
+	# Rebel standards planted on the wings (neutral-grey muster markers for the foe).
+	_banner(Vector2(-560.0, -300.0), "neutral", 78.0)
+	_banner(Vector2(560.0, -300.0), "neutral", 78.0)
+	# Arthur's Camelot-blue standard at the loyal line's back (our rally point).
+	_banner(Vector2(180.0, 430.0), "wei", 86.0)
+	# A rail of fencing on each flank — field furniture clear of the lane.
+	_fence(Vector2(-520.0, 60.0))
+	_fence(Vector2(520.0, 60.0))
+	# Scattered battle-clutter (rocks + a crate) on the flanks for texture on the bleak field.
+	for p in [Vector2(-470.0, -120.0), Vector2(-400.0, 140.0), Vector2(470.0, -120.0),
+			Vector2(400.0, 140.0)]:
+		_prop(ROCK, p)
+	_prop(CRATE, Vector2(-560.0, 20.0))
+	_prop(CRATE, Vector2(560.0, 20.0))
+
+func _drum(at: Vector2) -> void:
+	var d = WAR_DRUM.instantiate()
+	if "faction" in d:
+		d.faction = "wu"          # ring it rebel-red (the traitor host's drum)
+	d.position = at
+	add_child(d)
+
+func _banner(at: Vector2, fac: String, h: float) -> void:
+	var bn = FACTION_BANNER.instantiate()
+	if "faction" in bn:
+		bn.faction = fac
+	if "pole_height" in bn:
+		bn.pole_height = h
+	bn.position = at
+	add_child(bn)
+
+func _fence(at: Vector2) -> void:
+	var f = FENCE.instantiate()
+	f.position = at
+	add_child(f)
+
+func _prop(scene: PackedScene, at: Vector2) -> void:
+	var p = scene.instantiate()
+	p.position = at
+	add_child(p)
+
 # ── allies: a few loyal Round-Table knights stand with Arthur ───────────────────
 func _spawn_allies() -> void:
 	# A short loyal line just ahead of Arthur — they hunt the nearest rebel. The shared Spawner
@@ -55,11 +114,16 @@ func _spawn_allies() -> void:
 		if is_instance_valid(a) and "faction" in a:
 			a.faction = "camelot"
 
-# ── objectives: repel every rebel wave AND defeat Mordred ───────────────────────
+# ── objectives: repel every rebel wave, break the banner guard, AND fell the named bosses ─
 func _compose_objectives() -> ObjectiveManager:
 	var mgr := ObjectiveManager.new()
 	mgr.add(RepelWavesObjective.new("Repel Mordred's rebels"))
-	mgr.add(DefeatOfficerObjective.new("Defeat Mordred"))
+	# The banner guard's commander still gates (the OfficerGuard's is_support BannerBearer).
+	mgr.add(DefeatOfficerObjective.new("Break the banner guard"))
+	# The named-boss gate: victory now requires felling the named generals — Morgan le Fay AND
+	# Mordred the Traitor (both is_general, so they join the "generals" group the base surfaces
+	# as ctx["generals"]). No number of cleared waves wins until the traitor himself is down.
+	mgr.add(DefeatGeneralObjective.new("Defeat Mordred"))
 	return mgr
 
 # ── waves: escalating rebel assaults, ending in Mordred's banner guard ──────────
