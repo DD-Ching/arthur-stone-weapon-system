@@ -271,6 +271,14 @@ jobs:
           godot --headless --path . res://tests/YellowTurbanTest.tscn --quit-after 600 | tee yellowturban.log
           grep -q "YELLOWTURBAN_VERDICT PASS" yellowturban.log
 
+      - name: Run Mount Badon map test (Briton hilltop last-stand vs Saxon horde)
+        # Asserts the Mount Badon BattleMap subclass boots (Arthur + HUD), the Saxon horde
+        # spawns, the composed Survive + HoldLine objectives resolve win/lose correctly, and a
+        # short survival window drives the hilltop hold to victory through the shared loop.
+        run: |
+          godot --headless --path . res://tests/MountBadonTest.tscn --quit-after 600 | tee mountbadon.log
+          grep -q "BADON_VERDICT PASS" mountbadon.log
+
       - name: Run Named generals test (武將 boss units)
         run: |
           godot --headless --path . res://tests/GeneralsTest.tscn --quit-after 600 | tee generals.log
