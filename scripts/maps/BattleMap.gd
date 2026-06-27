@@ -60,6 +60,9 @@ func _ready() -> void:
 	arthur = ARTHUR.instantiate()
 	add_child(arthur)
 	arthur.global_position = _arthur_start()
+	# Frame the camera to THIS world so it zooms in + never pans into the empty band past the walls.
+	if "camera" in arthur and arthur.camera and arthur.camera.has_method("set_world_limits"):
+		arthur.camera.set_world_limits(_world_bounds())
 	if arthur.has_signal("died"):
 		arthur.died.connect(_on_arthur_died)
 	hud = HUD.instantiate()

@@ -20,6 +20,8 @@ signal musou_changed(current: float, maximum: float)   ## the musou rage gauge �
 ## The ULTIMATE reuses the slam's Shockwave (the one shared radial-launch path) — just
 ## bigger: a huge radius + impulse + stun centred on Arthur clears the whole screen.
 const SHOCKWAVE := preload("res://scenes/Shockwave.tscn")
+const BEAM := preload("res://scenes/Beam.tscn")
+const MUSOU_CHARGE_MAX := 2.5   ## seconds of beam a full gauge buys (charge longer, spray longer)
 
 @export_group("Movement")
 @export var max_speed := 158.0
@@ -48,6 +50,7 @@ const SHOCKWAVE := preload("res://scenes/Shockwave.tscn")
 var stamina := 0.0
 var health := 0.0
 var musou := 0.0               ## current rage charge, 0..max_musou
+var _musou_charge := 0.0       ## seconds the Q beam has been charged (held), 0..MUSOU_CHARGE_MAX
 var _regen_cooldown := 0.0
 var _hitstop_token := 0
 var _hurt := 0.0               ## red hit-flash, seconds remaining
@@ -82,7 +85,10 @@ func _physics_process(delta: float) -> void:
 	if _invuln > 0.0:
 		_invuln = maxf(0.0, _invuln - delta)
 	_handle_aim()
-	_handle_attack()
+	# Lead the camera a touch toward where the stone is aimed (musou look-ahead).
+	if camera and camera.has_method("set_focus"):
+		camera.call("set_focus", Vector2.RIGHT.rotated(weapon.aim_angle))
+	_handle_attack(delta)
 	_handle_movement(delta)
 	_handle_stamina(delta)
 	# Only redraw when something visible changes (hurt flash, i-frame blink, or the
@@ -134,13 +140,22 @@ func _touch_controls():
 		_touch_cache = get_tree().get_first_node_in_group("touch_controls")
 	return _touch_cache
 
-func _handle_attack() -> void:
-	# A full musou gauge + the musou key = the screen-clearing ULTIMATE. Guard the
-	# action so this is a no-op on a build whose project.godot lacks it (returns false,
-	# no error spam). Fires before swing/slam so the same press can't also do both.
-	if musou >= max_musou and InputMap.has_action("musou") and Input.is_action_just_pressed("musou"):
-		trigger_musou_ultimate()
-		return
+func _handle_attack(delta: float) -> void:
+	# Q is the CHARGE-BEAM ultimate: HOLD musou (while you have gauge) to CHARGE, RELEASE to fire a
+	# sustained light beam for as long as you charged (the gauge you spent → the beam you spray —
+	# "charge however long, spray that long"). The early return is load-bearing: a held/charging Q
+	# must not also swing/slam. Guarded so a build without the `musou` action is a clean no-op.
+	if InputMap.has_action("musou"):
+		if Input.is_action_pressed("musou") and musou > 0.0:
+			_musou_charge = minf(_musou_charge + delta, MUSOU_CHARGE_MAX)
+			add_musou(-(max_musou / MUSOU_CHARGE_MAX) * delta)   # holding drains the gauge into charge
+			weapon.stop_spin()
+			weapon.set_swinging(false)
+			return
+		elif _musou_charge > 0.0:   # released (or the gauge ran dry) → unleash the beam
+			fire_musou_beam(_musou_charge)
+			_musou_charge = 0.0
+			return
 	# Hold to whirl (the musou tornado); takes priority over swing/slam while held.
 	# The early return is load-bearing: holding spin must not also fire a swing/slam
 	# in the same frame. stop_spin() is idempotent — safe to call every frame.
@@ -287,29 +302,31 @@ func _on_weapon_too_tired() -> void:
 	Impact.note_exhausted()   # running dry mid-combo breaks Stone Flow
 	exhausted.emit()
 
-## The musou ULTIMATE: a screen-clearing radial launch centred on Arthur. It empties
-## the gauge, then spawns one BIG Shockwave at his feet and detonates it — reusing the
-## exact slam/shockwave force path (radial impulse + real damage + stun, with falloff),
-## just scaled way up. Public so the HUD/input and the headless test can fire it directly.
-func trigger_musou_ultimate() -> void:
-	# Empty the gauge first so a re-press in the same frame can't double-fire.
-	musou = 0.0
-	musou_changed.emit(musou, max_musou)
+## The musou ULTIMATE is the CHARGE-BEAM: a sustained light beam fired along Arthur's aim for
+## `charge` seconds (the gauge you spent). It anchors to Arthur and SWEEPS with the cursor like a
+## water gun, heavily damaging + shoving everything in its path. Reuses the shared Beam + Enemy
+## hit path; the punch-zoom + shake sell the unleash.
+func fire_musou_beam(charge: float) -> void:
 	var scene := get_tree().current_scene
 	if scene == null:
 		scene = get_parent()   # headless harnesses often add Arthur straight under the test root
 	if scene == null:
 		return
-	var wave = SHOCKWAVE.instantiate()   # untyped: it's a Node2D we position in the world
-	wave.radius = 360.0                  # a huge reach — clears the screen
-	wave.impulse = 1600.0                # launches the whole crowd hard
-	wave.stun_time = 1.5                 # and leaves them reeling
-	scene.add_child(wave)
-	wave.global_position = global_position
-	wave.detonate()                      # impulse AFTER positioning (see Shockwave.detonate)
+	var beam = BEAM.instantiate()   # untyped: a Node2D we anchor to Arthur
+	scene.add_child(beam)
+	beam.fire(self, clampf(charge, 0.4, MUSOU_CHARGE_MAX))
+	if camera and camera.has_method("kick"):
+		camera.call("kick", 26.0)
 	if camera and camera.has_method("add_shake"):
-		camera.call("add_shake", 30.0)   # a big, screen-rattling shake
+		camera.call("add_shake", 16.0)
 	Audio.play("wall_crush", global_position)
+
+## Back-compat alias (HUD / headless test / a build that calls it directly): empty the gauge and
+## fire a fixed-length beam along the current aim.
+func trigger_musou_ultimate() -> void:
+	musou = 0.0
+	musou_changed.emit(musou, max_musou)
+	fire_musou_beam(1.4)
 
 func _state_name(state: int) -> String:
 	match state:
