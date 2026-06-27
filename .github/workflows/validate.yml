@@ -133,6 +133,15 @@ jobs:
           godot --headless --path . res://tests/TouchControlsTest.tscn --quit-after 600 | tee touch.log
           grep -q "TOUCH_VERDICT PASS" touch.log
 
+      - name: Run touch-mobile polish test (off-HUD MENU + scaled targets + ULT charge ring)
+        # Asserts the mobile-polished touch UI: the MENU button no longer sits on the top-left
+        # HUD bar column, the thumb-target button radii scale up on a taller canvas (clearing
+        # ~44px), the haptic helper is a clean no-op on desktop, and the ULT charge-ring draw
+        # path renders without error with a real Arthur (full gauge + half charge) in "player".
+        run: |
+          godot --headless --path . res://tests/TouchMobileTest.tscn --quit-after 600 | tee touchmobile.log
+          grep -q "TOUCH_MOBILE_VERDICT PASS" touchmobile.log
+
       - name: Run HUD re-skin test (code-drawn bars + ULTIMATE readout + fading hints)
         # Asserts the re-skinned HUD: the code-drawn status bars render without error, the WEAPON
         # read-out is human-readable (a swing charge shows "CHARGE NN%", never the cryptic "POWER"),
