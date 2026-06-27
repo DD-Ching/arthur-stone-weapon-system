@@ -297,7 +297,7 @@ func _refresh_musou_text() -> void:
 	if _musou_ratio >= 1.0:
 		# On a phone there's no Q key — the ULT touch button fires it — so drop the
 		# keyboard cue and keep the line short for the cramped landscape viewport.
-		musou_label.text = "ULTIMATE  ★ READY" if _on_touch() else "ULTIMATE  ★ READY — hold Q to fire beam"
+		musou_label.text = "ULTIMATE  READY!" if _on_touch() else "ULTIMATE  READY! — hold Q to fire beam"
 	else:
 		musou_label.text = "ULTIMATE  %d%%" % round(_musou_ratio * 100.0)
 
