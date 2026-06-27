@@ -503,6 +503,14 @@ jobs:
           godot --headless --path . res://tests/DifficultyTest.tscn --quit-after 600 | tee difficulty.log
           grep -q "DIFFIC_VERDICT PASS" difficulty.log
 
+      - name: Run win-safety test (out-of-bounds softlock fix)
+        # Asserts the win-safety net: a raider flung far outside the world (a wall-escaping
+        # knockback) is hauled back in-bounds (or retired) by _recover_strays within a couple of
+        # scans, so the last enemy can never be stranded off-map and make the battle unwinnable.
+        run: |
+          godot --headless --path . res://tests/WinSafetyTest.tscn --quit-after 600 | tee winsafe.log
+          grep -q "WINSAFE_VERDICT PASS" winsafe.log
+
       - name: Run physics-foundation test (destruction + stone-blocks-arrows)
         # Asserts the physical-world foundation: a Breakable shatters into budgeted debris,
         # Impact.shatter caps at DEBRIS_BUDGET, Impact.explode hits a ring, and a javelin

@@ -152,6 +152,16 @@ func _ready() -> void:
 
 # ── taking a hit ────────────────────────────────────────────────────────────
 
+## Hard cap on a body's speed (px/s) — clamped every physics step in _integrate_forces so a single
+## max hit can NEVER tunnel a light unit clean through the (now 64px) world wall in one step. Still
+## a big, satisfying fling (~43px/step); residual escapes are caught by BattleMap's win-safety net.
+const MAX_LAUNCH_SPEED := 2600.0
+
+## Cap the rigid body's speed every physics step (anti-tunnelling). Cheap: one length check.
+func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
+	if state.linear_velocity.length() > MAX_LAUNCH_SPEED:
+		state.linear_velocity = state.linear_velocity.limit_length(MAX_LAUNCH_SPEED)
+
 ## Low-level: an impulse + a flash. Used by the slam shockwave and by anything
 ## that only wants to shove (kept for back-compat with the swing/tests).
 func apply_knockback(dir: Vector2, strength: float) -> void:
@@ -419,8 +429,13 @@ func _march_velocity() -> Vector2:
 ## it per soldier every frame is pure cost at swarm scale. Recomputes early if the desired heading
 ## swings hard (a new foe / a turn) so responsiveness is preserved where it matters.
 func _avoid(desired: Vector2) -> Vector2:
+	# In OPEN ground the wall deflection is stable, so recompute it only every 3rd frame. BUT the
+	# moment the last probe actually DEFLECTED us (we're in wall contact — output != input) recompute
+	# EVERY frame, so a unit sliding along / pressed into a wall re-probes immediately and slips off
+	# instead of grinding/sticking for 2 stale frames. That kills the "stuck on an invisible wall" feel.
+	var in_contact := not _cached_avoid.is_equal_approx(_cached_avoid_in)
 	_steer_tick -= 1
-	if _steer_tick <= 0 or desired.dot(_cached_avoid_in) < 0.6:
+	if in_contact or _steer_tick <= 0 or desired.dot(_cached_avoid_in) < 0.6:
 		_steer_tick = 3
 		_cached_avoid = Steering.avoid(_space, global_position, radius, desired, get_rid(), _steer_bias)
 		_cached_avoid_in = desired
