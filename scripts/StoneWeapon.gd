@@ -103,6 +103,10 @@ var _scrape_cd := 0.0     ## throttle for the slow grinding stone_scrape sound
 @onready var _arthur = get_parent()
 
 func _ready() -> void:
+	# Tag the solid stone body so projectiles can detect + deflect off it (the stone as a shield).
+	# The body's collision shape is only enabled when the stone is slow/parked (see _set_solid),
+	# so this naturally means "raise the stone to block arrows", not a free always-on guard.
+	stone_body.add_to_group("stone_weapon")
 	_head_dist = arm_length
 	_angle = _target_aim          # the head rests pointing toward the cursor
 	_prev_aim = _target_aim
