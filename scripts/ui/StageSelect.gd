@@ -216,14 +216,24 @@ func _build_ui() -> void:
 		empty.add_theme_color_override("font_color", SUBTITLE_COL)
 		list.add_child(empty)
 
-	# (c) Footer: a primary DEPLOY + a QUICK START.
+	# (c) Footer: campaign progress + a primary DEPLOY + a QUICK START.
 	var footer := HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 14)
 	column.add_child(footer)
 
+	# Campaign progress — "Battles cleared: X / N" — read from the Campaign autoload (single
+	# source of truth), so the lobby always shows how far through the legend the player is.
+	var progress := Label.new()
+	progress.text = _progress_text()
+	progress.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	progress.add_theme_font_size_override("font_size", 14)
+	progress.add_theme_color_override("font_color", BADGE_CLEARED_COL)
+	footer.add_child(progress)
+
 	var hint := Label.new()
 	hint.text = HINT_TEXT
 	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hint.add_theme_font_size_override("font_size", 13)
 	hint.add_theme_color_override("font_color", SUBTITLE_COL)
@@ -298,6 +308,14 @@ func _campaign():
 	if typeof(Campaign) != TYPE_NIL:
 		return Campaign
 	return null
+
+## "Battles cleared: X / N" from the Campaign autoload (single source of progress). Falls back to
+## a 0/entry-count line if the autoload is somehow absent, so the footer is never blank.
+func _progress_text() -> String:
+	var camp = _campaign()
+	if camp != null and camp.has_method("cleared_count") and camp.has_method("total"):
+		return "Battles cleared: %d / %d" % [camp.cleared_count(), camp.total()]
+	return "Battles cleared: 0 / %d" % entries.size()
 
 # --- Theme (shared Arthurian styling for the whole tree) ---------------------
 
