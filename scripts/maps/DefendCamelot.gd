@@ -102,6 +102,7 @@ func _build_terrain() -> void:
 # (a hurlable crate + an inert war-cart hulk), and a faction banner + war drum at the muster.
 func _build_decor() -> void:
 	var b := _world_bounds()
+	_scatter_battlefield_props()   # smashable barrels/pots/hay + a fire-barrel down the courtyard flanks
 	var wall_y := b.position.y + WALL_Y_OFFSET
 	var half_gap := GATE_GAP * 0.5
 	# Flank the gate gap with a pair of solid stone gate posts (one per jamb side).

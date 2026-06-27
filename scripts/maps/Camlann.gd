@@ -59,6 +59,7 @@ func _build_decor() -> void:
 	## crate. All sit out on the wings (|x| large) so the centre lane the bosses march down stays
 	## open and the final duel reads clean (the toppled banner in _draw stays at centre-north).
 	super._build_decor()
+	_scatter_battlefield_props()   # smashable battlefield clutter on the flanks (clear of the duel lane)
 	# Rebel war-drums on the northern wings, driving Mordred's host down the field.
 	_drum(Vector2(-500.0, -360.0))
 	_drum(Vector2(500.0, -360.0))
