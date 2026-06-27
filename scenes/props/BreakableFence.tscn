@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/props/BreakableFence.gd" id="1_fence"]
+
+[sub_resource type="RectangleShape2D" id="fence_shape"]
+size = Vector2(120, 16)
+
+[node name="BreakableFence" type="RigidBody2D"]
+collision_layer = 8
+collision_mask = 31
+mass = 1.6
+gravity_scale = 0.0
+linear_damp = 3.0
+angular_damp = 3.0
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_fence")
+max_health = 40.0
+hard_hit = 640.0
+radius = 8.0
+length = 60.0
+debris_count = 6
+chunk_color = Color(0.34, 0.26, 0.18, 1)
+debris_speed = Vector2(170, 360)
+smash_label = "SMASH"
+break_sound = "shield_break"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("fence_shape")
