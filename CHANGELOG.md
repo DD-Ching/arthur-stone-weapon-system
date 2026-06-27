@@ -16,6 +16,32 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.25.0] — 2026-06-27
+
+**Packaging polish: it stops feeling like a tech demo.**
+
+### Added
+- **Smooth scene transitions.** A shared `Transition` autoload fades the screen between every
+  lobby → battle → pause → result change (and fades up from black on boot), so the game no longer
+  hard-cuts between test scenes.
+- **A battlefield vignette** frames every map + room (a subtle screen-space dark-edge), so the
+  dense swarm pops and the action reads as composed, not a flat arena.
+- **The slam has a voice** — a deep thud + a rocky crack at impact (it was mute), plus more
+  procedural combat voices registered for future hooks.
+
+### Changed
+- **HUD re-skin.** Clean rounded code-drawn bars with a coherent palette and tidy rhythm; a clear
+  "WEAPON CHARGE %" readout; an **ULTIMATE** gauge that reads "★ READY — hold Q to fire beam" when
+  full; and the bottom control-hint strip now teaches for a few seconds then fades away.
+
+## [0.24.0] — 2026-06-27
+
+**Arena floor re-skin.** Replaced the flat charcoal + debug grid with a soft value gradient, a
+seeded dapple of soft blobs, and a faint edge shade, so the battlefield reads as ground rather than
+graph paper (re-themable per map; drawn once, zero per-frame cost).
+
+---
+
 ## [0.23.0] — 2026-06-27
 
 **Every minion fights, and weapons clash.**

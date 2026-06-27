@@ -133,6 +133,15 @@ jobs:
           godot --headless --path . res://tests/TouchControlsTest.tscn --quit-after 600 | tee touch.log
           grep -q "TOUCH_VERDICT PASS" touch.log
 
+      - name: Run HUD re-skin test (code-drawn bars + ULTIMATE readout + fading hints)
+        # Asserts the re-skinned HUD: the code-drawn status bars render without error, the WEAPON
+        # read-out is human-readable (a swing charge shows "CHARGE NN%", never the cryptic "POWER"),
+        # the ULTIMATE bar announces READY at a full gauge, and the control-hint strip fades after
+        # its hold window (teach-then-hide) and is restorable via replay_hints().
+        run: |
+          godot --headless --path . res://tests/HudReskinTest.tscn --quit-after 600 | tee hudreskin.log
+          grep -q "HUD_RESKIN_VERDICT PASS" hudreskin.log
+
       - name: Run navigation test (v0.14 obstacle avoidance)
         # Asserts a marching raider routes AROUND a solid wall (world layer) through the
         # gap to reach its goal, instead of jamming against it (the Steering module).
@@ -556,3 +565,27 @@ jobs:
         run: |
           godot --headless --path . res://tests/DeflectTest.tscn --quit-after 600 | tee deflect.log
           grep -q "DEFLECT_VERDICT PASS" deflect.log
+
+      - name: Run vignette test (screen-space battle frame)
+        # Asserts the reusable Vignette overlay: it is a CanvasLayer below the HUD (layer 1) so it
+        # never dims the HUD bars / pause / score, it builds a drawing child Control that ignores
+        # the mouse (clicks pass through), and it survives a few frames with no error.
+        run: |
+          godot --headless --path . res://tests/VignetteTest.tscn --quit-after 600 | tee vignette.log
+          grep -q "VIGNETTE_VERDICT PASS" vignette.log
+      - name: Run slam-audio test (the heaviest move finally has a voice)
+        # Asserts the SLAM voice + combat-audio additions: SoundBank registers the new "slam"
+        # voice (a real non-empty procedural stream) plus the cheap "big_swing" / "combo_tier"
+        # extras without dropping the originals, firing the events routes cleanly (headless has
+        # no audio device — event path, not playback), and a real slam impact fires "slam".
+        run: |
+          godot --headless --path . res://tests/SlamAudioTest.tscn --quit-after 600 | tee slamaudio.log
+          grep -q "SLAMAUDIO_VERDICT PASS" slamaudio.log
+      - name: Run transition test (shared scene-change fade)
+        # Asserts the Transition autoload (the hard-cut killer): it exposes change_scene(path), owns
+        # an overlay CanvasLayer + full-rect ColorRect cover, is process_mode ALWAYS (so it fades
+        # while the tree is paused — PauseMenu needs that), and arms the wipe on a valid path while
+        # treating an empty / missing path as a guarded no-op. The real scene swap is stubbed.
+        run: |
+          godot --headless --path . res://tests/TransitionTest.tscn --quit-after 600 | tee transition.log
+          grep -q "TRANSITION_VERDICT PASS" transition.log

@@ -22,6 +22,7 @@ Impact="*res://scripts/Impact.gd"
 Audio="*res://scripts/Audio.gd"
 SoundBank="*res://scripts/SoundBank.gd"
 Campaign="*res://scripts/Campaign.gd"
+Transition="*res://scripts/Transition.gd"
 
 [display]
 

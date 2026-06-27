@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/vignette_test.gd" id="1_vignette"]
+
+[node name="VignetteTest" type="Node2D"]
+script = ExtResource("1_vignette")

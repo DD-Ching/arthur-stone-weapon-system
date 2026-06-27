@@ -414,6 +414,8 @@ func _do_slam_impact() -> void:
 	var rock = ROCK.instantiate()
 	scene.add_child(rock)
 	rock.global_position = point
+	# The heaviest move finally LANDS audibly: a deep thud + rocky crack at the impact point.
+	Audio.play("slam", point)
 	hit_landed.emit(slam_shake, 0)   # one big shake + hit-stop
 
 func ease_out(t: float) -> float:

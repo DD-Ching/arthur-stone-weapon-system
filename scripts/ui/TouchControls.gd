@@ -125,7 +125,13 @@ func _press(index: int, p: Vector2) -> void:
 		if pm and pm.has_method("open"):
 			pm.open()
 		else:
-			get_tree().change_scene_to_file(STAGE_SELECT)
+			# No pause overlay here — fall back to the lobby, through the shared scene-fade when
+			# the Transition autoload is present, else a hard cut so this still always navigates.
+			var tr := get_node_or_null("/root/Transition")
+			if tr:
+				tr.change_scene(STAGE_SELECT)
+			else:
+				get_tree().change_scene_to_file(STAGE_SELECT)
 		return
 	if p.x < _vp.x * 0.5:
 		if not _has_role("move"):

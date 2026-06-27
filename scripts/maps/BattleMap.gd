@@ -17,6 +17,7 @@ const HUD := preload("res://scenes/Hud.tscn")
 const SCORE_SCREEN := preload("res://scenes/ui/ScoreScreen.tscn")
 const GENERAL_HEALTHBAR := preload("res://scenes/ui/GeneralHealthbar.tscn")
 const PAUSE_MENU := preload("res://scenes/ui/PauseMenu.tscn")
+const VIGNETTE := preload("res://scenes/ui/Vignette.tscn")
 
 @export_group("Battle Tuning")
 @export var density := 2.5                 ## scales wave counts (web-framerate dial)
@@ -71,6 +72,9 @@ func _ready() -> void:
 	hud = HUD.instantiate()
 	add_child(hud)
 	hud.bind(arthur)
+	# A static screen-space vignette that frames the battle (over the world, under the HUD). One
+	# instance here means every map AND every challenge room gets the same edge-darkening for free.
+	add_child(VIGNETTE.instantiate())
 	_score_screen = SCORE_SCREEN.instantiate()
 	add_child(_score_screen)
 	# A boss healthbar overlay that auto-tracks any named generals (武將) on the field.

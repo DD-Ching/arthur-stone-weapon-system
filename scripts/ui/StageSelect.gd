@@ -439,12 +439,17 @@ func selected_path() -> String:
 	return entries[selected]["path"]
 
 ## Launch the highlighted battle. Guarded again here so a stale/empty selection can never hand
-## `change_scene_to_file` an invalid path. Same flow as before — `change_scene_to_file`.
+## the scene change an invalid path. Routes through the shared scene-fade (Transition autoload)
+## when present, else a plain hard cut so a build / headless run without it still launches.
 func _launch() -> void:
 	var path := selected_path()
 	if path == "" or not ResourceLoader.exists(path):
 		return
-	get_tree().change_scene_to_file(path)
+	var tr := get_node_or_null("/root/Transition")
+	if tr:
+		tr.change_scene(path)
+	else:
+		get_tree().change_scene_to_file(path)
 
 ## QUICK START: jump into the first UNLOCKED battle (or just the first entry if none report lock
 ## state). Falls back to the current selection so the button is never a no-op.
