@@ -207,6 +207,14 @@ jobs:
           godot --headless --path . res://tests/ComboTrialRoomTest.tscn --quit-after 600 | tee combo.log
           grep -q "COMBO_ROOM_VERDICT PASS" combo.log
 
+      - name: Run room-campaign test (rooms end → ScoreScreen + Campaign)
+        # Asserts the RoomFinish glue closes the challenge-room dead-end: a BowlingRoom driven to a
+        # win marks the stage CLEARED in the Campaign and reveals a VICTORY ScoreScreen handed a
+        # non-empty next_path, and a room can register a loss (a DEFEAT ScoreScreen, no false clear).
+        run: |
+          godot --headless --path . res://tests/RoomCampaignTest.tscn --quit-after 600 | tee roomcampaign.log
+          grep -q "ROOMCAMPAIGN_VERDICT PASS" roomcampaign.log
+
       - name: Run score-screen test (v0.15 KO + time result overlay)
         # Asserts the end-of-battle ScoreScreen reveals on a result and its labels show the
         # KO count, the elapsed time formatted m:ss, and the right VICTORY/DEFEAT word.

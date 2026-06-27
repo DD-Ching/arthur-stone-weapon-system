@@ -49,6 +49,7 @@ var _enemy_total := 0
 var _won := false
 var _lost := false
 var _scan_cd := 0.0
+var _elapsed := 0.0
 var _started := false   ## true once enemies have actually spawned (so an empty first frame
                         ## isn't mistaken for "all defeated")
 
@@ -66,6 +67,8 @@ func _ready() -> void:
 	_objectives = ObjectiveManager.new()
 	_objectives.add(ClearRoomObjective.new())
 	arthur.died.connect(_on_arthur_died)
+	# Esc / mobile MENU → Resume / Restart / Return to Lobby, so the room is no longer a dead-end.
+	RoomFinish.add_pause_menu(self)
 	Impact.popup("LAUNCH THE ROCKS!", arthur.global_position + Vector2(0, -90),
 		Color(0.85, 0.78, 0.55), 1.4)
 	_evaluate()
@@ -160,6 +163,8 @@ func _spawn_enemies() -> void:
 	_started = true
 
 func _physics_process(delta: float) -> void:
+	if not (_won or _lost):
+		_elapsed += delta
 	_punish_wade()
 	_scan_cd -= delta
 	if _scan_cd <= 0.0:
@@ -206,18 +211,21 @@ func _victory() -> void:
 		return
 	_won = true
 	if _status:
-		_status.text = "ROOM CLEARED!   (press R to restart)"
+		_status.text = "ROOM CLEARED!"
 		_status.add_theme_color_override("font_color", Color(0.5, 0.95, 0.55))
 	Impact.popup("ROOM CLEARED!", arthur.global_position + Vector2(0, -64),
 		Color(0.5, 0.95, 0.55), 1.6)
+	# Mark the stage cleared + reveal the result overlay (Next / Lobby) via the shared glue.
+	RoomFinish.finish(self, true, Impact.kills, _elapsed)
 
 func _on_arthur_died() -> void:
-	if _won:
+	if _won or _lost:
 		return
 	_lost = true
 	if _status:
-		_status.text = "ARTHUR HAS FALLEN   (press R to restart)"
+		_status.text = "ARTHUR HAS FALLEN"
 		_status.add_theme_color_override("font_color", Color(0.95, 0.4, 0.4))
+	RoomFinish.finish(self, false, Impact.kills, _elapsed)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("reset_arena"):
