@@ -16,6 +16,26 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.23.0] — 2026-06-27
+
+**Every minion fights, and weapons clash.**
+
+### Added
+- **Every minion can attack.** The morale support units (banner bearers, the war drummer, the
+  standard bearer) and Morgan le Fay no longer just walk — they now harass with a ranged bolt from
+  their standoff distance (which the stone can deflect, on theme). No raider is harmless.
+- **Weapon clash.** Catch an enemy mid-strike with a swing of the stone and it's PARRIED — its
+  weapon is batted aside (strike cancelled, staggered, knocked back) with a "CLASH!" spark and a
+  Stone-Flow reward. The closest the swarm can get to weapon-on-weapon physics without a body per
+  soldier.
+- **Death-pop.** A felled raider bursts a few body-coloured debris chunks (budgeted), so clearing
+  the swarm reads as impact.
+
+### Changed
+- Camera look-ahead widened so aiming into the crowd pulls the view onto the fight.
+
+---
+
 ## [0.22.0] — 2026-06-27
 
 **The camera frames the fight, and Q becomes a beam.**

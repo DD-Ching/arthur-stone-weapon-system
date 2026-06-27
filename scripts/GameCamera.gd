@@ -9,8 +9,8 @@ extends Camera2D
 ## Shake rides ON TOP of the look-ahead offset (the old code hard-zeroed offset every frame, which
 ## stomped any framing). Reuse: every map + room gets it for free; BattleMap just sets the limits.
 
-@export var base_zoom := 1.45      ## framed-in (1 = no zoom); the swarm + the stone read at a glance
-@export var lookahead := 56.0      ## how far the view leads toward the aim heading
+@export var base_zoom := 1.5       ## framed-in (1 = no zoom); the swarm + the stone read at a glance
+@export var lookahead := 110.0     ## how far the view leads toward the aim heading (toward the fight)
 @export var decay := 9.0           ## how quickly a shake settles
 @export var max_offset := 24.0     ## clamp so a huge hit never throws the view off
 
