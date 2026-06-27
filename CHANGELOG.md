@@ -16,6 +16,25 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.22.0] — 2026-06-27
+
+**The camera frames the fight, and Q becomes a beam.**
+
+### Added
+- **Charge-beam ultimate.** Q is no longer a one-shot slam — HOLD it to CHARGE (draining the musou
+  gauge), RELEASE to spray a sustained directional **light beam** that sweeps with your aim like a
+  water gun and heavily damages everything in its path. Charge longer, spray longer. A new shared
+  `Beam` + a punch-zoom + shake sell the unleash.
+
+### Changed
+- **A real musou camera.** The view now zooms in (~1.45×) and follows Arthur with a small
+  look-ahead toward his aim, clamped to the world so it never pans into the empty band past the
+  walls — so the swarm and the stone fill the screen instead of sitting as specks in a wide static
+  diorama. Heavy hits + the ultimate punch-zoom; shake can bias along the hit direction. Every map
+  and room inherits it for free.
+
+---
+
 ## [0.21.1] — 2026-06-27
 
 **Hotfix: the battle is always winnable.**
