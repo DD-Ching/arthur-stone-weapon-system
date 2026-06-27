@@ -477,3 +477,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/PhysicsFoundationTest.tscn --quit-after 600 | tee physfound.log
           grep -q "PHYSFOUND_VERDICT PASS" physfound.log
+
+      - name: Run fire-barrel test (explosive + fire materials)
+        # Asserts the explosive/fire props: smashing a FireBarrel fires the shared Impact.explode
+        # ring (launches/damages a nearby raider) AND drops a FireZone burning pool that whittles
+        # down a unit standing in it over several ticks.
+        run: |
+          godot --headless --path . res://tests/FireBarrelTest.tscn --quit-after 600 | tee firebarrel.log
+          grep -q "FIREBARREL_VERDICT PASS" firebarrel.log

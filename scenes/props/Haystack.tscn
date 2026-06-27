@@ -1,0 +1,30 @@
+[gd_scene load_steps=3 format=3]
+
+; A flammable hay bale: barely launches (high linear_damp), bursts into straw, and ignites if it's
+; sitting in a FireZone (see scripts/props/Haystack.gd). A config of Breakable — props layer 8,
+; mask 31. High damping so a shoved bale stops fast instead of sliding across the field.
+
+[ext_resource type="Script" path="res://scripts/props/Haystack.gd" id="1_haystack"]
+
+[sub_resource type="RectangleShape2D" id="hay_shape"]
+size = Vector2(40, 30)
+
+[node name="Haystack" type="RigidBody2D"]
+collision_layer = 8
+collision_mask = 31
+mass = 1.0
+gravity_scale = 0.0
+linear_damp = 9.0
+angular_damp = 8.0
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_haystack")
+max_health = 24.0
+radius = 18.0
+debris_count = 6
+chunk_color = Color(0.82, 0.68, 0.22, 1)
+debris_speed = Vector2(90, 200)
+smash_label = "SCATTER"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("hay_shape")
