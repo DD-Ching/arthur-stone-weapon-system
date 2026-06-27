@@ -38,6 +38,14 @@ func _ready() -> void:
 	# Each is its OWN AudioStreamWAV so the win/loss event maps to a real voice like the rest.
 	_bank["victory_fanfare"]   = _fanfare()
 	_bank["defeat_knell"]      = _tone(70.0, 1.10, 0.62, 1.7, 0.10, -22.0)
+	# Combat heft. "slam" is the headline fix — the SLAM finally lands audibly (a deep body
+	# thud with a sharp rocky crack over it), wired up at the slam impact in StoneWeapon.
+	# "big_swing" (a heavier whoosh) and "combo_tier" (a rising blip for a Stone-Flow
+	# milestone) are registered voices ready for their call sites; the flow-milestone hook
+	# lives in Impact, so combo_tier's trigger is deferred. All procedural, built like above.
+	_bank["slam"]              = _slam_voice()
+	_bank["big_swing"]         = _tone(95.0, 0.30, 0.50, 5.5, 0.70, 240.0)
+	_bank["combo_tier"]        = _tone(660.0, 0.20, 0.42, 8.0, 0.06, 540.0)
 	Audio.sfx.connect(_on_sfx)
 
 func _on_sfx(event: StringName, _world_pos: Vector2) -> void:
@@ -94,6 +102,35 @@ func _fanfare() -> AudioStreamWAV:
 			var v := clampf(sin(phase) * env * 0.55, -1.0, 1.0)
 			data.encode_s16(idx * 2, int(v * 32767.0))
 			idx += 1
+	var w := AudioStreamWAV.new()
+	w.format = AudioStreamWAV.FORMAT_16_BITS
+	w.mix_rate = RATE
+	w.stereo = false
+	w.data = data
+	return w
+
+## The SLAM voice: the heaviest move in a game about a heavy weapon. A deep BODY thud —
+## a low sine that drops in pitch (~120 → ~45 Hz) under a slow decay so you FEEL the
+## weight — with a short, sharp NOISE crack laid over the very front for the rocky impact
+## (stone meeting ground). One mono 16-bit PCM buffer like every other voice, so it plays
+## through the same pool with no special-casing.
+func _slam_voice() -> AudioStreamWAV:
+	var dur := 0.42
+	var n := int(dur * RATE)
+	var data := PackedByteArray()
+	data.resize(n * 2)
+	var phase := 0.0
+	for i in n:
+		var t := float(i) / RATE
+		# Body: a low sine sagging from ~120 Hz down to ~45 Hz — a sinking heavy thud.
+		var f: float = lerpf(120.0, 45.0, clampf(t / dur, 0.0, 1.0))
+		phase += TAU * f / RATE
+		var body: float = sin(phase) * exp(-5.5 * t)
+		# Crack: a short, bright noise burst at the very front (the stone hitting rock),
+		# gone within the first ~50 ms so it reads as an attack transient, not a hiss.
+		var crack: float = (randf() * 2.0 - 1.0) * exp(-46.0 * t) * 0.7
+		var v := clampf((body + crack) * 0.85, -1.0, 1.0)
+		data.encode_s16(i * 2, int(v * 32767.0))
 	var w := AudioStreamWAV.new()
 	w.format = AudioStreamWAV.FORMAT_16_BITS
 	w.mix_rate = RATE
