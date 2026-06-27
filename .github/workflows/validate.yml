@@ -556,3 +556,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/DeflectTest.tscn --quit-after 600 | tee deflect.log
           grep -q "DEFLECT_VERDICT PASS" deflect.log
+
+      - name: Run vignette test (screen-space battle frame)
+        # Asserts the reusable Vignette overlay: it is a CanvasLayer below the HUD (layer 1) so it
+        # never dims the HUD bars / pause / score, it builds a drawing child Control that ignores
+        # the mouse (clicks pass through), and it survives a few frames with no error.
+        run: |
+          godot --headless --path . res://tests/VignetteTest.tscn --quit-after 600 | tee vignette.log
+          grep -q "VIGNETTE_VERDICT PASS" vignette.log
