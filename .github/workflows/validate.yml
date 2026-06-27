@@ -133,6 +133,15 @@ jobs:
           godot --headless --path . res://tests/TouchControlsTest.tscn --quit-after 600 | tee touch.log
           grep -q "TOUCH_VERDICT PASS" touch.log
 
+      - name: Run touch-mobile polish test (off-HUD MENU + scaled targets + ULT charge ring)
+        # Asserts the mobile-polished touch UI: the MENU button no longer sits on the top-left
+        # HUD bar column, the thumb-target button radii scale up on a taller canvas (clearing
+        # ~44px), the haptic helper is a clean no-op on desktop, and the ULT charge-ring draw
+        # path renders without error with a real Arthur (full gauge + half charge) in "player".
+        run: |
+          godot --headless --path . res://tests/TouchMobileTest.tscn --quit-after 600 | tee touchmobile.log
+          grep -q "TOUCH_MOBILE_VERDICT PASS" touchmobile.log
+
       - name: Run HUD re-skin test (code-drawn bars + ULTIMATE readout + fading hints)
         # Asserts the re-skinned HUD: the code-drawn status bars render without error, the WEAPON
         # read-out is human-readable (a swing charge shows "CHARGE NN%", never the cryptic "POWER"),
@@ -141,6 +150,15 @@ jobs:
         run: |
           godot --headless --path . res://tests/HudReskinTest.tscn --quit-after 600 | tee hudreskin.log
           grep -q "HUD_RESKIN_VERDICT PASS" hudreskin.log
+
+      - name: Run HUD mobile test (compact bars on a short / touch viewport)
+        # Asserts the phone-compacting HUD pass: the NARROW bar geometry consts are smaller than the
+        # desktop defaults, forcing a short logical viewport makes _apply_scale() shrink the live
+        # BAR_W / ROW_H / BAR_TOP vars + move the bar-row labels up (smaller font), restoring a tall
+        # viewport returns the desktop layout verbatim, and the bars draw without error in both.
+        run: |
+          godot --headless --path . res://tests/HudMobileTest.tscn --quit-after 600 | tee hudmobile.log
+          grep -q "HUD_MOBILE_VERDICT PASS" hudmobile.log
 
       - name: Run navigation test (v0.14 obstacle avoidance)
         # Asserts a marching raider routes AROUND a solid wall (world layer) through the
@@ -589,3 +607,22 @@ jobs:
         run: |
           godot --headless --path . res://tests/TransitionTest.tscn --quit-after 600 | tee transition.log
           grep -q "TRANSITION_VERDICT PASS" transition.log
+      - name: Run mobile-perf test (touchscreen performance profile)
+        # Asserts the touch performance dials that keep a phone smooth at peak swarm WITHOUT touching
+        # desktop: Impact.DEBRIS_BUDGET is a positive number defaulting to the desktop 90 and
+        # apply_mobile_profile lowers it to the mobile cap (and only ever lowers), a BattleMap's
+        # _apply_mobile_profile lowers density (<=1.6) + active_cap (<=80) and never raises a value
+        # already below the cap, and the desktop path (no touchscreen, no force) leaves every dial
+        # byte-identical — so every other test, run desktop, sees unchanged numbers.
+        run: |
+          godot --headless --path . res://tests/MobilePerfTest.tscn --quit-after 600 | tee mobileperf.log
+          grep -q "MOBILE_PERF_VERDICT PASS" mobileperf.log
+
+      - name: Run feel test (swing weight + beam charge payoff)
+        # Asserts the play-feel pass: a scored fast swing commits Arthur's mass into the blow
+        # (his lunge() carries him along the swing direction — swing weight), and the charge-beam
+        # scales with the charge held (a 2.0s charge fires a strictly wider AND longer beam than
+        # a 0.5s flick — the long charge feels earned).
+        run: |
+          godot --headless --path . res://tests/FeelTest.tscn --quit-after 600 | tee feel.log
+          grep -q "FEEL_VERDICT PASS" feel.log

@@ -42,7 +42,7 @@ Live demo: <https://dd-ching.github.io/arthur-stone-weapon-system/>
 
 Headless, on Godot 4.3. Run one with:
 `godot --headless --path . res://tests/<Name>.tscn --quit-after 600` and grep the
-`*_VERDICT PASS` line. **80 headless tests** now gate CI
+`*_VERDICT PASS` line. **84 headless tests** now gate CI
 (`.github/workflows/validate.yml`) — the original `SwingSmokeTest` / `BehaviorTest` /
 `ImpactTest` / `BattleTest` / `SpinTest` / `FordTest` / `HoldFordTest` plus the
 formations / objectives / abilities / nav / touch / challenge-room / module suites. Local

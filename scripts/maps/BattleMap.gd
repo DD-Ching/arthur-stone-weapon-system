@@ -52,6 +52,10 @@ var _pause = null                          ## the reusable PauseMenu overlay (re
 
 func _ready() -> void:
 	Impact.reset()
+	# On a touchscreen device (a phone), pull the peak-load dials DOWN before anything spawns, so the
+	# single-threaded mobile build stays smooth at peak swarm. Desktop never enters this branch, so its
+	# density / active_cap / debris budget are byte-identical. Each dial only ever drops, never rises.
+	_apply_mobile_profile()
 	_walls = StaticBody2D.new()
 	_walls.name = "Walls"
 	_walls.collision_layer = 1   # "world"
@@ -93,6 +97,24 @@ func _ready() -> void:
 		Color(0.95, 0.86, 0.5), 1.6)
 	_evaluate()
 	queue_redraw()
+
+## TOUCHSCREEN PERFORMANCE PROFILE — keep a phone smooth at peak swarm. On a touch device, LOWER the
+## effective load dials so the single-threaded mobile build doesn't drop frames when the field is full:
+##   • density    — scales every wave's count (BattleMap._scale). Capped to 1.6 (from a map's 2.5) so a
+##                  phone musters a thinner army; desktop keeps each map's authored value.
+##   • active_cap — the soft cap on concurrent raiders (_update_waves holds the next wave at the cap).
+##                  Capped to 80 (from 130) so fewer bodies are ever alive at once on a phone.
+##   • debris     — Impact lowers its shatter budget (DEBRIS_BUDGET 90 → 50) so death-pops float fewer
+##                  concurrent chunks (handled inside Impact.apply_mobile_profile).
+## Every dial only ever DROPS (minf/mini), never rises — a map that already ships below the cap keeps
+## its lower value. Gated on the touchscreen, so DESKTOP runs this branch never and is byte-identical.
+## `force` lets a headless test exercise the lowering path (the test device reports no touchscreen).
+func _apply_mobile_profile(force: bool = false) -> void:
+	if not (force or DisplayServer.is_touchscreen_available()):
+		return
+	density = minf(density, 1.6)        # thinner army per wave on a phone
+	active_cap = mini(active_cap, 80)   # fewer concurrent raiders alive at once
+	Impact.apply_mobile_profile(true)   # and a smaller death-pop debris budget (already gated above)
 
 # ── subclass hooks (override these to make a map) ────────────────────────────
 func _map_title() -> String: return "BATTLE"

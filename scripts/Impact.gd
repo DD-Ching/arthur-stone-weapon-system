@@ -69,7 +69,16 @@ signal impact_fx(strength: float)   ## camera shake / hit-stop request from non-
 signal kills_changed(kills: int, milestone: String)   ## musou KO counter
 
 const MAX_LABELS := 16        ## cap concurrent floating labels (web: bounds node + redraw churn)
-const DEBRIS_BUDGET := 90     ## cap concurrent shatter chunks (web: bounds node + redraw churn)
+## Cap on concurrent shatter chunks (web: bounds node + redraw churn). A VAR, not a const, so a
+## weaker device (a phone) can LOWER it — fewer chunks alive at once means less per-frame redraw +
+## physics on a single-threaded mobile GPU/CPU. Desktop keeps DEBRIS_BUDGET_DESKTOP (90) untouched;
+## only a touchscreen drops it (see `apply_mobile_profile`). Still read everywhere as
+## `Impact.DEBRIS_BUDGET`, so existing readers (the shatter path, the physics-foundation test) are
+## byte-identical on desktop.
+const DEBRIS_BUDGET_DESKTOP := 90  ## the full desktop chunk budget — never lowered
+const DEBRIS_BUDGET_MOBILE := 50   ## the lowered phone budget — fewer concurrent chunks on a weak GPU
+var DEBRIS_BUDGET := DEBRIS_BUDGET_DESKTOP   ## the LIVE budget honored by shatter() (mobile lowers it)
+var _mobile_profile := false  ## true once the touchscreen debris cap has been applied (idempotent)
 
 var flow := 0.0
 var stacks := 0
@@ -141,6 +150,18 @@ func reset() -> void:
 	_collision_cd.clear()
 	kills_changed.emit(0, "")
 	_recompute()
+
+## Lower the destruction budget for a weak device (a phone). Called ONCE by a map's _ready when a
+## touchscreen is detected, so on mobile a crowd-wipe / mass shatter floats fewer concurrent chunks
+## (DEBRIS_BUDGET_MOBILE 50 vs the desktop 90) — less redraw + physics on a single-threaded mobile
+## GPU. Only ever REDUCES the budget (never raises a value a caller already lowered) and is
+## idempotent. Desktop never calls this, so DEBRIS_BUDGET stays the full 90 = byte-identical there.
+## `force` lets a headless test exercise the cap (the device reports no touchscreen).
+func apply_mobile_profile(force: bool = false) -> void:
+	if not (force or DisplayServer.is_touchscreen_available()):
+		return
+	_mobile_profile = true
+	DEBRIS_BUDGET = mini(DEBRIS_BUDGET, DEBRIS_BUDGET_MOBILE)   # only ever lower it
 
 ## One shared debounce for "a flung body hit a target" — used by enemy bowling and
 ## prop launches so one touch scores once. Replaces per-body dictionaries that

@@ -16,6 +16,29 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.26.0] — 2026-06-27
+
+**Made for thumbs: a real mobile play experience (+ a heftier swing).**
+
+### Added
+- **Touch controls, mobile-grade.** The MENU button moved off the HUD bar; thumb targets are
+  bigger and scale up on short screens; a **gold charge-ring around the ULT button** finally makes
+  the hold-to-charge beam visible on a phone (with a ready-pulse when the gauge is full), a
+  circle-to-SWING hint, and haptic taps on button presses.
+- **Touch-swing assist.** Circling a thumb is hard — a steady held-aim now builds a real swing
+  without perfect circling. Pointer/mouse play is unchanged.
+- **Swing weight.** Landing a heavy hit now nudges Arthur along the swing — the heavy man moves
+  with his stone again. Slam + clash get a punch-zoom + directional shake; the charge-beam scales
+  its reach/width/damage and its release punch by how long you charged.
+
+### Changed
+- **Mobile-aware framing.** The camera zooms out a touch on short (phone) screens so you see more
+  battlefield, and the **HUD compacts on touch devices** (smaller bars, device-aware "★ READY"
+  ultimate text, no keyboard hints). Desktop is unchanged.
+- **Mobile performance profile.** On a touchscreen the swarm density, the active-unit cap, and the
+  debris budget are dialled down (and off-screen units skip redraws) so a phone stays smooth at
+  peak swarm — desktop dials untouched.
+
 ## [0.25.0] — 2026-06-27
 
 **Packaging polish: it stops feeling like a tech demo.**
