@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/props/Barrel.gd" id="1_barrel"]
+
+[sub_resource type="CircleShape2D" id="barrel_shape"]
+radius = 17.0
+
+[node name="Barrel" type="RigidBody2D"]
+collision_layer = 8
+collision_mask = 31
+mass = 1.1
+gravity_scale = 0.0
+linear_damp = 3.0
+angular_damp = 3.0
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_barrel")
+max_health = 34.0
+hard_hit = 620.0
+radius = 17.0
+debris_count = 6
+chunk_color = Color(0.46, 0.32, 0.18, 1)
+debris_speed = Vector2(170, 360)
+smash_label = "CRACK"
+break_sound = "shield_break"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("barrel_shape")

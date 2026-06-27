@@ -1,0 +1,30 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/props/Breakable.gd" id="1_break"]
+[ext_resource type="PackedScene" path="res://scenes/Rock.tscn" id="2_rock"]
+
+[sub_resource type="RectangleShape2D" id="crate_shape"]
+size = Vector2(34, 34)
+
+[node name="SupplyCrate" type="RigidBody2D"]
+collision_layer = 8
+collision_mask = 31
+mass = 1.1
+gravity_scale = 0.0
+linear_damp = 3.0
+angular_damp = 3.0
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_break")
+max_health = 32.0
+hard_hit = 600.0
+radius = 17.0
+debris_count = 5
+chunk_color = Color(0.5, 0.36, 0.22, 1)
+debris_speed = Vector2(160, 340)
+drops_piece = ExtResource("2_rock")
+smash_label = "SMASH"
+break_sound = "shield_break"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("crate_shape")

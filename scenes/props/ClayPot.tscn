@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/props/ClayPot.gd" id="1_pot"]
+
+[sub_resource type="CircleShape2D" id="pot_shape"]
+radius = 13.0
+
+[node name="ClayPot" type="RigidBody2D"]
+collision_layer = 8
+collision_mask = 31
+mass = 0.7
+gravity_scale = 0.0
+linear_damp = 3.0
+angular_damp = 3.0
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_pot")
+max_health = 6.0
+hard_hit = 320.0
+radius = 13.0
+debris_count = 8
+chunk_color = Color(0.72, 0.34, 0.24, 1)
+debris_speed = Vector2(150, 320)
+smash_label = "SMASH"
+break_sound = "shield_break"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("pot_shape")

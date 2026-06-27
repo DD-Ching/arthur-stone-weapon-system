@@ -477,3 +477,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/PhysicsFoundationTest.tscn --quit-after 600 | tee physfound.log
           grep -q "PHYSFOUND_VERDICT PASS" physfound.log
+
+      - name: Run materials test (basic smashable props — Barrel/SupplyCrate/ClayPot/Fence)
+        # Asserts the four smashable materials (all configs of Breakable): hitting each past its
+        # shatter threshold frees the prop and grows the shared "debris" group, and SupplyCrate
+        # drops a hurlable Rock on break (the slam -> rock -> throw loop).
+        run: |
+          godot --headless --path . res://tests/MaterialsTest.tscn --quit-after 600 | tee materials.log
+          grep -q "MATERIALS_VERDICT PASS" materials.log
