@@ -133,6 +133,15 @@ jobs:
           godot --headless --path . res://tests/TouchControlsTest.tscn --quit-after 600 | tee touch.log
           grep -q "TOUCH_VERDICT PASS" touch.log
 
+      - name: Run HUD re-skin test (code-drawn bars + ULTIMATE readout + fading hints)
+        # Asserts the re-skinned HUD: the code-drawn status bars render without error, the WEAPON
+        # read-out is human-readable (a swing charge shows "CHARGE NN%", never the cryptic "POWER"),
+        # the ULTIMATE bar announces READY at a full gauge, and the control-hint strip fades after
+        # its hold window (teach-then-hide) and is restorable via replay_hints().
+        run: |
+          godot --headless --path . res://tests/HudReskinTest.tscn --quit-after 600 | tee hudreskin.log
+          grep -q "HUD_RESKIN_VERDICT PASS" hudreskin.log
+
       - name: Run navigation test (v0.14 obstacle avoidance)
         # Asserts a marching raider routes AROUND a solid wall (world layer) through the
         # gap to reach its goal, instead of jamming against it (the Steering module).

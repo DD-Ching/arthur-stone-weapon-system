@@ -1,38 +1,85 @@
 extends CanvasLayer
-## Minimal diagnostic HUD: a stamina bar, a weapon-state read-out, the Stone Flow
-## combo meter, and a one-line control hint. Deliberately ugly-but-clear — game
-## feel first, polish later.
+## In-battle HUD: a tidy left-column of code-drawn status bars (HEALTH, STAMINA,
+## ULTIMATE, STONE FLOW) plus a one-line WEAPON read-out, the KO counter, the
+## objective line, and a control-hint strip that teaches then fades away.
 ##
-## It binds to Arthur (stamina + weapon state) and to the Impact autoload (Stone
-## Flow) via signals — the HUD never polls and never reaches into gameplay nodes.
+## The bars are NOT image assets — a single `Bars` Control renders every bar in its
+## `_draw()` (rounded, bordered, consistent palette) from a small block of remembered
+## state. The signal handlers only update that state + `queue_redraw()`; the HUD never
+## polls and never reaches into gameplay nodes.
+##
+## It binds to Arthur (health, stamina, weapon charge, musou) and to the Impact autoload
+## (Stone Flow + KO count) via signals. Public API consumed by BattleMap is kept stable:
+##   bind(arthur) · set_objective(text) · show_banner(text, color)
 
-@onready var stamina_fill: ColorRect = $Root/StaminaBg/StaminaFill
+@onready var bars: Control = $Root/Bars
 @onready var stamina_label: Label = $Root/StaminaLabel
 @onready var state_label: Label = $Root/StateLabel
-@onready var flow_fill: ColorRect = $Root/FlowBg/FlowFill
 @onready var flow_label: Label = $Root/FlowLabel
-@onready var health_fill: ColorRect = $Root/HealthBg/HealthFill
 @onready var health_label: Label = $Root/HealthLabel
 @onready var objective_label: Label = $Root/ObjectiveLabel
 @onready var banner_label: Label = $Root/BannerLabel
 @onready var ko_label: Label = $Root/KoLabel
-@onready var musou_fill: ColorRect = $Root/MusouBg/MusouFill
 @onready var musou_label: Label = $Root/MusouLabel
+@onready var hints_label: Label = $Root/Hints
 
-const FILL_WIDTH := 312.0
+# --- bar geometry (code-drawn, no image assets) ------------------------------
+const BAR_X := 30.0          ## left edge of every bar
+const BAR_W := 312.0         ## bar width
+const BAR_H := 16.0          ## bar height
+const BAR_R := 6.0           ## corner radius
+const ROW_H := 52.0          ## vertical pitch between rows
+const BAR_TOP := 42.0        ## top of the first (HEALTH) bar; label sits ~20px above
+const CHARGE_H := 8.0        ## the thin WEAPON-charge sub-bar
+
+# Row order — drives the bar Y for each meter (label offsets in the .tscn match this).
+const ROW_HEALTH := 0
+const ROW_STAMINA := 1
+const ROW_MUSOU := 2
+const ROW_WEAPON := 3        ## the weapon row carries the thin CHARGE bar
+const ROW_FLOW := 4
+
+# --- palette ------------------------------------------------------------------
+const COL_TRACK := Color(0.08, 0.09, 0.12, 0.82)   ## the recessed bar track
+const COL_BORDER := Color(0.0, 0.0, 0.0, 0.55)     ## a thin dark border frames each bar
+const COL_RIM := Color(1.0, 1.0, 1.0, 0.10)        ## a faint top highlight for a beveled read
+
+# Reused StyleBoxFlat instances for the code-drawn bars (rounded + bordered). Built once,
+# re-tinted per draw — cheaper than allocating a box every frame, and web-export safe.
+var _track_box := StyleBoxFlat.new()
+var _fill_box := StyleBoxFlat.new()
+
+# --- remembered state the _draw() reads --------------------------------------
+var _health_ratio := 1.0
+var _health_col := Color(0.5, 0.85, 0.4)
+var _stamina_ratio := 1.0
+var _stamina_col := Color(0.35, 0.85, 0.45)
+var _musou_ratio := 0.0       ## ultimate gauge fill 0..1 (full = beam READY)
+var _musou_col := Color(1.0, 0.84, 0.3)
+var _flow_ratio := 0.0        ## smoothed flow bar fill
+var _flow_target := 0.0
+var _charge_ratio := 0.0      ## the weapon swing charge 0..1 (the thin CHARGE sub-bar)
+
 var _flash := 0.0       ## white flash on the stamina bar when a swing fizzles
 var _ko_flash := 0.0    ## milestone flash on the KO counter
 var _milestone := ""
-var _flow_ratio := 0.0  ## smoothed flow bar fill
-var _flow_target := 0.0
 var _stacks := 0
 var _mode := false
-var _musou_ratio := 0.0   ## musou gauge fill 0..1 (full = ULTIMATE ready)
-var _stamina_ratio := 1.0   ## smoothed-source stamina fill 0..1 (drives the LOW-stamina pulse)
 var _stamina_base_col := Color(0.35, 0.85, 0.45)   ## the bar's resting colour, re-tinted each frame while low
 var _t := 0.0
 
 const STAMINA_LOW := 0.25   ## below this, the stamina bar pulses + desaturates as a low-stamina warning
+
+# --- control-hint fade: teach, then get out of the way -----------------------
+const HINTS_HOLD := 6.0      ## seconds the hint strip stays fully lit after the battle starts
+const HINTS_FADE := 2.5      ## seconds it then takes to fade out
+var _hints_alpha := 1.0      ## current hint-strip opacity, mirrored onto hints_label.modulate.a
+
+func _ready() -> void:
+	_track_box.set_border_width_all(1)   # the thin dark frame around each bar
+	if bars:
+		bars.draw.connect(_draw_bars)
+		bars.queue_redraw()
 
 func bind(arthur) -> void:
 	arthur.stamina_changed.connect(_on_stamina_changed)
@@ -70,40 +117,46 @@ func show_banner(text: String, color: Color) -> void:
 		banner_label.add_theme_color_override("font_color", color)
 		banner_label.visible = true
 
-func _on_health_changed(current: float, maximum: float) -> void:
-	if not health_fill:
-		return
-	var ratio := clampf(current / maximum, 0.0, 1.0)
-	health_fill.size.x = FILL_WIDTH * ratio
-	health_fill.color = Color(0.85, 0.3, 0.3).lerp(Color(0.5, 0.85, 0.4), ratio)
-	health_label.text = "HEALTH  %d / %d" % [round(current), round(maximum)]
+## Re-show the control hints (e.g. on un-pause). Optional convenience — resets the fade.
+func replay_hints() -> void:
+	_t = 0.0
+	_hints_alpha = 1.0
+	if hints_label:
+		hints_label.modulate.a = 1.0
 
-## The musou rage gauge: a gold bar that fills as Arthur fights; at full it reads
-## "ULTIMATE READY!" and pulses (the pulse rides in _process so it animates).
+func _on_health_changed(current: float, maximum: float) -> void:
+	_health_ratio = clampf(current / maxf(maximum, 0.001), 0.0, 1.0)
+	_health_col = Color(0.85, 0.3, 0.3).lerp(Color(0.5, 0.85, 0.4), _health_ratio)
+	if health_label:
+		health_label.text = "HEALTH  %d / %d" % [round(current), round(maximum)]
+	if bars:
+		bars.queue_redraw()
+
+## The musou gauge is the CHARGE-BEAM ULTIMATE: a gold bar that fills as Arthur fights;
+## at full it reads "READY — hold Q to fire beam" and pulses (the pulse rides in _process).
 func _on_musou_changed(current: float, maximum: float) -> void:
-	if not musou_fill:
-		return
 	_musou_ratio = clampf(current / maxf(maximum, 0.001), 0.0, 1.0)
-	musou_fill.size.x = FILL_WIDTH * _musou_ratio
 	if _musou_ratio >= 1.0:
-		musou_label.text = "MUSOU  ULTIMATE READY!"
+		if musou_label:
+			musou_label.text = "ULTIMATE  ★ READY — hold Q to fire beam"
 	else:
-		musou_label.text = "MUSOU  %d / %d" % [round(current), round(maximum)]
+		if musou_label:
+			musou_label.text = "ULTIMATE  %d%%" % round(_musou_ratio * 100.0)
 		# Dim gold while charging; the full-gauge pulse is applied in _process.
-		musou_fill.color = Color(0.7, 0.55, 0.18).lerp(Color(1.0, 0.84, 0.3), _musou_ratio)
+		_musou_col = Color(0.7, 0.55, 0.18).lerp(Color(1.0, 0.84, 0.3), _musou_ratio)
+	if bars:
+		bars.queue_redraw()
 
 func _process(delta: float) -> void:
 	_t += delta
 	if _flash > 0.0:
 		_flash = maxf(0.0, _flash - delta * 3.0)
-	# Keep the LOW-stamina pulse animating: _on_stamina_changed only fires on a CHANGE, so
-	# while the pool sits low/empty (or the exhausted flash decays) the bar would otherwise
-	# freeze — re-tint it every frame from the remembered resting colour. Cosmetic only.
-	if stamina_fill and (_stamina_ratio < STAMINA_LOW or _flash > 0.0):
-		var base := _stamina_base_col
-		if _flash > 0.0:
-			base = base.lerp(Color(1, 1, 1), _flash)
-		stamina_fill.color = _stamina_pulsed(base)
+	# Re-tint the stamina bar each frame while it's low (or the exhausted flash is decaying):
+	# _on_stamina_changed only fires on a CHANGE, so a low/empty pool would otherwise freeze.
+	var base := _stamina_base_col
+	if _flash > 0.0:
+		base = base.lerp(Color(1, 1, 1), _flash)
+	_stamina_col = _stamina_pulsed(base)
 	# KO milestone flash: shout RAMPAGE! etc. in gold, then fall back to the count.
 	if _ko_flash > 0.0 and ko_label:
 		_ko_flash = maxf(0.0, _ko_flash - delta)
@@ -115,12 +168,61 @@ func _process(delta: float) -> void:
 			ko_label.add_theme_color_override("font_color", Color(1, 1, 1))
 	# Ease the flow bar so chains feel like a meter filling, not snapping.
 	_flow_ratio = move_toward(_flow_ratio, _flow_target, delta * 2.5)
-	flow_fill.size.x = FILL_WIDTH * _flow_ratio
-	flow_fill.color = _flow_color()
-	# A full musou gauge pulses bright gold so "ULTIMATE READY!" is unmissable.
-	if musou_fill and _musou_ratio >= 1.0:
+	# A full ultimate gauge pulses bright gold so "READY" is unmissable.
+	if _musou_ratio >= 1.0:
 		var pulse := 0.65 + 0.35 * sin(_t * 12.0)
-		musou_fill.color = Color(1.0, 0.78, 0.25).lerp(Color(1.0, 0.95, 0.6), pulse)
+		_musou_col = Color(1.0, 0.78, 0.25).lerp(Color(1.0, 0.95, 0.6), pulse)
+	# Fade the control-hint strip a few seconds in: it teaches, then gets out of the way.
+	_update_hints_fade()
+	if bars:
+		bars.queue_redraw()
+
+## Hold the hint strip lit for HINTS_HOLD, then fade it over HINTS_FADE. Cheap + reusable.
+func _update_hints_fade() -> void:
+	if not hints_label:
+		return
+	if _t <= HINTS_HOLD:
+		_hints_alpha = 1.0
+	else:
+		_hints_alpha = clampf(1.0 - (_t - HINTS_HOLD) / HINTS_FADE, 0.0, 1.0)
+	hints_label.modulate.a = _hints_alpha
+
+# --- the code-drawn bars (no image assets) -----------------------------------
+
+func _bar_y(row: int) -> float:
+	return BAR_TOP + float(row) * ROW_H
+
+## Draw one rounded, bordered bar: a recessed dark track (rounded + bordered) with a coloured
+## fill clipped to `ratio` inset inside it, plus a faint top rim so it reads as a beveled gauge,
+## not a flat box. Built from StyleBoxFlat (true rounded corners), web-export safe — no images.
+func _draw_bar(y: float, ratio: float, fill: Color, h: float = BAR_H) -> void:
+	var r := minf(BAR_R, h * 0.5)
+	# Recessed track: dark fill + a thin dark border, rounded.
+	_track_box.bg_color = COL_TRACK
+	_track_box.border_color = COL_BORDER
+	_track_box.set_corner_radius_all(int(r))
+	bars.draw_style_box(_track_box, Rect2(BAR_X, y, BAR_W, h))
+	# Coloured fill, inset 2px so the track frame stays visible, clipped to ratio.
+	var fw := (BAR_W - 4.0) * clampf(ratio, 0.0, 1.0)
+	if fw > 1.0:
+		var fr := maxf(0.0, r - 2.0)
+		_fill_box.bg_color = fill
+		_fill_box.set_corner_radius_all(int(fr))
+		var fill_rect := Rect2(BAR_X + 2.0, y + 2.0, fw, h - 4.0)
+		bars.draw_style_box(_fill_box, fill_rect)
+		# faint top highlight across the filled span for a glossy, readable bevel
+		bars.draw_rect(Rect2(fill_rect.position, Vector2(fill_rect.size.x, maxf(2.0, h * 0.25))), COL_RIM)
+
+func _draw_bars() -> void:
+	if not bars:
+		return
+	_draw_bar(_bar_y(ROW_HEALTH), _health_ratio, _health_col)
+	_draw_bar(_bar_y(ROW_STAMINA), _stamina_ratio, _stamina_col)
+	_draw_bar(_bar_y(ROW_MUSOU), _musou_ratio, _musou_col)
+	# The WEAPON row carries only a thin CHARGE sub-bar (the swing charge), sitting under
+	# its label; an empty charge draws just the track so the row still reads as a gauge.
+	_draw_bar(_bar_y(ROW_WEAPON), _charge_ratio, Color(1.0, 0.72, 0.25), CHARGE_H)
+	_draw_bar(_bar_y(ROW_FLOW), _flow_ratio, _flow_color())
 
 func _flow_color() -> Color:
 	var cool := Color(0.45, 0.7, 1.0)
@@ -133,15 +235,17 @@ func _flow_color() -> Color:
 	return col
 
 func _on_stamina_changed(current: float, maximum: float) -> void:
-	var ratio := clampf(current / maximum, 0.0, 1.0)
+	var ratio := clampf(current / maxf(maximum, 0.001), 0.0, 1.0)
 	_stamina_ratio = ratio
-	stamina_fill.size.x = FILL_WIDTH * ratio
 	var col := Color(0.85, 0.25, 0.25).lerp(Color(0.35, 0.85, 0.45), ratio)
 	_stamina_base_col = col   # remember the resting tint so the LOW-stamina pulse (in _process) can ride on top
 	if _flash > 0.0:
 		col = col.lerp(Color(1, 1, 1), _flash)
-	stamina_fill.color = _stamina_pulsed(col)
-	stamina_label.text = "STAMINA  %d / %d" % [round(current), round(maximum)]
+	_stamina_col = _stamina_pulsed(col)
+	if stamina_label:
+		stamina_label.text = "STAMINA  %d / %d" % [round(current), round(maximum)]
+	if bars:
+		bars.queue_redraw()
 
 ## Telegraph a LOW stamina pool through the EXISTING bar: below STAMINA_LOW it pulses and
 ## desaturates (a readable "almost out" warning), reusing _t and the exhausted _flash. A
@@ -155,20 +259,31 @@ func _stamina_pulsed(col: Color) -> Color:
 	var dim := col.lerp(Color(0.45, 0.42, 0.4), 0.5 * sev)   # desaturate toward a tired grey
 	return dim.lerp(Color(1.0, 0.85, 0.4), sev * 0.35 * pulse)
 
+## The weapon read-out. A live swing reports a `power` (charge 0..1) — show it as a clear
+## "WEAPON  CHARGE 42%" line plus a thin charge sub-bar; otherwise just the state word.
 func _on_state_changed(state_name: String, power: float) -> void:
 	if power > 0.01:
-		state_label.text = "WEAPON: POWER  [%d%%]" % round(power * 100.0)
+		_charge_ratio = clampf(power, 0.0, 1.0)
+		if state_label:
+			state_label.text = "WEAPON  CHARGE %d%%" % round(power * 100.0)
 	else:
-		state_label.text = "WEAPON: %s" % state_name
+		_charge_ratio = 0.0
+		if state_label:
+			state_label.text = "WEAPON  %s" % state_name
+	if bars:
+		bars.queue_redraw()
 
 func _on_flow_changed(flow: float, stacks: int, mode: bool) -> void:
 	_flow_target = clampf(flow / Impact.FLOW_MAX, 0.0, 1.0)
 	_stacks = stacks
 	_mode = mode
-	if mode:
-		flow_label.text = "STONE FLOW  x%d  — FLOW!" % stacks
-	else:
-		flow_label.text = "STONE FLOW  x%d" % stacks
+	if flow_label:
+		if mode:
+			flow_label.text = "STONE FLOW  x%d  — FLOW!" % stacks
+		else:
+			flow_label.text = "STONE FLOW  x%d" % stacks
+	if bars:
+		bars.queue_redraw()
 
 func _on_exhausted() -> void:
 	_flash = 1.0
