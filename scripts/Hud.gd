@@ -24,13 +24,35 @@ extends CanvasLayer
 @onready var hints_label: Label = $Root/Hints
 
 # --- bar geometry (code-drawn, no image assets) ------------------------------
-const BAR_X := 30.0          ## left edge of every bar
-const BAR_W := 312.0         ## bar width
-const BAR_H := 16.0          ## bar height
-const BAR_R := 6.0           ## corner radius
-const ROW_H := 52.0          ## vertical pitch between rows
-const BAR_TOP := 42.0        ## top of the first (HEALTH) bar; label sits ~20px above
-const CHARGE_H := 8.0        ## the thin WEAPON-charge sub-bar
+# These are VARS, not consts: _apply_scale() sets them on boot and on every resize. On a
+# short (phone-landscape) viewport — or any touchscreen — they shrink so the bar column
+# stops eating the short screen. On a wide desktop viewport they take the *_DESK values,
+# so the desktop layout stays byte-identical to before this change.
+const BAR_X := 30.0          ## left edge of every bar (constant across layouts)
+const BAR_R := 6.0           ## corner radius (constant)
+var BAR_W := 312.0           ## bar width — compacted on a narrow viewport
+var BAR_H := 16.0            ## bar height — compacted on a narrow viewport
+var ROW_H := 52.0            ## vertical pitch between rows — compacted on a narrow viewport
+var BAR_TOP := 42.0          ## top of the first (HEALTH) bar — compacted on a narrow viewport
+var CHARGE_H := 8.0          ## the thin WEAPON-charge sub-bar — compacted on a narrow viewport
+
+# Desktop defaults — the un-compacted look shipped before this change.
+const BAR_W_DESK := 312.0
+const BAR_H_DESK := 16.0
+const ROW_H_DESK := 52.0
+const BAR_TOP_DESK := 42.0
+const CHARGE_H_DESK := 8.0
+const LABEL_FS_DESK := 14       ## bar-row label font size on desktop (matches the .tscn)
+const LABEL_GAP_DESK := 20.0    ## how far a bar-row label sits above its bar on desktop
+
+# Narrow (phone) layout — a tighter bar column for the short landscape viewport.
+const BAR_W_NARROW := 226.0
+const BAR_H_NARROW := 12.0
+const ROW_H_NARROW := 38.0
+const BAR_TOP_NARROW := 28.0
+const CHARGE_H_NARROW := 6.0
+const LABEL_FS_NARROW := 12      ## smaller bar-row label font on a phone
+const LABEL_GAP_NARROW := 16.0   ## tighter label-above-bar gap on a phone
 
 # Row order — drives the bar Y for each meter (label offsets in the .tscn match this).
 const ROW_HEALTH := 0
@@ -56,6 +78,7 @@ var _stamina_ratio := 1.0
 var _stamina_col := Color(0.35, 0.85, 0.45)
 var _musou_ratio := 0.0       ## ultimate gauge fill 0..1 (full = beam READY)
 var _musou_col := Color(1.0, 0.84, 0.3)
+var _musou_live := false      ## true once the gauge is bound — guards the boot ULTIMATE placeholder
 var _flow_ratio := 0.0        ## smoothed flow bar fill
 var _flow_target := 0.0
 var _charge_ratio := 0.0      ## the weapon swing charge 0..1 (the thin CHARGE sub-bar)
@@ -75,11 +98,132 @@ const HINTS_HOLD := 6.0      ## seconds the hint strip stays fully lit after the
 const HINTS_FADE := 2.5      ## seconds it then takes to fade out
 var _hints_alpha := 1.0      ## current hint-strip opacity, mirrored onto hints_label.modulate.a
 
+# Remembered .tscn label geometry, captured once on boot. The desktop branch of _apply_scale
+# restores EXACTLY these (so desktop stays byte-identical, FlowLabel's hand-nudged 224 and
+# all), while the narrow branch overrides them with the compact phone column.
+var _label_defaults := {}    ## label -> {top, bottom, fs}
+var _scale_ready := false    ## true once the defaults are captured (guards an early _apply_scale)
+
 func _ready() -> void:
 	_track_box.set_border_width_all(1)   # the thin dark frame around each bar
 	if bars:
 		bars.draw.connect(_draw_bars)
 		bars.queue_redraw()
+	# Capture the shipped .tscn label geometry so the desktop branch can restore it exactly.
+	_capture_label_defaults()
+	# Pick the compact-vs-desktop bar layout, and re-pick it whenever the viewport
+	# changes (rotate / resize) — a phone landscape can shrink the logical height.
+	var vp := get_viewport()
+	if vp:
+		vp.size_changed.connect(_apply_scale)
+	_apply_scale()
+	# On a touchscreen the bottom control-hint strip is redundant (the touch buttons teach
+	# the controls) and just crowds the short screen — hide it. Desktop keeps the fading hint.
+	if hints_label and _on_touch():
+		hints_label.visible = false
+
+## True when this device should use the COMPACT phone layout: a touchscreen is present, or
+## a touch UI is active (the in-HUD TouchControls, looked up by group). Reused for the bar
+## sizing AND the device-aware ULTIMATE / hint text below.
+func _on_touch() -> bool:
+	if DisplayServer.is_touchscreen_available():
+		return true
+	var tc = get_tree().get_first_node_in_group("touch_controls")
+	return tc != null and tc.active_ui
+
+## The bar-row labels, paired with the bar they title (row order matches _draw_bars / ROW_*).
+## Built fresh each call so it survives the @onready resolve; cheap (six entries).
+func _bar_label_rows() -> Array:
+	return [
+		[health_label, ROW_HEALTH],
+		[stamina_label, ROW_STAMINA],
+		[musou_label, ROW_MUSOU],
+		[state_label, ROW_WEAPON],
+		[flow_label, ROW_FLOW],
+		[get_node_or_null("Root/FlowHint"), ROW_FLOW],   # the "build combo…" hint, under FLOW
+	]
+
+## Snapshot the shipped .tscn label geometry (offsets + font size) so the desktop branch can
+## restore it verbatim — keeping desktop byte-identical (incl. FlowLabel's hand-nudged 224).
+func _capture_label_defaults() -> void:
+	for entry in _bar_label_rows():
+		var lbl: Label = entry[0]
+		if lbl:
+			_label_defaults[lbl] = {
+				"top": lbl.offset_top,
+				"bottom": lbl.offset_bottom,
+				"fs": lbl.get_theme_font_size("font_size"),
+			}
+	_scale_ready = true
+
+## Choose the bar geometry for the current screen, then re-lay the bar-row labels to match.
+## NARROW (a short logical viewport OR a touchscreen) → the compact phone column; otherwise
+## restore the shipped desktop layout verbatim. Wired to the viewport's size_changed so a
+## rotate/resize re-picks the layout live.
+func _apply_scale() -> void:
+	if not _scale_ready:
+		return   # defaults not captured yet (an early size_changed); _ready will call us
+	# CanvasLayer has no get_viewport_rect(); read the visible rect off the viewport instead.
+	var view := get_viewport()
+	var vp := view.get_visible_rect().size if view else Vector2(1280, 720)
+	# Share ONE "is this a phone?" predicate with the text/hint compacting (_on_touch covers a
+	# touchscreen, a force_on test rig, or a runtime _reveal); add the short-viewport fallback
+	# so a narrow desktop window compacts too. Keeps the bars, labels, ULT text + hints in sync.
+	var narrow := vp.y < 600.0 or _on_touch()
+	if narrow:
+		BAR_W = BAR_W_NARROW
+		BAR_H = BAR_H_NARROW
+		ROW_H = ROW_H_NARROW
+		BAR_TOP = BAR_TOP_NARROW
+		CHARGE_H = CHARGE_H_NARROW
+		_layout_bar_labels_narrow()
+	else:
+		BAR_W = BAR_W_DESK
+		BAR_H = BAR_H_DESK
+		ROW_H = ROW_H_DESK
+		BAR_TOP = BAR_TOP_DESK
+		CHARGE_H = CHARGE_H_DESK
+		_restore_label_defaults()
+	# A touch-state flip / rotate may change the device → re-pick the ULTIMATE wording too,
+	# so a full gauge can't keep a stale "hold Q" cue on a phone (no Q key there). Skip until
+	# the gauge is bound so the boot "ULTIMATE" placeholder (the .tscn text) is left alone.
+	if _musou_live:
+		_refresh_musou_text()
+	if bars:
+		bars.queue_redraw()
+
+## Re-position each bar-row label for the COMPACT phone column: sit it `gap` px above its bar
+## (following the tightened row pitch) with the smaller phone font. Code-driven so the labels
+## track the shrunken bars.
+func _layout_bar_labels_narrow() -> void:
+	var flow_hint := get_node_or_null("Root/FlowHint")
+	for entry in _bar_label_rows():
+		var lbl: Label = entry[0]
+		if not lbl:
+			continue
+		var row: int = entry[1]
+		# The bar-row labels sit ABOVE their bar; the FlowHint (also row FLOW, but it's the
+		# trailing entry) tucks just UNDER the FLOW bar instead.
+		var top: float
+		var fs := LABEL_FS_NARROW
+		if lbl == flow_hint:
+			top = _bar_y(ROW_FLOW) + BAR_H + 6.0
+			fs = maxi(LABEL_FS_NARROW - 2, 10)
+		else:
+			top = _bar_y(row) - LABEL_GAP_NARROW
+		lbl.offset_top = top
+		lbl.offset_bottom = top + float(fs) + 6.0
+		lbl.add_theme_font_size_override("font_size", fs)
+
+## Restore the captured .tscn label geometry — the desktop layout, exactly as shipped.
+func _restore_label_defaults() -> void:
+	for entry in _bar_label_rows():
+		var lbl: Label = entry[0]
+		if lbl and _label_defaults.has(lbl):
+			var d: Dictionary = _label_defaults[lbl]
+			lbl.offset_top = d["top"]
+			lbl.offset_bottom = d["bottom"]
+			lbl.add_theme_font_size_override("font_size", d["fs"])
 
 func bind(arthur) -> void:
 	arthur.stamina_changed.connect(_on_stamina_changed)
@@ -135,17 +279,27 @@ func _on_health_changed(current: float, maximum: float) -> void:
 ## The musou gauge is the CHARGE-BEAM ULTIMATE: a gold bar that fills as Arthur fights;
 ## at full it reads "READY — hold Q to fire beam" and pulses (the pulse rides in _process).
 func _on_musou_changed(current: float, maximum: float) -> void:
+	_musou_live = true
 	_musou_ratio = clampf(current / maxf(maximum, 0.001), 0.0, 1.0)
-	if _musou_ratio >= 1.0:
-		if musou_label:
-			musou_label.text = "ULTIMATE  ★ READY — hold Q to fire beam"
-	else:
-		if musou_label:
-			musou_label.text = "ULTIMATE  %d%%" % round(_musou_ratio * 100.0)
+	if _musou_ratio < 1.0:
 		# Dim gold while charging; the full-gauge pulse is applied in _process.
 		_musou_col = Color(0.7, 0.55, 0.18).lerp(Color(1.0, 0.84, 0.3), _musou_ratio)
+	_refresh_musou_text()
 	if bars:
 		bars.queue_redraw()
+
+## Set the ULTIMATE read-out for the current gauge + device. Pulled out of _on_musou_changed so
+## _apply_scale can re-run it: a touch-state flip (_reveal) or a resize re-evaluates the text, so
+## a full gauge never leaves the stale "hold Q" cue on a phone (there's no Q key there).
+func _refresh_musou_text() -> void:
+	if not musou_label:
+		return
+	if _musou_ratio >= 1.0:
+		# On a phone there's no Q key — the ULT touch button fires it — so drop the
+		# keyboard cue and keep the line short for the cramped landscape viewport.
+		musou_label.text = "ULTIMATE  ★ READY" if _on_touch() else "ULTIMATE  ★ READY — hold Q to fire beam"
+	else:
+		musou_label.text = "ULTIMATE  %d%%" % round(_musou_ratio * 100.0)
 
 func _process(delta: float) -> void:
 	_t += delta
