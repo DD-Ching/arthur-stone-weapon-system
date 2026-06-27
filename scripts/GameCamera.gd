@@ -27,11 +27,14 @@ func _ready() -> void:
 	reset_smoothing()
 	get_viewport().size_changed.connect(_recompute_zoom)
 
-## Effective zoom = base zoom scaled down on a SHORT viewport (a phone in landscape, ~390px tall)
-## so a tight screen still shows enough battlefield. Desktop (720 tall) → ratio 1.0 → unchanged.
+## Effective zoom = base zoom scaled DOWN on a phone so more battlefield shows. A touchscreen sees a
+## wider-but-shorter slice (stretch=expand keeps the logical height ~720, so a height ratio alone
+## never triggers), so the touchscreen branch is the real "phone" signal; a genuinely short logical
+## viewport also nudges it. Desktop (no touchscreen, 720 tall) → 1.0 → unchanged.
 func _recompute_zoom() -> void:
 	var vp := get_viewport_rect().size
-	_eff_zoom = base_zoom * clampf(vp.y / 720.0, 0.72, 1.0)
+	var mobile := 0.82 if DisplayServer.is_touchscreen_available() else 1.0
+	_eff_zoom = base_zoom * minf(mobile, clampf(vp.y / 720.0, 0.72, 1.0))
 
 ## Clamp the camera to the world so it never shows past the bounding wall band. Called once by
 ## BattleMap with _world_bounds(). Godot centres automatically when the world is smaller than the view.
