@@ -23,7 +23,7 @@ base_color = Color(0.55, 0.3, 0.3, 1)
 max_health = 30.0
 move_speed = 52.0
 keep_distance = 230.0
-attack_kind = "none"
+moves = PackedStringArray("javelin")
 is_support = true
 morale_radius = 200.0
 

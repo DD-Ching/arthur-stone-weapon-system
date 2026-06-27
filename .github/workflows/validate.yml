@@ -503,6 +503,14 @@ jobs:
           godot --headless --path . res://tests/DifficultyTest.tscn --quit-after 600 | tee difficulty.log
           grep -q "DIFFIC_VERDICT PASS" difficulty.log
 
+      - name: Run combat-fix test (every minion attacks + weapon clash)
+        # Asserts every formerly-attackless support unit now carries an attack (a non-empty moveset)
+        # so no raider just walks, and the weapon-clash parry hook (is_striking/parry_strike) cancels
+        # + staggers an enemy caught mid-strike.
+        run: |
+          godot --headless --path . res://tests/CombatFixTest.tscn --quit-after 600 | tee combatfix.log
+          grep -q "COMBATFIX_VERDICT PASS" combatfix.log
+
       - name: Run win-safety test (out-of-bounds softlock fix)
         # Asserts the win-safety net: a raider flung far outside the world (a wall-escaping
         # knockback) is hauled back in-bounds (or retired) by _recover_strays within a couple of

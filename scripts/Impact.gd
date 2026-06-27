@@ -39,6 +39,7 @@ const MASS_ENEMY := 0.9       ## an enemy used as a bowling ball (low — see no
 const BASE_KNOCK := 540.0
 const KNOCK_MIN := 300.0
 const KNOCK_MAX := 1800.0     ## headroom so a full charge still out-launches a maxed combo
+const CLASH_FLOW := 6.0       ## Stone-Flow reward for parrying an enemy's strike with the stone
 const DMG_BASE := 9.0
 const SLAM_DAMAGE_MULT := 1.6 ## the slam's bonus damage on top of DMG_BASE (read by Shockwave)
 const STUN_BASE := 0.18

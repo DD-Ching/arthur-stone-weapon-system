@@ -273,6 +273,16 @@ func _apply_swing_hits(delta: float) -> void:
 			continue
 		_hit_ids[id] = true
 
+		# WEAPON CLASH: if the enemy is MID-STRIKE when the swinging stone connects, the stone bats
+		# its weapon aside — strike cancelled, staggered, knocked back, with a clash spark. The
+		# normal scored hit below still lands; this is the extra "weapons physically collide" result.
+		if body.has_method("is_striking") and body.has_method("parry_strike") and body.is_striking():
+			var cdir: Vector2 = (body.global_position - origin).normalized()
+			body.parry_strike(cdir)
+			Impact.popup("CLASH!", body.global_position + Vector2(0, -34), Color(1.0, 0.95, 0.7), 1.2)
+			Impact.add_flow(Impact.CLASH_FLOW)
+			Audio.play("shield_block", body.global_position)
+
 		var to: Vector2 = body.global_position - origin
 		var dir := to.normalized() if to.length() > 1.0 else Vector2.RIGHT.rotated(_angle)
 

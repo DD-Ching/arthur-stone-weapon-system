@@ -59,8 +59,9 @@ func _ready() -> void:
 			# is_support and counted among the officers the DefeatOfficer objective hunts.
 			_checks["%s_is_support" % name] = bool(t.is_support)
 			_checks["%s_in_officers" % name] = t.is_in_group("officers")
-			# A morale support carries NO attack moveset (war drum / standard, not a weapon).
-			_checks["%s_no_moveset" % name] = (t._abilities as Array).is_empty()
+			# Support troops now also DEFEND themselves — every minion can attack (a ranged bolt
+			# from their standoff distance), so they carry a built moveset too.
+			_checks["%s_armed" % name] = not (t._abilities as Array).is_empty()
 		else:
 			# ATTACKING troops: the data-driven brain built exactly one Ability per move id, in order.
 			var built: Array = t._abilities

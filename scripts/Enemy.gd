@@ -219,6 +219,22 @@ func _interrupt() -> void:
 	_ai_time = 0.0
 	_did_strike = false
 
+## True while this unit is winding up or landing an attack — the stone reads this to PARRY a clash.
+func is_striking() -> bool:
+	return _ai == AI.WINDUP or _ai == AI.STRIKE
+
+## The stone CLASHED with this unit's raised weapon mid-strike — cancel the strike, knock it back a
+## little, and stagger it briefly. A real weapon-on-weapon parry, not just a visual. `dir` is the
+## push direction (away from the stone).
+func parry_strike(dir: Vector2) -> void:
+	if _dead:
+		return
+	_did_strike = true   # cancel the pending hit of this strike
+	_interrupt()
+	stun(0.4)
+	apply_central_impulse(dir * 220.0)
+	_flash = 0.2
+
 func _defeat() -> void:
 	_dead = true
 	_chain = 0
@@ -232,6 +248,10 @@ func _defeat() -> void:
 	if team == "raiders":
 		Impact.add_flow(10.0)
 		Impact.add_kill()                # the musou KO counter
+		# A little death-pop: a few body-coloured chunks fly out so clearing the swarm reads as
+		# impact (budgeted by Impact.shatter so a crowd-wipe can't flood the single-thread web build).
+		Impact.shatter(preload("res://scenes/props/ChunkDebris.tscn"), global_position, 3,
+			Vector2(110.0, 230.0), base_color)
 	if is_support:
 		# A banner bearer falling rattles the line.
 		Impact.popup("MORALE BROKEN", global_position + Vector2(0, -48), Color(1.0, 0.5, 0.3), 1.2)

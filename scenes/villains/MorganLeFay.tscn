@@ -34,6 +34,7 @@ move_speed = 48.0
 move_accel = 520.0
 sight_range = 280.0
 keep_distance = 200.0
+moves = PackedStringArray("javelin")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("morgan_shape")
