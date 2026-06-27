@@ -23,6 +23,8 @@ const PAUSE_MENU := preload("res://scenes/ui/PauseMenu.tscn")
 @export var wave_interval := 16.0          ## seconds before the next wave is forced in
 @export var wave_clear_threshold := 7      ## spawn the next wave once raiders drop to this
 @export var active_cap := 130              ## soft cap on concurrent raiders (web-perf safety net)
+@export var ground_top := Color(0.12, 0.13, 0.12)     ## arena floor — value gradient top (re-themable)
+@export var ground_bottom := Color(0.17, 0.15, 0.13)  ## arena floor — value gradient bottom
 @export var max_breaches := 0              ## 0 = no defence line; >0 = lose after this many cross
 @export var defence_line_y := 360.0        ## y a raider must pass to count as a breach
 
@@ -41,6 +43,7 @@ var _started := false
 var _breaches := 0
 var _breached := {}
 var _stray_t := {}                          ## id -> scans a target has been out of bounds (win-safety net)
+var _dapple: Array = []                     ## precomputed ground dapple blobs (Vector3 x,y,radius)
 var _ward = null                           ## a protected unit (ProtectBanner); null = none
 var _had_ward := false                      ## a live ward was once seen (so a vanished ward = fallen)
 var _score_screen = null
@@ -380,8 +383,35 @@ func _scale(n: int) -> int:
 
 func _draw() -> void:
 	var b := _world_bounds()
-	draw_rect(b, Color(0.14, 0.13, 0.16))
-	for x in range(int(b.position.x), int(b.end.x) + 1, 80):
-		draw_line(Vector2(x, b.position.y), Vector2(x, b.end.y), Color(1, 1, 1, 0.03), 1.0)
-	for y in range(int(b.position.y), int(b.end.y) + 1, 80):
-		draw_line(Vector2(b.position.x, y), Vector2(b.end.x, y), Color(1, 1, 1, 0.03), 1.0)
+	if _dapple.is_empty():
+		_init_ground(b)
+	# A soft vertical value gradient (darker top → warmer bottom) instead of a flat debug fill —
+	# drawn as a stack of bands. The map redraws once (static), so this costs nothing per frame.
+	var bands := 14
+	for i in bands:
+		var y0 := b.position.y + b.size.y * float(i) / float(bands)
+		draw_rect(Rect2(b.position.x, y0, b.size.x, b.size.y / float(bands) + 1.0),
+			ground_top.lerp(ground_bottom, float(i) / float(bands - 1)))
+	# A seeded DAPPLE — soft dark/light blobs that break up the flat floor so it reads as ground,
+	# not graph paper. Precomputed once (deterministic), so no per-frame randomness or allocation.
+	for j in _dapple.size():
+		var d: Vector3 = _dapple[j]
+		var c := Color(0.0, 0.0, 0.0, 0.06) if (j % 2 == 0) else Color(0.85, 0.8, 0.7, 0.03)
+		draw_circle(Vector2(d.x, d.y), d.z, c)
+	# A faint in-world edge darkening to settle the frame.
+	var edge := Color(0.0, 0.0, 0.0, 0.16)
+	var t := 56.0
+	draw_rect(Rect2(b.position.x, b.position.y, b.size.x, t), edge)
+	draw_rect(Rect2(b.position.x, b.end.y - t, b.size.x, t), edge)
+	draw_rect(Rect2(b.position.x, b.position.y, t, b.size.y), edge)
+	draw_rect(Rect2(b.end.x - t, b.position.y, t, b.size.y), edge)
+
+## Precompute the static ground dapple (seeded → deterministic, same every boot).
+func _init_ground(b: Rect2) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 20260627
+	for _i in 150:
+		_dapple.append(Vector3(
+			rng.randf_range(b.position.x, b.end.x),
+			rng.randf_range(b.position.y, b.end.y),
+			rng.randf_range(7.0, 26.0)))
