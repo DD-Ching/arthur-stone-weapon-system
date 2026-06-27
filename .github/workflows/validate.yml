@@ -142,6 +142,15 @@ jobs:
           godot --headless --path . res://tests/HudReskinTest.tscn --quit-after 600 | tee hudreskin.log
           grep -q "HUD_RESKIN_VERDICT PASS" hudreskin.log
 
+      - name: Run HUD mobile test (compact bars on a short / touch viewport)
+        # Asserts the phone-compacting HUD pass: the NARROW bar geometry consts are smaller than the
+        # desktop defaults, forcing a short logical viewport makes _apply_scale() shrink the live
+        # BAR_W / ROW_H / BAR_TOP vars + move the bar-row labels up (smaller font), restoring a tall
+        # viewport returns the desktop layout verbatim, and the bars draw without error in both.
+        run: |
+          godot --headless --path . res://tests/HudMobileTest.tscn --quit-after 600 | tee hudmobile.log
+          grep -q "HUD_MOBILE_VERDICT PASS" hudmobile.log
+
       - name: Run navigation test (v0.14 obstacle avoidance)
         # Asserts a marching raider routes AROUND a solid wall (world layer) through the
         # gap to reach its goal, instead of jamming against it (the Steering module).
