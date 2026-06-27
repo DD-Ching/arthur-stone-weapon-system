@@ -37,6 +37,9 @@ const LIGHT := preload("res://scenes/LightSoldier.tscn")
 ## propagates. Tuned with the lighter damp so it doesn't arrest mid-crowd.
 @export var striker_mass := 3.0
 @export var striker_damp := 1.6
+## A lenient time budget to land the strike. Let it run out without clearing the crowd and the
+## room ends in a DEFEAT (ScoreScreen → Retry) instead of dead-ending forever.
+@export var time_limit := 60.0
 
 @onready var arthur = $Arthur
 @onready var walls: StaticBody2D = $Walls
@@ -49,6 +52,8 @@ var _status: Label = null
 var _scan_cd := 0.0
 var _struck := false
 var _resolved := false
+var _time_left := 0.0
+var _elapsed := 0.0
 
 func _ready() -> void:
 	Impact.reset()
@@ -59,6 +64,9 @@ func _ready() -> void:
 	_objectives = ObjectiveManager.new()
 	_objectives.add(ClearClusterObjective.new())
 	_build_status()
+	# Esc / mobile MENU → Resume / Restart / Return to Lobby, so the room is no longer a dead-end.
+	RoomFinish.add_pause_menu(self)
+	_time_left = time_limit
 	Impact.popup("STRIKE THE CLUSTER", arthur.global_position + Vector2(0, -90),
 		Color(0.6, 0.9, 1.0), 1.3)
 	_evaluate()
@@ -146,10 +154,17 @@ func _build_status() -> void:
 # ── per-frame ───────────────────────────────────────────────────────────────
 
 func _physics_process(delta: float) -> void:
+	if not _resolved:
+		_elapsed += delta
+		_time_left = maxf(0.0, _time_left - delta)
 	_scan_cd -= delta
 	if _scan_cd <= 0.0:
 		_scan_cd = 0.15
 		_evaluate()
+		# Lenient lose: the strike never cleared the crowd in time. End in a DEFEAT screen
+		# (Retry / Lobby) rather than leaving the player stuck in a half-bowled lane.
+		if not _resolved and _time_left <= 0.0:
+			_lose()
 
 ## Count the pins still standing (alive AND within clear_threshold of their spawn). A pin that
 ## was defeated or shoved out of the crowd no longer counts — that's a "bowled" pin.
@@ -199,6 +214,18 @@ func _win() -> void:
 	Impact.popup("STRIKE! CLUSTER CLEARED", arthur.global_position + Vector2(0, -90),
 		Color(0.6, 0.95, 1.0), 1.6)
 	Audio.play("chain_impact", arthur.global_position)
+	# Mark the stage cleared + reveal the result overlay (Next / Lobby) via the shared glue.
+	RoomFinish.finish(self, true, Impact.kills, _elapsed)
+
+func _lose() -> void:
+	if _resolved:
+		return
+	_resolved = true
+	if _status != null:
+		_status.text = "BOWLING ROOM   ·   OUT OF TIME"
+	Impact.popup("OUT OF TIME", arthur.global_position + Vector2(0, -90),
+		Color(0.95, 0.45, 0.4), 1.4)
+	RoomFinish.finish(self, false, Impact.kills, _elapsed)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("reset_arena"):

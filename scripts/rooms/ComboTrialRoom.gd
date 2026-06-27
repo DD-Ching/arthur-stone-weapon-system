@@ -49,6 +49,8 @@ func _ready() -> void:
 	# Mobile: this room builds its own RoomHud (not the shared Hud), so add the touch controls
 	# here too — otherwise the trial has no joysticks on a phone.
 	$RoomHud.add_child(preload("res://scenes/ui/TouchControls.tscn").instantiate())
+	# Esc / mobile MENU → Resume / Restart / Return to Lobby, so the room is no longer a dead-end.
+	RoomFinish.add_pause_menu(self)
 	queue_redraw()
 
 ## The room leases one connection to the autoload combo meter; drop it when the room leaves
@@ -106,6 +108,8 @@ func _win() -> void:
 	Impact.popup("STONE FLOW MASTERED", _arthur.global_position + Vector2(0, -80),
 		Color(1.0, 0.85, 0.3), 1.6)
 	won.emit()
+	# Mark the stage cleared + reveal the result overlay (Next / Lobby) via the shared glue.
+	RoomFinish.finish(self, true, Impact.kills, time_limit - _time_left)
 
 func _lose() -> void:
 	if _finished:
@@ -115,6 +119,7 @@ func _lose() -> void:
 	_banner.modulate = Color(0.95, 0.45, 0.4)
 	_banner.visible = true
 	lost.emit()
+	RoomFinish.finish(self, false, Impact.kills, time_limit - _time_left)
 
 func _update_labels() -> void:
 	_time_label.text = "TIME  %4.1f" % _time_left
