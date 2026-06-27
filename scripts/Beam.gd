@@ -6,20 +6,42 @@ extends Node2D
 ## by how long you charged (the gauge you spent). Reuse-first: damage goes through the shared
 ## Enemy.apply_hit; it's a cheap group scan per tick (no per-frame raycasts), code-drawn glow.
 
-const LEN := 780.0          ## beam reach
-const WIDTH := 74.0         ## beam half-width is WIDTH*0.5
+const LEN := 780.0          ## base beam reach (a short charge); a full charge stretches it to LEN*LEN_MAX_MULT
+const WIDTH := 74.0         ## base beam width (half-width is WIDTH*0.5); a full charge fattens it to WIDTH*WIDTH_MAX_MULT
 const TICK := 0.07          ## damage cadence (s)
+const FULL_CHARGE := 2.5    ## a full gauge's worth of charge (seconds) — the charge that earns the biggest beam (mirrors Arthur.MUSOU_CHARGE_MAX; kept local so Beam has no class dependency)
+const DAMAGE := 17.0        ## base per-tick damage at a short charge
+const KNOCKBACK := 540.0    ## base per-tick shove at a short charge
+
+# CHARGE PAYOFF: a long charge earns a noticeably wider, longer, heavier beam. These are the
+# full-charge multipliers a power of 1.0 reaches; a short charge (power → 0) stays at the base.
+const LEN_MAX_MULT := 1.6
+const WIDTH_MAX_MULT := 1.9
+const DAMAGE_MAX_MULT := 2.2
+const KNOCKBACK_MAX_MULT := 1.7
 
 var _arthur = null
 var _life := 0.0
 var _t := 0.0
 var _tick_cd := 0.0
 var _alpha := 1.0
+var _power := 0.0           ## 0..1 charge payoff (0 = a flick, 1 = a full gauge held)
+var _len := LEN             ## effective reach this beam, scaled by _power
+var _width := WIDTH         ## effective width this beam, scaled by _power
+var _damage := DAMAGE       ## effective per-tick damage, scaled by _power
+var _knockback := KNOCKBACK ## effective per-tick shove, scaled by _power
 
 ## Anchor to Arthur and set the spray duration (the charge held). Call right after add_child.
+## The charge held also scales the beam's reach/width/damage — a long charge feels earned.
 func fire(arthur, duration: float) -> void:
 	_arthur = arthur
 	_life = maxf(0.25, duration)
+	# Map the held charge (seconds) onto a 0..1 payoff against a full gauge's worth.
+	_power = clampf(duration / FULL_CHARGE, 0.0, 1.0)
+	_len = LEN * lerpf(1.0, LEN_MAX_MULT, _power)
+	_width = WIDTH * lerpf(1.0, WIDTH_MAX_MULT, _power)
+	_damage = DAMAGE * lerpf(1.0, DAMAGE_MAX_MULT, _power)
+	_knockback = KNOCKBACK * lerpf(1.0, KNOCKBACK_MAX_MULT, _power)
 	if is_instance_valid(arthur):
 		Audio.play("shield_break", arthur.global_position)   # a bright zap on fire
 
@@ -52,13 +74,13 @@ func _zap() -> void:
 			continue
 		var rel: Vector2 = e.global_position - origin
 		var along := rel.dot(dir)
-		if along < 0.0 or along > LEN:
+		if along < 0.0 or along > _len:
 			continue
 		var r: float = e.radius if "radius" in e else 14.0
-		if absf(rel.dot(perp)) > WIDTH * 0.5 + r:
+		if absf(rel.dot(perp)) > _width * 0.5 + r:
 			continue
 		if e.has_method("apply_hit"):
-			e.apply_hit(dir, 540.0, 0.2, 17.0, 0.0)   # shove down-beam + heavy damage
+			e.apply_hit(dir, _knockback, 0.2, _damage, 0.0)   # shove down-beam + heavy damage (both scale with charge)
 		Impact.add_flow(1.0)
 	if _arthur and _arthur.camera and _arthur.camera.has_method("add_shake"):
 		_arthur.camera.call("add_shake", 7.0, dir)
@@ -68,9 +90,9 @@ func _draw() -> void:
 	# hot white core, and a pulsing muzzle flare at the origin.
 	var a := _alpha
 	var pulse := 0.82 + 0.18 * sin(_t * 42.0)
-	var tip := Vector2(LEN, 0.0)
-	draw_line(Vector2.ZERO, tip, Color(0.55, 0.82, 1.0, 0.18 * a), WIDTH)
-	draw_line(Vector2.ZERO, tip, Color(0.72, 0.92, 1.0, 0.42 * a), WIDTH * 0.55)
-	draw_line(Vector2.ZERO, tip, Color(1.0, 1.0, 1.0, 0.95 * a * pulse), WIDTH * 0.22)
-	draw_circle(Vector2.ZERO, WIDTH * 0.62 * pulse, Color(1.0, 1.0, 0.95, 0.65 * a))
-	draw_circle(Vector2.ZERO, WIDTH * 0.34, Color(0.85, 0.96, 1.0, 0.9 * a))
+	var tip := Vector2(_len, 0.0)
+	draw_line(Vector2.ZERO, tip, Color(0.55, 0.82, 1.0, 0.18 * a), _width)
+	draw_line(Vector2.ZERO, tip, Color(0.72, 0.92, 1.0, 0.42 * a), _width * 0.55)
+	draw_line(Vector2.ZERO, tip, Color(1.0, 1.0, 1.0, 0.95 * a * pulse), _width * 0.22)
+	draw_circle(Vector2.ZERO, _width * 0.62 * pulse, Color(1.0, 1.0, 0.95, 0.65 * a))
+	draw_circle(Vector2.ZERO, _width * 0.34, Color(0.85, 0.96, 1.0, 0.9 * a))

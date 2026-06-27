@@ -617,3 +617,12 @@ jobs:
         run: |
           godot --headless --path . res://tests/MobilePerfTest.tscn --quit-after 600 | tee mobileperf.log
           grep -q "MOBILE_PERF_VERDICT PASS" mobileperf.log
+
+      - name: Run feel test (swing weight + beam charge payoff)
+        # Asserts the play-feel pass: a scored fast swing commits Arthur's mass into the blow
+        # (his lunge() carries him along the swing direction — swing weight), and the charge-beam
+        # scales with the charge held (a 2.0s charge fires a strictly wider AND longer beam than
+        # a 0.5s flick — the long charge feels earned).
+        run: |
+          godot --headless --path . res://tests/FeelTest.tscn --quit-after 600 | tee feel.log
+          grep -q "FEEL_VERDICT PASS" feel.log

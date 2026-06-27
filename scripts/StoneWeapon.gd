@@ -38,6 +38,10 @@ const ROCK := preload("res://scenes/Rock.tscn")
 @export var max_avel := 28.0           ## cap on angular speed (rad/s)
 @export var drag_gain := 5.2           ## mouse-DRAG torque while swinging — how hard a whip builds speed
 @export var swing_stamina_rate := 26.0 ## stamina drained per second while actively dragging a swing (just above regen, so held swinging isn't effectively free)
+@export var swing_weight_gain := 0.06  ## a SCORED swing hit nudges Arthur along the swing dir, this much per px/s of head speed (landing a heavy hit moves the heavy man)
+@export var swing_weight_max := 150.0  ## clamp on that lunge so a heavy hit shoves him a step, never flings him across the map
+@export var touch_assist_avel := 7.0   ## angular speed (rad/s) a HELD-steady touch aim ramps the head toward, so a thumb that barely circles still builds a real swing
+@export var touch_assist_gain := 9.0   ## how fast the touch assist winds _avel up toward touch_assist_avel
 @export var hit_speed_min := 420.0     ## head speed below which contact only PUSHES (no scored hit)
 @export var solid_off_speed := 400.0   ## above this the solid stone steps aside so the impulse hits
 @export var hit_interval := 0.3        ## a fast head re-hits the same target this often (seconds)
@@ -92,6 +96,7 @@ var _head_speed := 0.0    ## measured head speed in px/s — the swing's "relati
 var _arthur_vel_prev := Vector2.ZERO
 var _spin_clear := 0.0    ## countdown to clear spin hit-dedup so the whirl re-hits
 var _swinging := false    ## is the attack button held (drag = swing mode)
+var _touch_assist := false ## touch aim-stick is active → assist a barely-circling thumb up to a usable swing
 var _prev_aim := 0.0      ## last frame's cursor angle, for the drag's angular velocity
 var _mouse_avel := 0.0    ## how fast the cursor is being dragged around Arthur (signed: CW/CCW)
 var _hit_clear := 0.0     ## countdown to clear the contact hit-dedup
@@ -130,6 +135,13 @@ func _slam_committed() -> bool:
 ## motion. set_swinging() is called every frame with the button's held state.
 func set_swinging(on: bool) -> void:
 	_swinging = on
+
+## TOUCH-SWING ASSIST toggle. Arthur calls this with `true` only while the on-screen
+## aim-stick is active (pointer/mouse play passes `false`, so it's UNCHANGED there).
+## Circling a thumb is hard, so while it's on a held-steady aim still ramps the head
+## toward a usable swing speed (see _update_pendulum) instead of going limp.
+func set_touch_assist(on: bool) -> void:
+	_touch_assist = on
 
 func start_slam() -> void:
 	if _slam_committed() or state == State.SPIN:
@@ -236,6 +248,13 @@ func _update_pendulum(delta: float, accel: Vector2) -> void:
 	if _swinging and absf(_mouse_avel) > 0.25:
 		if _arthur.try_spend_stamina(swing_stamina_rate * delta):
 			torque += _mouse_avel * drag_gain
+	elif _swinging and _touch_assist and absf(_mouse_avel) <= 0.25:
+		# TOUCH ASSIST: a thumb barely circling the aim-stick can't build a swing the way a
+		# fast mouse-drag does, so a HELD-steady touch aim ramps the head toward a usable whirl
+		# (in whichever way it's already turning). Still costs stamina, so it isn't free spin.
+		if _arthur.try_spend_stamina(swing_stamina_rate * delta):
+			var sign_dir := 1.0 if _avel >= 0.0 else -1.0
+			_avel = move_toward(_avel, touch_assist_avel * sign_dir, touch_assist_gain * delta)
 
 	_avel = clampf(_avel + torque * delta, -max_avel, max_avel)
 	_angle = wrapf(_angle + _avel * delta, -PI, PI)
@@ -295,10 +314,15 @@ func _apply_swing_hits(delta: float) -> void:
 			"relative_speed": _head_speed, "charge": 0.0,   # power is all real motion now
 			"angle_quality": 1.0, "pin": pin,
 		})
+		# `scored` = a real damaging hit landed on a FOE (drives the swing-weight lunge below).
+		# Props (the else branch) are merely shoved, so they don't count — bumping a loose rock
+		# shouldn't yank Arthur forward as if he committed his mass into an enemy.
+		var scored := false
 		if body.has_method("apply_hit"):
 			# The enemy applies its own shield block / break and reports back.
 			var res: Dictionary = body.apply_hit(dir, r["knockback"], r["stun"], r["damage"], pin)
-			if not res["blocked"]:
+			scored = not res["blocked"]
+			if scored:
 				Impact.popup(r["label"], body.global_position + Vector2(0, -26), r["color"], 1.0 + 0.4 * clampf(_head_speed / 1600.0, 0.0, 1.0))
 			Impact.add_flow(r["flow_gain"] * (0.4 if res["blocked"] else 1.0))
 		else:
@@ -306,8 +330,20 @@ func _apply_swing_hits(delta: float) -> void:
 			Impact.popup(r["label"], body.global_position + Vector2(0, -26), r["color"], 1.0 + 0.4 * clampf(_head_speed / 1600.0, 0.0, 1.0))
 			Impact.add_flow(r["flow_gain"])
 
+		# SWING WEIGHT: a scored (non-blocked) hit on a foe commits Arthur's mass into the blow —
+		# a modest, head-speed-scaled lunge along the swing direction. Reuses his existing lunge()
+		# (the same capped dash burst), so a heavy hit moves the heavy man a step without flinging
+		# him across the field. A blocked hit, or merely shoving a prop, doesn't carry him in.
+		if scored and _arthur and _arthur.has_method("lunge"):
+			var nudge := clampf(_head_speed * swing_weight_gain, 0.0, swing_weight_max)
+			_arthur.lunge(dir * nudge)
+
 		_hit_count += 1
+		# Bias the camera shake along the swing direction so a heavy hit kicks the view
+		# the way it landed (a directional jolt, not omni rumble).
 		hit_landed.emit(r["shake"], _hit_count)
+		if _arthur and _arthur.camera and _arthur.camera.has_method("add_shake"):
+			_arthur.camera.call("add_shake", r["shake"], dir)
 		Audio.play("wall_crush" if pin >= 0.5 else "heavy_swing", body.global_position)
 
 # --- spin / tornado ---------------------------------------------------------
@@ -417,6 +453,14 @@ func _do_slam_impact() -> void:
 	# The heaviest move finally LANDS audibly: a deep thud + rocky crack at the impact point.
 	Audio.play("slam", point)
 	hit_landed.emit(slam_shake, 0)   # one big shake + hit-stop
+	# JUICE: a punch-zoom on the smash so the heaviest move snaps the whole frame, biased along
+	# the slam direction so the shake reads as "it landed THAT way".
+	if _arthur and _arthur.camera:
+		var sdir := Vector2.RIGHT.rotated(_target_aim)
+		if _arthur.camera.has_method("kick"):
+			_arthur.camera.call("kick", 22.0)
+		if _arthur.camera.has_method("add_shake"):
+			_arthur.camera.call("add_shake", slam_shake, sdir)
 
 func ease_out(t: float) -> float:
 	return 1.0 - pow(1.0 - t, 3.0)
