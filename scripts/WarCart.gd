@@ -13,14 +13,8 @@ const DEBRIS := preload("res://scenes/Rock.tscn")
 func _defeat() -> void:
 	super._defeat()   # standard: dead, KO count, DOWN!, flow
 	Impact.popup("CART FLIPPED", global_position + Vector2(0, -42), Color(1.0, 0.6, 0.3), 1.4)
-	var scene := get_tree().current_scene
-	if scene == null:
-		return
-	for _i in debris_count:
-		var d = DEBRIS.instantiate()
-		scene.add_child(d)
-		d.global_position = global_position + Vector2(randf_range(-22.0, 22.0), randf_range(-22.0, 22.0))
-		d.apply_knockback(Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)).normalized(), 320.0)
+	# Burst into launchable Rock debris through the shared shatter (one destruction code path).
+	Impact.shatter(DEBRIS, global_position, debris_count, Vector2(300.0, 340.0))
 
 func _draw_type() -> void:
 	var fwd := Vector2(cos(_face), sin(_face))

@@ -469,3 +469,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/DifficultyTest.tscn --quit-after 600 | tee difficulty.log
           grep -q "DIFFIC_VERDICT PASS" difficulty.log
+
+      - name: Run physics-foundation test (destruction + stone-blocks-arrows)
+        # Asserts the physical-world foundation: a Breakable shatters into budgeted debris,
+        # Impact.shatter caps at DEBRIS_BUDGET, Impact.explode hits a ring, and a javelin
+        # deflects off a "stone_weapon" body instead of striking through it.
+        run: |
+          godot --headless --path . res://tests/PhysicsFoundationTest.tscn --quit-after 600 | tee physfound.log
+          grep -q "PHYSFOUND_VERDICT PASS" physfound.log

@@ -68,6 +68,7 @@ signal impact_fx(strength: float)   ## camera shake / hit-stop request from non-
 signal kills_changed(kills: int, milestone: String)   ## musou KO counter
 
 const MAX_LABELS := 16        ## cap concurrent floating labels (web: bounds node + redraw churn)
+const DEBRIS_BUDGET := 90     ## cap concurrent shatter chunks (web: bounds node + redraw churn)
 
 var flow := 0.0
 var stacks := 0
@@ -314,3 +315,61 @@ func popup(text: String, world_pos: Vector2, color: Color = Color.WHITE, scale: 
 	scene.add_child(label)
 	label.global_position = world_pos
 	label.setup(text, color, scale)
+
+# ── Destruction (one code path for "it breaks and pieces fly out") ───────────
+
+## Burst `count` debris chunks of `scene` out of `pos`, each flung at a random heading + a speed
+## in `speed_range`. The single reusable "shatter" any breakable prop / cart / pot calls, so the
+## look + the spawn cost live in ONE place. Honors DEBRIS_BUDGET so a mass shatter (a haystack
+## cluster, a row of barrels) can't flood the single-threaded web build with chunks.
+func shatter(scene: PackedScene, pos: Vector2, count: int,
+		speed_range: Vector2 = Vector2(160.0, 340.0), tint: Color = Color(0.5, 0.36, 0.22)) -> void:
+	if scene == null:
+		return
+	var tree := get_tree()
+	if tree == null:
+		return
+	var parent := tree.current_scene
+	if parent == null:
+		return
+	var live := tree.get_nodes_in_group("debris").size()
+	var budget := maxi(0, DEBRIS_BUDGET - live)
+	var n := mini(count, budget)
+	for _i in n:
+		var d = scene.instantiate()
+		parent.add_child(d)
+		d.global_position = pos + Vector2(randf_range(-9.0, 9.0), randf_range(-9.0, 9.0))
+		if "chunk_color" in d:
+			d.chunk_color = tint
+		if d.has_method("apply_knockback"):
+			var ang := randf() * TAU
+			d.apply_knockback(Vector2(cos(ang), sin(ang)), randf_range(speed_range.x, speed_range.y))
+
+## A radial burst from `pos`: launch + damage everything hittable within `radius`, with falloff
+## to the edge. The reusable AoE for an explosive barrel or any boom (the slam keeps its own richer
+## Shockwave for the wall-crush pin). `from_node` is spared (the source prop). Returns the count hit.
+func explode(from_node: Node, pos: Vector2, radius: float, impulse: float, dmg: float, stun: float) -> int:
+	var tree := get_tree()
+	if tree == null:
+		return 0
+	var hit := 0
+	for group in ["targets", "props"]:
+		for body in tree.get_nodes_in_group(group):
+			if not is_instance_valid(body) or body == from_node:
+				continue
+			var to: Vector2 = body.global_position - pos
+			var dist := to.length()
+			if dist >= radius:
+				continue
+			var falloff := 1.0 - dist / radius
+			var dir := to.normalized() if dist > 0.01 else Vector2.RIGHT
+			var strength := impulse * falloff
+			if body.has_method("apply_hit"):
+				body.apply_hit(dir, strength, stun * falloff, dmg * falloff, 0.0)
+				add_flow(2.0 * falloff)
+				hit += 1
+			elif body.has_method("apply_knockback"):
+				body.apply_knockback(dir, strength)
+	impact_fx.emit(clampf(impulse / 800.0, 0.25, 1.0))
+	popup("BOOM!", pos + Vector2(0.0, -28.0), Color(1.0, 0.62, 0.22), 1.4)
+	return hit

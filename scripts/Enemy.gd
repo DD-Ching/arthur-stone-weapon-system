@@ -92,6 +92,11 @@ var _danger_zones: Array = []    ## cached "danger_terrain" (deep water) to rout
 var _crossings: Array = []       ## cached "crossing" markers (bridges/fords) to aim at
 var _goal_node = null            ## cached march goal (the ford banner), refreshed on retarget
 var _ally_goal = null            ## cached ally muster marker (the front), refreshed on retarget
+var _last_face := 0.0            ## last-drawn facing, for the dirty-redraw gate (swarm perf)
+var _last_ai := -1               ## last-drawn AI state, for the dirty-redraw gate
+var _steer_tick := 0            ## counts down to the next wall-avoidance recompute (throttle)
+var _cached_avoid := Vector2.RIGHT  ## last computed avoidance direction (reused between recomputes)
+var _cached_avoid_in := Vector2.RIGHT  ## the desired heading the cached avoid was computed for
 var _rerouting := false          ## currently steering around danger, not pursuing the foe
 var _space: PhysicsDirectSpaceState2D = null  ## world physics space, refreshed on the retarget tick
 
@@ -393,7 +398,7 @@ func _approach_velocity(dir: Vector2, dist: float) -> Vector2:
 	var d := dir
 	if _flank != 0.0 and dist > attack_range + 18.0:
 		d = (dir + Vector2(-dir.y, dir.x) * _flank * 0.55).normalized()
-	d = Steering.avoid(_space, global_position, radius, d, get_rid(), _steer_bias)   # round fences while closing in
+	d = _avoid(d)   # round fences while closing in (throttled wall-avoidance — swarm perf)
 	return d * move_speed + _separation * 40.0
 
 ## Steering while marching toward the goal (no foe in reach), still anti-stacking.
@@ -403,11 +408,23 @@ func _march_velocity() -> Vector2:
 	var to_goal: Vector2 = _goal_position() - global_position
 	var gdir := to_goal / maxf(to_goal.length(), 0.001)
 	gdir = _avoid_redirect(gdir)                                           # route around deep water first
-	gdir = Steering.avoid(_space, global_position, radius, gdir, get_rid(), _steer_bias)  # then bend around walls
+	gdir = _avoid(gdir)  # then bend around walls (throttled wall-avoidance — swarm perf)
 	_face = gdir.angle()
 	if shielded:
 		shield_angle = _face
 	return gdir * move_speed + _separation * 40.0
+
+## Wall-avoidance (Steering.avoid casts 3 rays) THROTTLED to ~every 3rd physics frame and reused
+## between recomputes — walls are static, so the deflection is stable frame-to-frame; recomputing
+## it per soldier every frame is pure cost at swarm scale. Recomputes early if the desired heading
+## swings hard (a new foe / a turn) so responsiveness is preserved where it matters.
+func _avoid(desired: Vector2) -> Vector2:
+	_steer_tick -= 1
+	if _steer_tick <= 0 or desired.dot(_cached_avoid_in) < 0.6:
+		_steer_tick = 3
+		_cached_avoid = Steering.avoid(_space, global_position, radius, desired, get_rid(), _steer_bias)
+		_cached_avoid_in = desired
+	return _cached_avoid
 
 ## If deep water is right ahead along `desired`, return a direction toward the nearest
 ## crossing instead; otherwise return `desired` unchanged. Used by both the march and the
@@ -582,10 +599,22 @@ func _process(delta: float) -> void:
 	elif _spawn_in > 0.0:
 		_spawn_in = maxf(0.0, _spawn_in - delta)
 		_alpha = clampf(1.0 - _spawn_in / 0.3, 0.0, 1.0)
-	# AI enemies animate (facing, telegraphs) so they redraw each frame; passive
-	# dummies only redraw when something visible changes (keeps the web build light).
-	# A support unit also redraws so its morale-aura ring keeps pulsing (few of them, cheap).
-	if ai_enabled or is_support or _flash > 0.0 or _stun > 0.0 or _alpha < 1.0:
+	# DIRTY-REDRAW (the single biggest swarm-scale win): re-tessellating each soldier's multi-arc
+	# silhouette every frame is the dominant cost with many troops. Redraw only when something
+	# VISIBLE actually changed — transient effects (flash/stun/fade/shield-break) and telegraph
+	# states always redraw so wind-up/strike read smoothly; an idle/marching unit redraws only when
+	# its facing turns past a small threshold or its AI state flips.
+	var redraw := _flash > 0.0 or _stun > 0.0 or _alpha < 1.0 or _shield_broken > 0.0
+	if not redraw and is_support:
+		redraw = true                          # support aura pulses (few of them, cheap)
+	elif not redraw and ai_enabled:
+		if _ai == AI.WINDUP or _ai == AI.STRIKE or _ai == AI.RECOVER:
+			redraw = true                      # telegraph animates
+		elif absf(angle_difference(_face, _last_face)) > 0.04 or _ai != _last_ai:
+			redraw = true
+	if redraw:
+		_last_face = _face
+		_last_ai = _ai
 		queue_redraw()
 
 # ── drawing ─────────────────────────────────────────────────────────────────
