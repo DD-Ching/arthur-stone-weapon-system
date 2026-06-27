@@ -88,6 +88,14 @@ jobs:
           godot --headless --path . res://tests/HoldFordTest.tscn --quit-after 600 | tee holdford.log
           grep -q "HOLDFORD_VERDICT PASS" holdford.log
 
+      - name: Run ford-campaign test (Hold the Ford joins the campaign spine)
+        # Asserts the original standalone Ford level got its campaign wiring: a reusable PauseMenu
+        # overlay is present, a forced VICTORY fires the guarded Campaign.mark_completed (the Ford
+        # reads CLEARED), and the ScoreScreen receives a non-empty next_path + blurb (5-arg form).
+        run: |
+          godot --headless --path . res://tests/FordCampaignTest.tscn --quit-after 600 | tee fordcampaign.log
+          grep -q "FORDCAMPAIGN_VERDICT PASS" fordcampaign.log
+
       - name: Run objectives test (v0.10 ObjectiveManager)
         # Asserts the reusable objectives compose win/lose: completable objectives gate the
         # win, a constraint objective only gates losing, the officer must be defeated to win.

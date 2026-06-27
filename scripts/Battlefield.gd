@@ -68,6 +68,7 @@ const SPEAR_PHALANX := preload("res://scenes/formations/SpearPhalanx.tscn")
 const OFFICER_GUARD := preload("res://scenes/formations/OfficerGuard.tscn")
 const ALLIED_HOST := preload("res://scenes/formations/AlliedHost.tscn")
 const SCORE_SCREEN := preload("res://scenes/ui/ScoreScreen.tscn")
+const PAUSE_MENU := preload("res://scenes/ui/PauseMenu.tscn")   ## Esc / mobile MENU → return-to-lobby
 
 @onready var arthur = $Arthur
 @onready var hud = $Hud
@@ -90,6 +91,7 @@ var _log_cd := 6.0
 var _objectives: ObjectiveManager = null   ## this level's win/lose, composed from modules
 var _elapsed := 0.0                  ## battle time, frozen at the win/lose result
 var _score_screen: CanvasLayer = null   ## end-of-battle KO + time overlay
+var _pause: CanvasLayer = null       ## the reusable PauseMenu overlay (Esc / mobile MENU → lobby)
 
 func _ready() -> void:
 	Impact.reset()
@@ -122,6 +124,10 @@ func _ready() -> void:
 	hud.bind(arthur)
 	_score_screen = SCORE_SCREEN.instantiate()
 	add_child(_score_screen)
+	# The reusable pause overlay — Esc / mobile MENU → Resume / Restart / Return to Lobby. Same as
+	# every BattleMap; the Ford is the original standalone level so it got wired here by hand.
+	_pause = PAUSE_MENU.instantiate()
+	add_child(_pause)
 	Impact.popup("THE FORD OF THE STONE KING", arthur.global_position + Vector2(0, -120),
 		Color(0.85, 0.8, 0.6), 1.4)
 	_evaluate_objectives()
@@ -308,6 +314,11 @@ func _victory() -> void:
 	if _won or _lost:
 		return
 	_won = true
+	# Record the win in the campaign so the lobby marks the Ford CLEARED (guarded — the autoload
+	# may be absent when the scene is booted standalone or under a headless test harness).
+	var c := get_node_or_null("/root/Campaign")
+	if c:
+		c.mark_completed(scene_file_path)
 	hud.show_banner("THE FORD HOLDS!", Color(0.5, 0.95, 0.55))
 	Impact.popup("VICTORY — THE FORD IS YOURS", arthur.global_position + Vector2(0, -64),
 		Color(1.0, 0.85, 0.3), 1.6)
@@ -320,11 +331,21 @@ func _defeat_ford() -> void:
 	hud.show_banner("THE FORD IS LOST", Color(0.95, 0.45, 0.4))
 	_show_score(false)
 
-## Reveal the end-of-battle KO + time overlay with the live Impact KO count and the
-## elapsed battle time. Minimal hook for the score-screen unit; the panel owns its own UI.
+## Reveal the end-of-battle result overlay and hand it the campaign context (the next battle to
+## advance to + that battle's story beat), exactly as BattleMap._show_score does. Also locks the
+## pause overlay — the result screen owns the Next / Retry / Return-to-Lobby choices now.
 func _show_score(victory: bool) -> void:
+	if _pause and _pause.has_method("lock"):
+		_pause.lock()
+	var next_path := ""
+	var blurb := ""
+	var c := get_node_or_null("/root/Campaign")
+	if c:
+		# On a win, advance to the next battle; on a loss the player retries THIS one.
+		next_path = c.next_path(scene_file_path) if victory else ""
+		blurb = c.blurb_for(next_path) if (victory and next_path != "") else c.blurb_for(scene_file_path)
 	if _score_screen:
-		_score_screen.show_result(victory, Impact.kills, _elapsed)
+		_score_screen.show_result(victory, Impact.kills, _elapsed, next_path, blurb)
 
 # ── bridge (a level-specific destructible) ──────────────────────────────────
 
