@@ -34,6 +34,10 @@ func _ready() -> void:
 	_bank["water_splash"]      = _tone(680.0, 0.18, 0.32, 11.0, 0.90, -260.0)
 	_bank["water_wheel_creak"] = _tone(130.0, 0.34, 0.22, 5.0, 0.55, 26.0)
 	_bank["stone_flow_gain"]   = _tone(620.0, 0.26, 0.40, 7.0, 0.10, 320.0)
+	# Big-moment stingers: a bright rising arpeggio on a win, a low somber knell on a loss.
+	# Each is its OWN AudioStreamWAV so the win/loss event maps to a real voice like the rest.
+	_bank["victory_fanfare"]   = _fanfare()
+	_bank["defeat_knell"]      = _tone(70.0, 1.10, 0.62, 1.7, 0.10, -22.0)
 	Audio.sfx.connect(_on_sfx)
 
 func _on_sfx(event: StringName, _world_pos: Vector2) -> void:
@@ -61,6 +65,35 @@ func _tone(freq: float, dur: float, vol: float, decay: float, noise: float, glid
 		var sample: float = sin(phase) * (1.0 - noise) + (randf() * 2.0 - 1.0) * noise
 		var v := clampf(sample * env * vol, -1.0, 1.0)
 		data.encode_s16(i * 2, int(v * 32767.0))
+	var w := AudioStreamWAV.new()
+	w.format = AudioStreamWAV.FORMAT_16_BITS
+	w.mix_rate = RATE
+	w.stereo = false
+	w.data = data
+	return w
+
+## A bright VICTORY fanfare: a rising major arpeggio (a triumphant chime climbing the
+## chord) with a soft per-note attack + decay. Built the same way as `_tone` — one mono
+## 16-bit PCM buffer — so it plays through the same voice pool with no special-casing.
+func _fanfare() -> AudioStreamWAV:
+	# Rising major arpeggio (C5 E5 G5 C6), each note held for `note_dur`.
+	var notes := [523.25, 659.25, 783.99, 1046.50]
+	var note_dur := 0.18
+	var n := int(note_dur * RATE)
+	var data := PackedByteArray()
+	data.resize(notes.size() * n * 2)
+	var idx := 0
+	for ni in notes.size():
+		var freq: float = notes[ni]
+		var phase := 0.0
+		for i in n:
+			var t := float(i) / RATE
+			# A quick attack then an exponential tail so each note rings, not clicks.
+			var env: float = clampf(t / 0.012, 0.0, 1.0) * exp(-4.5 * t)
+			phase += TAU * freq / RATE
+			var v := clampf(sin(phase) * env * 0.55, -1.0, 1.0)
+			data.encode_s16(idx * 2, int(v * 32767.0))
+			idx += 1
 	var w := AudioStreamWAV.new()
 	w.format = AudioStreamWAV.FORMAT_16_BITS
 	w.mix_rate = RATE

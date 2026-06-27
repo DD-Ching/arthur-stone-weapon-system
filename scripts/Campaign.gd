@@ -167,6 +167,45 @@ func next_path(path: String) -> String:
 		j += 1
 	return ""
 
+## True once EVERY stage of `section` has been cleared. The campaign finale + any
+## "section complete" banner read this (e.g. the legend is done when all SEC_ARTHUR
+## battles are won). Empty/unknown section → false (nothing to complete).
+func is_section_complete(section: String) -> bool:
+	var any := false
+	for s in STAGES:
+		if String(s["section"]) != section:
+			continue
+		any = true
+		if not _cleared.has(String(s["id"])):
+			return false
+	return any
+
+## True when `path` is the LAST stage of the Arthurian legend (SEC_ARTHUR) — the finale.
+## Clearing it completes the legend, so the score screen shows the grand finale banner.
+func is_finale(path: String) -> bool:
+	return path != "" and path == _last_section_path(SEC_ARTHUR)
+
+## The scene path of the last stage in `section` (in play order), or "" if the section is empty.
+func _last_section_path(section: String) -> String:
+	var last := ""
+	for s in STAGES:
+		if String(s["section"]) == section:
+			last = String(s["path"])
+	return last
+
+## How many distinct stages have been cleared (matched to the stage table, so stray ids
+## from an older save don't inflate the count). Pairs with total() for "X / N" progress.
+func cleared_count() -> int:
+	var c := 0
+	for s in STAGES:
+		if _cleared.has(String(s["id"])):
+			c += 1
+	return c
+
+## Total number of stages in the campaign (the denominator for cleared_count()).
+func total() -> int:
+	return STAGES.size()
+
 ## Wipe all progress (new game / tests).
 func reset() -> void:
 	_cleared = {}

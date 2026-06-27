@@ -424,6 +424,15 @@ jobs:
           godot --headless --path . res://tests/CampaignTest.tscn --quit-after 600 | tee campaign.log
           grep -q "CAMPAIGN_VERDICT PASS" campaign.log
 
+      - name: Run FinaleAudioTest (victory/defeat audio + campaign finale)
+        # Asserts the big-moment finale: ScoreScreen.show_result chooses the victory_fanfare event
+        # on a win + the defeat_knell on a loss (event NAME, headless has no audio device) and both
+        # voices are registered in SoundBank; Campaign.is_section_complete(SEC_ARTHUR) flips true
+        # once every Arthurian battle is cleared and is_finale(last) is true; cleared_count tracks.
+        run: |
+          godot --headless --path . res://tests/FinaleAudioTest.tscn --quit-after 600 | tee finale.log
+          grep -q "FINALE_VERDICT PASS" finale.log
+
       - name: Run MenuListTest (reusable overlay navigation)
         # Asserts the shared MenuList component (PauseMenu + ScoreScreen lean on it): set_items,
         # wrapping focus, and activate() emitting chosen(id).
