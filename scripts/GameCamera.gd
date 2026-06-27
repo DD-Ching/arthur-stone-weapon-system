@@ -18,11 +18,20 @@ var _shake := 0.0
 var _shake_dir := Vector2.ZERO
 var _base_offset := Vector2.ZERO   ## the look-ahead offset (shake is added on top of this)
 var _zoom_kick := 0.0              ## transient punch-zoom amount, eases back to 0
+var _eff_zoom := 1.5               ## base_zoom scaled DOWN on short (phone) screens — see _recompute_zoom
 
 func _ready() -> void:
 	make_current()
-	zoom = Vector2(base_zoom, base_zoom)
+	_recompute_zoom()
+	zoom = Vector2(_eff_zoom, _eff_zoom)
 	reset_smoothing()
+	get_viewport().size_changed.connect(_recompute_zoom)
+
+## Effective zoom = base zoom scaled down on a SHORT viewport (a phone in landscape, ~390px tall)
+## so a tight screen still shows enough battlefield. Desktop (720 tall) → ratio 1.0 → unchanged.
+func _recompute_zoom() -> void:
+	var vp := get_viewport_rect().size
+	_eff_zoom = base_zoom * clampf(vp.y / 720.0, 0.72, 1.0)
 
 ## Clamp the camera to the world so it never shows past the bounding wall band. Called once by
 ## BattleMap with _world_bounds(). Godot centres automatically when the world is smaller than the view.
@@ -64,7 +73,7 @@ func _process(delta: float) -> void:
 	# Punch-zoom: ease the kick back to 0, so zoom dips in then recovers.
 	if _zoom_kick > 0.001:
 		_zoom_kick = lerpf(_zoom_kick, 0.0, clampf(8.0 * delta, 0.0, 1.0))
-		var z := base_zoom * (1.0 - _zoom_kick)
+		var z := _eff_zoom * (1.0 - _zoom_kick)
 		zoom = Vector2(z, z)
-	elif not zoom.is_equal_approx(Vector2(base_zoom, base_zoom)):
-		zoom = Vector2(base_zoom, base_zoom)
+	elif not zoom.is_equal_approx(Vector2(_eff_zoom, _eff_zoom)):
+		zoom = Vector2(_eff_zoom, _eff_zoom)
