@@ -589,3 +589,13 @@ jobs:
         run: |
           godot --headless --path . res://tests/TransitionTest.tscn --quit-after 600 | tee transition.log
           grep -q "TRANSITION_VERDICT PASS" transition.log
+      - name: Run mobile-perf test (touchscreen performance profile)
+        # Asserts the touch performance dials that keep a phone smooth at peak swarm WITHOUT touching
+        # desktop: Impact.DEBRIS_BUDGET is a positive number defaulting to the desktop 90 and
+        # apply_mobile_profile lowers it to the mobile cap (and only ever lowers), a BattleMap's
+        # _apply_mobile_profile lowers density (<=1.6) + active_cap (<=80) and never raises a value
+        # already below the cap, and the desktop path (no touchscreen, no force) leaves every dial
+        # byte-identical — so every other test, run desktop, sees unchanged numbers.
+        run: |
+          godot --headless --path . res://tests/MobilePerfTest.tscn --quit-after 600 | tee mobileperf.log
+          grep -q "MOBILE_PERF_VERDICT PASS" mobileperf.log

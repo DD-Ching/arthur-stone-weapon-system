@@ -99,6 +99,13 @@ var _cached_avoid := Vector2.RIGHT  ## last computed avoidance direction (reused
 var _cached_avoid_in := Vector2.RIGHT  ## the desired heading the cached avoid was computed for
 var _rerouting := false          ## currently steering around danger, not pursuing the foe
 var _space: PhysicsDirectSpaceState2D = null  ## world physics space, refreshed on the retarget tick
+## TOUCH OFF-SCREEN REDRAW SKIP (mobile swarm perf, see _process). On a touchscreen ONLY, a unit far
+## from Arthur (the camera target) is off the phone's view, so re-tessellating its silhouette is wasted
+## work. `_touch` is the device check, cached once so it costs nothing per frame; on DESKTOP it is
+## false and the whole skip path is dead, so the dirty-redraw stays byte-identical there. `_offscreen`
+## remembers last frame so the unit forces ONE redraw the moment it scrolls back on-screen.
+static var _touch := DisplayServer.is_touchscreen_available()
+var _offscreen := false           ## was off the phone's view last frame (touch only)
 
 ## The faction's banner colour, used by the drawing pass to tint a unit so allegiance reads at a
 ## glance (no gameplay effect). Arthurian: Camelot gold / Saxon moss-green / Mordred's rebels
@@ -647,10 +654,38 @@ func _process(delta: float) -> void:
 			redraw = true                      # telegraph animates
 		elif absf(angle_difference(_face, _last_face)) > 0.04 or _ai != _last_ai:
 			redraw = true
+	# TOUCH-ONLY off-screen skip: on a phone, a unit far from Arthur (the camera target) is off the
+	# view, so its silhouette change isn't seen this frame — suppress the redraw to save the swarm cost.
+	# Force ONE redraw the moment it scrolls back on-screen so it isn't drawn stale. Dead on DESKTOP
+	# (_touch == false), so the gate above is byte-identical there. A cheap squared-distance check.
+	if _touch:
+		var off := _is_offscreen()
+		if off:
+			redraw = false                         # off the phone's view → don't re-tessellate
+		elif _offscreen:
+			redraw = true                          # just re-entered the view → catch up once
+		_offscreen = off
 	if redraw:
 		_last_face = _face
 		_last_ai = _ai
 		queue_redraw()
+
+## Is this unit far enough from Arthur (the camera target) to be off the phone's view? A cheap
+## squared-distance check against Arthur — no viewport/camera maths. The CAMERA isn't always centred
+## on Arthur (BattleMap clamps it to the world bounds, so it pins at an edge when Arthur defends a
+## wall); OFF_SCREEN_R (1600px) is set well beyond the worst-case Arthur-to-visible-edge distance at
+## that pinned state + the mobile zoom (~1180px), so a genuinely VISIBLE unit is never skipped — only
+## the safely-distant ones are (which is where the swarm saving lives anyway; a map is ~1280x900).
+## Arthur (the one "player") is cached in a SHARED static ref, validated cheaply, so this never does a
+## per-frame group scan at swarm scale. With no player (a sandbox / a test) nothing is off-screen.
+const OFF_SCREEN_R := 1600.0
+static var _cam_target: Node2D = null   ## shared camera target (Arthur); cached, refreshed if freed
+func _is_offscreen() -> bool:
+	if _cam_target == null or not is_instance_valid(_cam_target):
+		_cam_target = get_tree().get_first_node_in_group("player")
+	if _cam_target == null or not is_instance_valid(_cam_target):
+		return false
+	return global_position.distance_squared_to(_cam_target.global_position) > OFF_SCREEN_R * OFF_SCREEN_R
 
 # ── drawing ─────────────────────────────────────────────────────────────────
 
