@@ -16,6 +16,22 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 
 ---
 
+## [0.21.1] — 2026-06-27
+
+**Hotfix: the battle is always winnable.**
+
+### Fixed
+- **Out-of-bounds softlock** — a hard knockback could fling a light enemy clean through a thin
+  (24px) world wall or its unsealed corner notch; a stranded enemy stayed in the target group
+  forever, so the last one could never be killed and the win never fired. Now: the world walls
+  are thick (64px) and overlap at the corners, enemy launch speed is capped (no single-step
+  tunnelling), and a **win-safety net** hauls any raider that still ends up outside the world
+  back in-bounds (or retires it) every scan — so a battle can never become unwinnable.
+- **Stuck on invisible walls** — wall-avoidance now re-probes every frame while a unit is in
+  wall contact (instead of every 3rd), so units slide off walls instead of grinding to a halt.
+
+---
+
 ## [0.21.0] — 2026-06-27
 
 **A physical, breakable, swarming world.** The battlefield becomes a place you can break:

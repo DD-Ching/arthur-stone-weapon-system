@@ -40,6 +40,7 @@ var _lost := false
 var _started := false
 var _breaches := 0
 var _breached := {}
+var _stray_t := {}                          ## id -> scans a target has been out of bounds (win-safety net)
 var _ward = null                           ## a protected unit (ProtectBanner); null = none
 var _had_ward := false                      ## a live ward was once seen (so a vanished ward = fallen)
 var _score_screen = null
@@ -126,6 +127,7 @@ func _physics_process(delta: float) -> void:
 		_update_waves()
 		if max_breaches > 0:
 			_check_breaches()
+		_recover_strays()
 		_evaluate()
 
 func _wave_count() -> int:
@@ -318,12 +320,49 @@ func _add_zone(r: Rect2, drag: float, current: Vector2, dangerous: bool, drown: 
 	add_child(z)
 	return z
 
+## WIN-SAFETY NET — the guarantee that a battle is ALWAYS winnable. Any raider that ends up OUTSIDE
+## the world (launched through/over the wall, a physics fluke, wedged in a corner) is pulled straight
+## back to the nearest in-bounds point with its velocity killed, so the LAST enemy can never be
+## stranded off-map where you can't reach it (which would stall the win forever). If one keeps
+## escaping every scan it is retired (counted as a KO) after a short grace, as a final backstop.
+func _recover_strays() -> void:
+	if _won or _lost:
+		return
+	var b := _world_bounds()
+	var safe := b.grow(60.0)
+	for e in get_tree().get_nodes_in_group("targets"):
+		if not is_instance_valid(e) or ("_dead" in e and e._dead):
+			continue
+		# Only reclaim ACTIVE combatants — a flung raider is always ai_enabled. Passive units
+		# (training dummies, deliberately-placed fixtures) don't wander off-map, so leave them be.
+		if "ai_enabled" in e and not e.ai_enabled:
+			continue
+		if safe.has_point(e.global_position):
+			_stray_t.erase(e.get_instance_id())
+			continue
+		# Out of bounds → haul it back inside and stop it dead.
+		e.global_position = Vector2(
+			clampf(e.global_position.x, b.position.x + 30.0, b.end.x - 30.0),
+			clampf(e.global_position.y, b.position.y + 30.0, b.end.y - 30.0))
+		if e is RigidBody2D:
+			e.linear_velocity = Vector2.ZERO
+			e.angular_velocity = 0.0
+		var id := e.get_instance_id()
+		_stray_t[id] = int(_stray_t.get(id, 0)) + 1
+		if _stray_t[id] > 8 and e.has_method("_defeat"):   # ~1.2s of repeated escapes → retire it
+			e._defeat()
+			_stray_t.erase(id)
+
 func _frame_walls(b: Rect2) -> void:
-	var t := 24.0
-	_wall(Rect2(b.position.x, b.position.y - t, b.size.x, t))   # top
-	_wall(Rect2(b.position.x, b.end.y, b.size.x, t))            # bottom
-	_wall(Rect2(b.position.x - t, b.position.y, t, b.size.y))   # left
-	_wall(Rect2(b.end.x, b.position.y, t, b.size.y))            # right
+	# THICK (64) walls that OVERLAP at the corners (top/bottom run the full width + t each end) so
+	# there are no corner notches a hard knockback could squeeze a body through. Combined with the
+	# Enemy launch-speed clamp, a max hit can't tunnel a light body across this band in one step.
+	# The walls sit OUTSIDE the world bounds (off-screen), so thickening them changes no visuals.
+	var t := 64.0
+	_wall(Rect2(b.position.x - t, b.position.y - t, b.size.x + t * 2.0, t))   # top
+	_wall(Rect2(b.position.x - t, b.end.y, b.size.x + t * 2.0, t))            # bottom
+	_wall(Rect2(b.position.x - t, b.position.y, t, b.size.y))                 # left
+	_wall(Rect2(b.end.x, b.position.y, t, b.size.y))                         # right
 
 func _wall(r: Rect2) -> void:
 	var cs := CollisionShape2D.new()
