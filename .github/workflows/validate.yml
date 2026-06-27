@@ -477,3 +477,19 @@ jobs:
         run: |
           godot --headless --path . res://tests/PhysicsFoundationTest.tscn --quit-after 600 | tee physfound.log
           grep -q "PHYSFOUND_VERDICT PASS" physfound.log
+
+      - name: Run archer-volley test (Saxon archers lob the shared javelin)
+        # Asserts the archer-volley raiders: a few ai_enabled SaxonArchers placed within sight of
+        # a target throw the shared Javelin projectile (at least one appears), and the concurrent
+        # projectile count stays bounded (they self-free instead of flooding the scene).
+        run: |
+          godot --headless --path . res://tests/ArcherVolleyTest.tscn --quit-after 600 | tee archervolley.log
+          grep -q "ARCHERVOLLEY_VERDICT PASS" archervolley.log
+
+      - name: Run deflect test (raised stone breaks the volley)
+        # Asserts the stone-deflects-arrows contract: a Javelin meeting a "stone_weapon" body goes
+        # spent WITHOUT striking its target and pays the DEFLECT flow reward, while a javelin meeting
+        # a normal opposing foe still lands — the deflect is the stone's privilege, not a blanket miss.
+        run: |
+          godot --headless --path . res://tests/DeflectTest.tscn --quit-after 600 | tee deflect.log
+          grep -q "DEFLECT_VERDICT PASS" deflect.log
