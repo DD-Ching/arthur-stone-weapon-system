@@ -22,6 +22,7 @@ signal musou_changed(current: float, maximum: float)   ## the musou rage gauge �
 const SHOCKWAVE := preload("res://scenes/Shockwave.tscn")
 const BEAM := preload("res://scenes/Beam.tscn")
 const MUSOU_CHARGE_MAX := 2.5   ## seconds of beam a full gauge buys (charge longer, spray longer)
+const HAPTIC_HIT_FLOOR := 12.0  ## min hit-shake that buzzes a touch device (a meaty clash/slam, not every light tap)
 
 @export_group("Movement")
 @export var max_speed := 158.0
@@ -126,9 +127,14 @@ func take_damage(amount: float, from_pos: Vector2 = Vector2.ZERO) -> bool:
 func _handle_aim() -> void:
 	var tc = _touch_controls()
 	if tc and tc.active_ui:
+		# TOUCH-SWING ASSIST: circling a thumb is hard, so while the aim-stick is held the
+		# weapon ramps a barely-circling aim up to a usable swing (pointer play is untouched
+		# because this only ever turns on under an active touch stick).
+		weapon.set_touch_assist(tc.aim_active)
 		if tc.aim_active:
 			weapon.set_aim_target(tc.aim_angle)
 		return
+	weapon.set_touch_assist(false)
 	var to_mouse := get_global_mouse_position() - global_position
 	if to_mouse.length() > 4.0:
 		weapon.set_aim_target(to_mouse.angle())
@@ -270,6 +276,13 @@ func _on_weapon_hit(shake_strength: float, _count: int) -> void:
 	# so spin gets only the rumble, not the hit-stop.
 	if weapon.state != StoneWeapon.State.SPIN:
 		_do_hit_stop(clampf(shake_strength * 0.006, 0.02, 0.10))
+	# JUICE (touch only): a short rumble on a meaty clash/slam — NOT on the constant spin
+	# whirl (which would buzz the phone forever). Guarded — desktop has no touch controls
+	# (null) and the method is optional, so this is a clean no-op there.
+	if weapon.state != StoneWeapon.State.SPIN and shake_strength >= HAPTIC_HIT_FLOOR:
+		var tc = _touch_controls()   # reuse the cached lookup, not a fresh group scan per hit
+		if tc and tc.has_method("_haptic"):
+			tc._haptic(12)
 
 ## A brief, real-time freeze on impact — the cheapest way to make a hit feel like
 ## it connected with something heavy. Bigger hits freeze a touch longer. The
@@ -312,13 +325,18 @@ func fire_musou_beam(charge: float) -> void:
 		scene = get_parent()   # headless harnesses often add Arthur straight under the test root
 	if scene == null:
 		return
+	var charged := clampf(charge, 0.4, MUSOU_CHARGE_MAX)
 	var beam = BEAM.instantiate()   # untyped: a Node2D we anchor to Arthur
 	scene.add_child(beam)
-	beam.fire(self, clampf(charge, 0.4, MUSOU_CHARGE_MAX))
+	beam.fire(self, charged)
+	# CHARGE PAYOFF: a longer charge releases a heavier beam, so the unleash kicks the camera
+	# harder too — a full gauge snaps the frame, a flick barely nudges it. (Beam.gd scales its
+	# own reach/width/damage by the same charge.)
+	var power := clampf(charged / MUSOU_CHARGE_MAX, 0.0, 1.0)
 	if camera and camera.has_method("kick"):
-		camera.call("kick", 26.0)
+		camera.call("kick", lerpf(16.0, 40.0, power))
 	if camera and camera.has_method("add_shake"):
-		camera.call("add_shake", 16.0)
+		camera.call("add_shake", lerpf(10.0, 22.0, power), Vector2.RIGHT.rotated(weapon.aim_angle))
 	Audio.play("wall_crush", global_position)
 
 ## Back-compat alias (HUD / headless test / a build that calls it directly): empty the gauge and
