@@ -287,6 +287,14 @@ jobs:
           godot --headless --path . res://tests/ChangbanTest.tscn --quit-after 600 | tee changban.log
           grep -q "CHANGBAN_VERDICT PASS" changban.log
 
+      - name: Run map-decor test (長坂坡 Changban dressed, retreat lane kept clear)
+        # Asserts the Changban escort map boots with no parse/script error (Arthur + HUD up), the
+        # field is DRESSED (banners/drums in "decor" + shovable crates/rocks placed), and the
+        # central retreat corridor is kept clear so the escort/ward path isn't blocked.
+        run: |
+          godot --headless --path . res://tests/MapDecorTest.tscn --quit-after 600 | tee mapdecor.log
+          grep -q "MAPDECOR_VERDICT PASS" mapdecor.log
+
       - name: Run Yellow Turban map test (黃巾 survival + SurviveObjective)
         run: |
           godot --headless --path . res://tests/YellowTurbanTest.tscn --quit-after 600 | tee yellowturban.log
