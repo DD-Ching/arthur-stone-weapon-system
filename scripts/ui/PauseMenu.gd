@@ -103,4 +103,14 @@ func _on_chosen(id: String) -> void:
 			get_tree().reload_current_scene()
 		"lobby":
 			get_tree().paused = false
-			get_tree().change_scene_to_file(STAGE_SELECT)
+			_goto(STAGE_SELECT)
+
+## Leave via the shared scene-fade when the Transition autoload is present (it is process_mode
+## ALWAYS, so the wipe still runs even though we just toggled the tree out of pause), else fall
+## straight back to a hard cut so a build / headless run WITHOUT the autoload still navigates.
+func _goto(path: String) -> void:
+	var tr := get_node_or_null("/root/Transition")
+	if tr:
+		tr.change_scene(path)
+	else:
+		get_tree().change_scene_to_file(path)
