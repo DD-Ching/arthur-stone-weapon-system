@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3]
+
+; The marquee explosive prop: a barrel that, when smashed, fires an Impact.explode ring AND drops a
+; FireZone burning pool (see scripts/props/FireBarrel.gd). A config of Breakable — props layer 8,
+; mask 31, mass + damping copied from Crate.tscn.
+
+[ext_resource type="Script" path="res://scripts/props/FireBarrel.gd" id="1_firebarrel"]
+
+[sub_resource type="RectangleShape2D" id="barrel_shape"]
+size = Vector2(30, 36)
+
+[node name="FireBarrel" type="RigidBody2D"]
+collision_layer = 8
+collision_mask = 31
+mass = 1.2
+gravity_scale = 0.0
+linear_damp = 3.0
+angular_damp = 3.0
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_firebarrel")
+max_health = 26.0
+radius = 16.0
+debris_count = 6
+chunk_color = Color(0.34, 0.22, 0.12, 1)
+smash_label = "BOOM!"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("barrel_shape")
