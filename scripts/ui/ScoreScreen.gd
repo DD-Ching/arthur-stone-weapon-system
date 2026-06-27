@@ -176,10 +176,19 @@ func _on_chosen(id: String) -> void:
 	match id:
 		"next":
 			if _next_path != "" and ResourceLoader.exists(_next_path):
-				get_tree().change_scene_to_file(_next_path)
+				_goto(_next_path)
 			else:
-				get_tree().change_scene_to_file(STAGE_SELECT)
+				_goto(STAGE_SELECT)
 		"retry":
 			get_tree().reload_current_scene()
 		"lobby":
-			get_tree().change_scene_to_file(STAGE_SELECT)
+			_goto(STAGE_SELECT)
+
+## Navigate through the shared scene-fade when the Transition autoload is present, else hard-cut so
+## a build / headless run WITHOUT the autoload still reaches the next scene.
+func _goto(path: String) -> void:
+	var tr := get_node_or_null("/root/Transition")
+	if tr:
+		tr.change_scene(path)
+	else:
+		get_tree().change_scene_to_file(path)

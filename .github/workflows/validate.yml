@@ -581,3 +581,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/SlamAudioTest.tscn --quit-after 600 | tee slamaudio.log
           grep -q "SLAMAUDIO_VERDICT PASS" slamaudio.log
+      - name: Run transition test (shared scene-change fade)
+        # Asserts the Transition autoload (the hard-cut killer): it exposes change_scene(path), owns
+        # an overlay CanvasLayer + full-rect ColorRect cover, is process_mode ALWAYS (so it fades
+        # while the tree is paused — PauseMenu needs that), and arms the wipe on a valid path while
+        # treating an empty / missing path as a guarded no-op. The real scene swap is stubbed.
+        run: |
+          godot --headless --path . res://tests/TransitionTest.tscn --quit-after 600 | tee transition.log
+          grep -q "TRANSITION_VERDICT PASS" transition.log
