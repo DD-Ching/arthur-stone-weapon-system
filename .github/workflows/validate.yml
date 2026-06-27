@@ -556,3 +556,12 @@ jobs:
         run: |
           godot --headless --path . res://tests/DeflectTest.tscn --quit-after 600 | tee deflect.log
           grep -q "DEFLECT_VERDICT PASS" deflect.log
+
+      - name: Run slam-audio test (the heaviest move finally has a voice)
+        # Asserts the SLAM voice + combat-audio additions: SoundBank registers the new "slam"
+        # voice (a real non-empty procedural stream) plus the cheap "big_swing" / "combo_tier"
+        # extras without dropping the originals, firing the events routes cleanly (headless has
+        # no audio device — event path, not playback), and a real slam impact fires "slam".
+        run: |
+          godot --headless --path . res://tests/SlamAudioTest.tscn --quit-after 600 | tee slamaudio.log
+          grep -q "SLAMAUDIO_VERDICT PASS" slamaudio.log
