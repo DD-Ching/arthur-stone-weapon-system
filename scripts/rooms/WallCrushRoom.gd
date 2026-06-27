@@ -45,6 +45,10 @@ const SPOTS := [
 	{"scene": SHIELD, "pos": Vector2(0.0, 272.0), "into": Vector2(0.0, 1.0)},     # bottom nub
 ]
 
+## A lenient time budget to clear the alcoves. Let it run out (or let Arthur fall) and the room
+## ends in a DEFEAT (ScoreScreen → Retry) instead of dead-ending forever.
+@export var time_limit := 75.0
+
 @onready var arthur = $Arthur
 @onready var hud = $Hud
 @onready var walls: StaticBody2D = $Walls
@@ -55,7 +59,10 @@ var _enemies: Array = []          ## the raiders placed at spawn (for the live c
 var _total := 0
 var _crush_kos := 0               ## raiders finished while pinned to a wall
 var _won := false
+var _lost := false
 var _scan_cd := 0.0
+var _time_left := 0.0
+var _elapsed := 0.0
 
 func _ready() -> void:
 	Impact.reset()
@@ -67,6 +74,12 @@ func _ready() -> void:
 	_objectives = ObjectiveManager.new()
 	_objectives.add(ClearFieldObjective.new())
 	hud.bind(arthur)
+	# Esc / mobile MENU → Resume / Restart / Return to Lobby, so the room is no longer a dead-end.
+	RoomFinish.add_pause_menu(self)
+	# A fallen Arthur is also a loss (reuse his existing died signal).
+	if arthur.has_signal("died"):
+		arthur.died.connect(_on_arthur_died)
+	_time_left = time_limit
 	Impact.popup("WALL-CRUSH TRAINING", arthur.global_position + Vector2(0, -110),
 		Color(1.0, 0.55, 0.25), 1.4)
 	Impact.popup("PIN THEM TO THE WALL", arthur.global_position + Vector2(0, -78),
@@ -115,6 +128,9 @@ func _build_status_label() -> void:
 	layer.add_child(_status)
 
 func _physics_process(delta: float) -> void:
+	if not (_won or _lost):
+		_elapsed += delta
+		_time_left = maxf(0.0, _time_left - delta)
 	_scan_cd -= delta
 	if _scan_cd > 0.0:
 		return
@@ -122,6 +138,10 @@ func _physics_process(delta: float) -> void:
 	_tally_crush_kos()
 	_update_status()
 	_evaluate()
+	# Lenient lose: the alcoves were never cleared in time. End in a DEFEAT screen (Retry /
+	# Lobby) rather than leaving the player stuck against an unbeaten wall of raiders.
+	if not (_won or _lost) and _time_left <= 0.0:
+		_defeat()
 
 ## Live count of raiders still standing (a defeated Enemy sets `_dead` immediately, then
 ## lingers to fade — count only the live ones).
@@ -149,20 +169,40 @@ func _tally_crush_kos() -> void:
 			_crush_kos += 1
 
 func _evaluate() -> void:
-	if _won:
+	if _won or _lost:
 		return
 	_objectives.evaluate({"alive": _alive(), "total": _total})
 	if _objectives.won:
 		_victory()
 
 func _victory() -> void:
-	if _won:
+	if _won or _lost:
 		return
 	_won = true
 	_update_status()
 	hud.show_banner("ROOM CLEARED!", Color(0.5, 0.95, 0.55))
 	Impact.popup("ROOM CLEARED — %d / %d BY WALL CRUSH" % [_crush_kos, _total],
 		arthur.global_position + Vector2(0, -64), Color(1.0, 0.85, 0.3), 1.5)
+	# Mark the stage cleared + reveal the result overlay (Next / Lobby) via the shared glue.
+	RoomFinish.finish(self, true, Impact.kills, _elapsed)
+
+func _defeat() -> void:
+	if _won or _lost:
+		return
+	_lost = true
+	_update_status()
+	hud.show_banner("OUT OF TIME", Color(0.95, 0.45, 0.4))
+	Impact.popup("OUT OF TIME", arthur.global_position + Vector2(0, -64),
+		Color(0.95, 0.45, 0.4), 1.4)
+	RoomFinish.finish(self, false, Impact.kills, _elapsed)
+
+func _on_arthur_died() -> void:
+	if _won or _lost:
+		return
+	_lost = true
+	_update_status()
+	hud.show_banner("ARTHUR HAS FALLEN", Color(0.95, 0.4, 0.4))
+	RoomFinish.finish(self, false, Impact.kills, _elapsed)
 
 func _update_status() -> void:
 	if _status == null:

@@ -29,6 +29,11 @@ const ROCK := preload("res://scenes/Rock.tscn")
 const FENCE := preload("res://scenes/terrain/Fence.tscn")
 const FACTION_BANNER := preload("res://scenes/decor/FactionBanner.tscn")
 const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
+const SAXON_ARCHER := preload("res://scenes/villains/SaxonArcher.tscn")  # lobs javelins — the stone can deflect them
+const BARREL := preload("res://scenes/props/Barrel.tscn")
+const HAYSTACK := preload("res://scenes/props/Haystack.tscn")
+const CLAY_POT := preload("res://scenes/props/ClayPot.tscn")
+const FIRE_BARREL := preload("res://scenes/props/FireBarrel.tscn")
 
 ## How long the hilltop hold lasts, and the body-count that also wins it (either bar fills → win).
 ## Exported so a headless test can drive a short, deterministic survival window.
@@ -97,6 +102,16 @@ func _build_decor() -> void:
 		_prop(ROCK, p)
 	_prop(CRATE, Vector2(-500.0, 200.0))
 	_prop(CRATE, Vector2(500.0, 200.0))
+	# Smashable battlefield materials on the flanks — barrels, haystacks and pots to shatter, plus
+	# a tactical fire-barrel each side (smash it to blow a knot of climbing Saxons off the slope).
+	for p in [Vector2(-450.0, 150.0), Vector2(450.0, 150.0), Vector2(-380.0, 255.0), Vector2(380.0, 255.0)]:
+		_prop(BARREL, p)
+	for p in [Vector2(-540.0, 150.0), Vector2(540.0, 150.0)]:
+		_prop(HAYSTACK, p)
+	for p in [Vector2(-300.0, 260.0), Vector2(300.0, 260.0), Vector2(-250.0, 175.0), Vector2(250.0, 175.0)]:
+		_prop(CLAY_POT, p)
+	_prop(FIRE_BARREL, Vector2(-410.0, 110.0))
+	_prop(FIRE_BARREL, Vector2(410.0, 110.0))
 
 func _drum(at: Vector2) -> void:
 	var d = WAR_DRUM.instantiate()
@@ -186,11 +201,11 @@ func _horde_wave(label: String, idx: int, n: int, lane: float) -> Wave:
 	var w := Wave.new()
 	var roster: Array[PackedScene] = [LIGHT]
 	if idx >= 4:
-		roster = [LIGHT, SPEARMAN, HEAVY, BRUTE, LIGHT, SPEARMAN]
+		roster = [LIGHT, SPEARMAN, SAXON_ARCHER, HEAVY, BRUTE, LIGHT, SAXON_ARCHER, SPEARMAN]
 	elif idx >= 3:
-		roster = [LIGHT, SPEARMAN, HEAVY, LIGHT]
+		roster = [LIGHT, SPEARMAN, SAXON_ARCHER, HEAVY, LIGHT]
 	elif idx >= 2:
-		roster = [LIGHT, SPEARMAN, LIGHT]
+		roster = [LIGHT, SPEARMAN, SAXON_ARCHER, LIGHT]
 	elif idx >= 1:
 		roster = [LIGHT, SPEARMAN]
 	if roster.size() == 1:

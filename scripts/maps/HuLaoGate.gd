@@ -36,6 +36,9 @@ func _arthur_start() -> Vector2:
 func _world_bounds() -> Rect2:
 	return Rect2(-640.0, -440.0, 1280.0, 900.0)
 
+func _build_decor() -> void:
+	_scatter_battlefield_props()   # smashable barrels/pots/hay + a fire-barrel on the flanks
+
 # ── walls: bounding frame + an interior GATE funnel near the top ───────────────
 func _build_walls() -> void:
 	var b := _world_bounds()

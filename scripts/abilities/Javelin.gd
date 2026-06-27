@@ -23,9 +23,10 @@ func _ready() -> void:
 	monitoring = true
 	monitorable = false
 	collision_layer = 0
-	# arthur(bit2=2) + enemies(bit3=4): the two teams that can be foes. Walls/props are
-	# ignored on purpose — a javelin flies over scenery in this top-down toy.
-	collision_mask = 2 | 4
+	# arthur(bit2=2) + enemies(bit3=4): the two teams that can be foes; + weapon(bit5=16) so the
+	# swung STONE can intercept the shaft. Walls/props are still ignored — a javelin flies over
+	# scenery in this top-down toy.
+	collision_mask = 2 | 4 | 16
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
 
@@ -49,6 +50,12 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if _spent or not is_instance_valid(body):
 		return
+	# The swung stone (its solid body, only enabled when parked/slow) DEFLECTS the shaft — the
+	# stone is a shield as well as a club. Checked before the combatant branch so a raised stone
+	# stops the arrow no matter whose side threw it.
+	if body.is_in_group("stone_weapon"):
+		_deflect()
+		return
 	if body.is_in_group(_team):
 		return                                  # never hit the thrower's own side
 	var dir := _vel.normalized()
@@ -59,6 +66,14 @@ func _on_body_entered(body: Node) -> void:
 	else:
 		return                                  # not a combatant (shouldn't happen via mask)
 	Impact.popup("JAVELIN", global_position + Vector2(0.0, -22.0), Color(0.85, 0.8, 0.6))
+	_expire()
+
+## Blocked by the stone: a spark + a small Stone-Flow reward for a clean block, then gone.
+func _deflect() -> void:
+	Impact.popup("DEFLECT", global_position + Vector2(0.0, -22.0), Color(0.82, 0.9, 1.0), 1.1)
+	Impact.add_flow(4.0)
+	Impact.impact_fx.emit(0.3)
+	Audio.play("shield_block", global_position)
 	_expire()
 
 ## Stop, hide, and free next frame. We don't free inside the signal so a body_entered

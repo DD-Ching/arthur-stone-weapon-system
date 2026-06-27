@@ -88,6 +88,14 @@ jobs:
           godot --headless --path . res://tests/HoldFordTest.tscn --quit-after 600 | tee holdford.log
           grep -q "HOLDFORD_VERDICT PASS" holdford.log
 
+      - name: Run ford-campaign test (Hold the Ford joins the campaign spine)
+        # Asserts the original standalone Ford level got its campaign wiring: a reusable PauseMenu
+        # overlay is present, a forced VICTORY fires the guarded Campaign.mark_completed (the Ford
+        # reads CLEARED), and the ScoreScreen receives a non-empty next_path + blurb (5-arg form).
+        run: |
+          godot --headless --path . res://tests/FordCampaignTest.tscn --quit-after 600 | tee fordcampaign.log
+          grep -q "FORDCAMPAIGN_VERDICT PASS" fordcampaign.log
+
       - name: Run objectives test (v0.10 ObjectiveManager)
         # Asserts the reusable objectives compose win/lose: completable objectives gate the
         # win, a constraint objective only gates losing, the officer must be defeated to win.
@@ -207,6 +215,14 @@ jobs:
           godot --headless --path . res://tests/ComboTrialRoomTest.tscn --quit-after 600 | tee combo.log
           grep -q "COMBO_ROOM_VERDICT PASS" combo.log
 
+      - name: Run room-campaign test (rooms end → ScoreScreen + Campaign)
+        # Asserts the RoomFinish glue closes the challenge-room dead-end: a BowlingRoom driven to a
+        # win marks the stage CLEARED in the Campaign and reveals a VICTORY ScoreScreen handed a
+        # non-empty next_path, and a room can register a loss (a DEFEAT ScoreScreen, no false clear).
+        run: |
+          godot --headless --path . res://tests/RoomCampaignTest.tscn --quit-after 600 | tee roomcampaign.log
+          grep -q "ROOMCAMPAIGN_VERDICT PASS" roomcampaign.log
+
       - name: Run score-screen test (v0.15 KO + time result overlay)
         # Asserts the end-of-battle ScoreScreen reveals on a result and its labels show the
         # KO count, the elapsed time formatted m:ss, and the right VICTORY/DEFEAT word.
@@ -270,6 +286,14 @@ jobs:
         run: |
           godot --headless --path . res://tests/ChangbanTest.tscn --quit-after 600 | tee changban.log
           grep -q "CHANGBAN_VERDICT PASS" changban.log
+
+      - name: Run map-decor test (長坂坡 Changban dressed, retreat lane kept clear)
+        # Asserts the Changban escort map boots with no parse/script error (Arthur + HUD up), the
+        # field is DRESSED (banners/drums in "decor" + shovable crates/rocks placed), and the
+        # central retreat corridor is kept clear so the escort/ward path isn't blocked.
+        run: |
+          godot --headless --path . res://tests/MapDecorTest.tscn --quit-after 600 | tee mapdecor.log
+          grep -q "MAPDECOR_VERDICT PASS" mapdecor.log
 
       - name: Run Yellow Turban map test (黃巾 survival + SurviveObjective)
         run: |
@@ -424,6 +448,15 @@ jobs:
           godot --headless --path . res://tests/CampaignTest.tscn --quit-after 600 | tee campaign.log
           grep -q "CAMPAIGN_VERDICT PASS" campaign.log
 
+      - name: Run FinaleAudioTest (victory/defeat audio + campaign finale)
+        # Asserts the big-moment finale: ScoreScreen.show_result chooses the victory_fanfare event
+        # on a win + the defeat_knell on a loss (event NAME, headless has no audio device) and both
+        # voices are registered in SoundBank; Campaign.is_section_complete(SEC_ARTHUR) flips true
+        # once every Arthurian battle is cleared and is_finale(last) is true; cleared_count tracks.
+        run: |
+          godot --headless --path . res://tests/FinaleAudioTest.tscn --quit-after 600 | tee finale.log
+          grep -q "FINALE_VERDICT PASS" finale.log
+
       - name: Run MenuListTest (reusable overlay navigation)
         # Asserts the shared MenuList component (PauseMenu + ScoreScreen lean on it): set_items,
         # wrapping focus, and activate() emitting chosen(id).
@@ -469,3 +502,41 @@ jobs:
         run: |
           godot --headless --path . res://tests/DifficultyTest.tscn --quit-after 600 | tee difficulty.log
           grep -q "DIFFIC_VERDICT PASS" difficulty.log
+
+      - name: Run physics-foundation test (destruction + stone-blocks-arrows)
+        # Asserts the physical-world foundation: a Breakable shatters into budgeted debris,
+        # Impact.shatter caps at DEBRIS_BUDGET, Impact.explode hits a ring, and a javelin
+        # deflects off a "stone_weapon" body instead of striking through it.
+        run: |
+          godot --headless --path . res://tests/PhysicsFoundationTest.tscn --quit-after 600 | tee physfound.log
+          grep -q "PHYSFOUND_VERDICT PASS" physfound.log
+
+      - name: Run materials test (basic smashable props — Barrel/SupplyCrate/ClayPot/Fence)
+        # Asserts the four smashable materials (all configs of Breakable): hitting each past its
+        # shatter threshold frees the prop and grows the shared "debris" group, and SupplyCrate
+        # drops a hurlable Rock on break (the slam -> rock -> throw loop).
+        run: |
+          godot --headless --path . res://tests/MaterialsTest.tscn --quit-after 600 | tee materials.log
+          grep -q "MATERIALS_VERDICT PASS" materials.log
+      - name: Run fire-barrel test (explosive + fire materials)
+        # Asserts the explosive/fire props: smashing a FireBarrel fires the shared Impact.explode
+        # ring (launches/damages a nearby raider) AND drops a FireZone burning pool that whittles
+        # down a unit standing in it over several ticks.
+        run: |
+          godot --headless --path . res://tests/FireBarrelTest.tscn --quit-after 600 | tee firebarrel.log
+          grep -q "FIREBARREL_VERDICT PASS" firebarrel.log
+      - name: Run archer-volley test (Saxon archers lob the shared javelin)
+        # Asserts the archer-volley raiders: a few ai_enabled SaxonArchers placed within sight of
+        # a target throw the shared Javelin projectile (at least one appears), and the concurrent
+        # projectile count stays bounded (they self-free instead of flooding the scene).
+        run: |
+          godot --headless --path . res://tests/ArcherVolleyTest.tscn --quit-after 600 | tee archervolley.log
+          grep -q "ARCHERVOLLEY_VERDICT PASS" archervolley.log
+
+      - name: Run deflect test (raised stone breaks the volley)
+        # Asserts the stone-deflects-arrows contract: a Javelin meeting a "stone_weapon" body goes
+        # spent WITHOUT striking its target and pays the DEFLECT flow reward, while a javelin meeting
+        # a normal opposing foe still lands — the deflect is the stone's privilege, not a blanket miss.
+        run: |
+          godot --headless --path . res://tests/DeflectTest.tscn --quit-after 600 | tee deflect.log
+          grep -q "DEFLECT_VERDICT PASS" deflect.log

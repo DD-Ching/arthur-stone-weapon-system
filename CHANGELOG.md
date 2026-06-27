@@ -9,9 +9,44 @@ where a new `MINOR` marks a playable milestone reaching `main`.
 ## [Unreleased]
 
 ### Planned
-- Enemy pooling (`EnemyPool`) for even bigger crowds, per-ability VFX + a cooldown UI,
+- Enemy pooling (`EnemyPool`) for even bigger crowds (deferred — the dirty-redraw +
+  throttled-steering + density cap already give the swarm), per-ability VFX + a cooldown UI,
   more named generals & officer duels, and rank-and-file Saxon/Briton troop looks.
   See [`docs/BATCH_PLAN.md`](docs/BATCH_PLAN.md) and [`ROADMAP.md`](ROADMAP.md).
+
+---
+
+## [0.21.0] — 2026-06-27
+
+**A physical, breakable, swarming world.** The battlefield becomes a place you can break:
+denser armies, the stone as a shield as well as a club, and scenery that shatters and
+flings its pieces when you smash it. Built reuse-first on the shared modules.
+
+### Added
+- **Destruction engine** — a reusable `Breakable` base + cheap code-art `ChunkDebris` shards,
+  driven by new `Impact.shatter` (a budgeted debris burst) + `Impact.explode` (an AoE ring),
+  so anything smashed bursts into flying pieces with a pop, a shake and a sound. One code path.
+- **Smashable materials** scattered across the battlefields — **Barrel**, **SupplyCrate**
+  (drops a hurlable Rock), **ClayPot** (fragile, bursts into shards), **BreakableFence**,
+  a **FireBarrel** (smash → explosion + a burning fire pool), a **LitBrazier**, and a
+  flammable **Haystack** — each a config of `Breakable`, scattered down map flanks.
+- **The stone blocks arrows.** The swung/parked stone now DEFLECTS incoming javelins (a spark
+  + a Stone-Flow reward) instead of being struck through — the stone is a shield as well as a
+  club. **Saxon archer** volleys join the Mount Badon horde so raising the stone matters.
+- **A complete campaign loop** — the four challenge rooms AND Hold-the-Ford now join the
+  campaign (clear → unlock → next, with a pause menu + result screen in each), a
+  **"THE LEGEND IS COMPLETE"** finale on the last battle, **victory/defeat fanfares**, and a
+  "Battles cleared: X / N" lobby footer. Changban is dressed (it was a bare grey field).
+
+### Changed
+- **Bigger armies, still smooth.** Per-soldier cost cut with a dirty-redraw (only re-tessellate
+  a unit when its facing/state changes) + throttled wall-avoidance (raycasts on every 3rd frame,
+  cached) — so base density rises **2.0 → 2.5** behind a soft `active_cap` (130) that bounds the
+  worst case on the single-threaded web build. Nav routing is unchanged.
+
+### Tests
+- Suite grows to **74 headless tests** on Godot 4.3.0 (physics-foundation, materials, fire-barrel,
+  archer-volley, deflect, room/Ford-campaign, finale, map-decor added).
 
 ---
 

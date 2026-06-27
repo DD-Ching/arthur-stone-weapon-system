@@ -140,6 +140,7 @@ func _build_decor() -> void:
 	# first objective evaluation (they're static field furniture).
 	for idx in DEPOTS.size():
 		_place_depot(DEPOTS[idx], idx)
+	_scatter_battlefield_props(2, 2, 1, 1)   # lighter smashable clutter — the depots stay the focus
 
 func _place_depot(centre: Vector2, idx: int) -> void:
 	var b := BASE.instantiate()

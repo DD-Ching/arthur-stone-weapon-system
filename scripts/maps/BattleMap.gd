@@ -19,9 +19,10 @@ const GENERAL_HEALTHBAR := preload("res://scenes/ui/GeneralHealthbar.tscn")
 const PAUSE_MENU := preload("res://scenes/ui/PauseMenu.tscn")
 
 @export_group("Battle Tuning")
-@export var density := 2.0                 ## scales wave counts (web-framerate dial)
+@export var density := 2.5                 ## scales wave counts (web-framerate dial)
 @export var wave_interval := 16.0          ## seconds before the next wave is forced in
 @export var wave_clear_threshold := 7      ## spawn the next wave once raiders drop to this
+@export var active_cap := 130              ## soft cap on concurrent raiders (web-perf safety net)
 @export var max_breaches := 0              ## 0 = no defence line; >0 = lose after this many cross
 @export var defence_line_y := 360.0        ## y a raider must pass to count as a breach
 
@@ -134,6 +135,10 @@ func _update_waves() -> void:
 	if _won or _lost or _wave >= _wave_count():
 		return
 	var alive := get_tree().get_nodes_in_group("targets").size()
+	# Soft cap: never pour the next wave on while the field is already at the cap, so a denser
+	# battle can't blow past the single-threaded web build's body budget. The timer still waits.
+	if alive >= active_cap:
+		return
 	if alive <= _scale(wave_clear_threshold) or _wave_cd <= 0.0:
 		var units: Array = _waves.spawn_wave(self, _wave)
 		_on_wave_spawned(_wave, units)
@@ -241,6 +246,50 @@ func _show_score(victory: bool) -> void:
 		_score_screen.show_result(victory, Impact.kills, _elapsed, next_path, blurb)
 
 # ── helpers (use these in subclasses) ────────────────────────────────────────
+## Spawn a single interactive prop (a Breakable, a Crate, a banner…) at a world position. Returns
+## the instance so a caller can tweak it. The one place maps drop scenery so it isn't copy-pasted.
+## (Named `_spawn_prop`, not `_place_prop`, so a map MAY still keep its own local `_place_prop`.)
+func _spawn_prop(scene: PackedScene, pos: Vector2) -> Node:
+	if scene == null:
+		return null
+	var p = scene.instantiate()
+	add_child(p)
+	if "global_position" in p:
+		p.global_position = pos
+	else:
+		p.position = pos
+	return p
+
+## Scatter `count` copies of `scene` at random points inside `rect` — for sprinkling breakable
+## barrels / pots / haystacks across a battlefield by config. A FIXED count (not density-scaled)
+## so destruction cost never compounds with the denser-army work.
+func _scatter_props(scene: PackedScene, count: int, rect: Rect2) -> void:
+	if scene == null:
+		return
+	for _i in count:
+		_spawn_prop(scene, rect.position + Vector2(randf() * rect.size.x, randf() * rect.size.y))
+
+const BREAKABLE_BARREL := preload("res://scenes/props/Barrel.tscn")
+const BREAKABLE_POT := preload("res://scenes/props/ClayPot.tscn")
+const BREAKABLE_HAY := preload("res://scenes/props/Haystack.tscn")
+const BREAKABLE_FIRE := preload("res://scenes/props/FireBarrel.tscn")
+
+## Scatter a standard mix of SMASHABLE materials down the two FLANKS of the field (the outer
+## thirds), leaving the central lane clear so nav + the main push are never blocked. One call gives
+## any map an interactive, destructible battlefield — barrels/pots/hay to shatter + a fire-barrel
+## to detonate. Fixed counts (not density-scaled) so destruction cost never compounds with denser
+## armies. A map opts in from its `_build_decor`.
+func _scatter_battlefield_props(barrels := 3, pots := 3, hay := 2, fire := 1) -> void:
+	var b := _world_bounds()
+	var fw := b.size.x * 0.28
+	var top := b.position.y + b.size.y * 0.25
+	var h := b.size.y * 0.5
+	for r in [Rect2(b.position.x + 40.0, top, fw, h), Rect2(b.end.x - 40.0 - fw, top, fw, h)]:
+		_scatter_props(BREAKABLE_BARREL, barrels, r)
+		_scatter_props(BREAKABLE_POT, pots, r)
+		_scatter_props(BREAKABLE_HAY, hay, r)
+		_scatter_props(BREAKABLE_FIRE, fire, r)
+
 func _place_goal() -> void:
 	## A march goal so raider AI advances downfield (Enemy steers toward the "ford_goal" group).
 	var goal := Node2D.new()
