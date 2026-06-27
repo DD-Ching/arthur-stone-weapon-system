@@ -111,7 +111,7 @@ func _report() -> void:
 	#    active → it must drop the "Q" cue and read the short phone form (no stale keyboard hint).
 	var musou: Label = _hud.get_node("Root/MusouLabel")
 	_hud._on_musou_changed(200.0, 200.0)
-	checks["ult_ready_touch_short"] = musou.text == "ULTIMATE  ★ READY"
+	checks["ult_ready_touch_short"] = musou.text == "ULTIMATE  READY!"
 	# Flip touch OFF and re-run the layout pass → the desktop wording (with "Q") comes back,
 	# proving _apply_scale re-picks the ULT text (not only _on_musou_changed).
 	if tc:
