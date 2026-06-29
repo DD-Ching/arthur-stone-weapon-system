@@ -12,7 +12,7 @@ extends Node2D
 ## Look for the ART_SPEAR_VERDICT line.
 
 const SPEARMAN := preload("res://scenes/Spearman.tscn")
-const FACTIONS := ["neutral", "wei", "shu", "wu"]
+const FACTIONS := ["neutral", "camelot", "briton", "saxon", "rebel"]
 
 var _units: Array = []
 var _frame := 0

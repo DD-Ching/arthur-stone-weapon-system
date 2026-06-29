@@ -1,14 +1,14 @@
 class_name RedCliffs
 extends BattleMap
-## Red Cliffs (赤壁) — the burning river crossing. Cao Cao's 魏 Wei navy, chained deck-to-deck,
-## is set ablaze by the 吳 Wu / 蜀 Shu alliance; the survivors leap into the river and wade the
-## ford under a sky of fire. Arthur holds the south bank against the wave that gets across.
+## The Burning Fords — a tidal ford choked with burning Saxon longships. The Saxon war-fleet,
+## beached and chained hull-to-hull, is set ablaze; the survivors leap into the tide and wade the
+## ford under a sky of fire. Arthur holds the south bank against the landing that gets across.
 ##
 ## This is a THIN BattleMap subclass: it only fills the theme hooks + the build hooks. All the
 ## orchestration (Arthur, HUD, score screen, wave driving, objectives, win/lose) is the base's.
-## What makes it "赤壁" is composition of the shared modules — water `TerrainZone` bands for the
-## ford, several `FireZone` hazards for the burning fleet, a `WaveSpawner` of escalating raiders,
-## allies on the south bank — no new mechanic, no copy-pasted level loop.
+## What makes it the Burning Fords is composition of the shared modules — water `TerrainZone` bands
+## for the ford, several `FireZone` hazards for the burning fleet, a `WaveSpawner` of escalating
+## raiders, allies on the south bank — no new mechanic, no copy-pasted level loop.
 
 const ALLY_SHIELD := preload("res://scenes/AllyShield.tscn")
 const ALLY_SPEAR := preload("res://scenes/AllySpear.tscn")
@@ -24,7 +24,7 @@ const HEAVY := preload("res://scenes/HeavyGuard.tscn")
 const _WATER_MASK := 14
 
 func _map_title() -> String:
-	return "RED CLIFFS 赤壁"
+	return "THE BURNING FORDS"
 
 func _opening_banner() -> String:
 	return "THE FLEET BURNS — HOLD THE FORD!"
@@ -48,7 +48,7 @@ func _build_terrain() -> void:
 	# group). Not dangerous and no drown, so a unit can actually get across there.
 	_mark_crossing(Vector2(0.0, -55.0))
 	_mark_crossing(Vector2(0.0, 55.0))
-	# The burning fleet: several FireZones drifting on the water (Cao Cao's chained ships ablaze).
+	# The burning fleet: several FireZones drifting on the water (the chained Saxon longships ablaze).
 	# Each burns any body that wades through it — fire that can actually finish a wounded raider.
 	_place_fire(Rect2(-560.0, -118.0, 150.0, 104.0), 4.0, 0.4)
 	_place_fire(Rect2(-250.0, -116.0, 170.0, 104.0), 5.0, 0.4)
@@ -71,21 +71,21 @@ func _mark_crossing(pos: Vector2) -> void:
 	m.global_position = pos
 	add_child(m)
 
-# ── allies: the Wu / Shu line on the south bank ──────────────────────────────
+# ── allies: the Briton line on the south bank ────────────────────────────────
 func _spawn_allies() -> void:
-	# Wu marines (吳, red) front the bank with shields + spears; a Shu (蜀, green) knight anchors
-	# the centre. Allies fight FOR Arthur (team "ally"); faction is colour flavour only.
+	# Briton levies front the bank with shields + spears; a Camelot knight anchors the centre.
+	# Allies fight FOR Arthur (team "ally"); faction is colour flavour only.
 	var shields: Array = Spawner.spawn_count(self, ALLY_SHIELD, _scale(3), 230.0, -180.0, 180.0, false)
 	var spears: Array = Spawner.spawn_count(self, ALLY_SPEAR, _scale(3), 270.0, -150.0, 150.0, false)
 	for u in shields:
-		_set_faction(u, "wu")
+		_set_faction(u, "briton")
 	for u in spears:
-		_set_faction(u, "wu")
-	# A lone Shu (蜀, green) knight anchors the centre — spawned via the same shared Spawner path
+		_set_faction(u, "briton")
+	# A lone Camelot knight anchors the centre — spawned via the same shared Spawner path
 	# (it sets ai_enabled + position), not a hand-rolled instantiate block.
 	var knights: Array = Spawner.spawn(self, [ALLY_KNIGHT], 260.0, 0.0, 0.0, false)
 	for u in knights:
-		_set_faction(u, "shu")
+		_set_faction(u, "camelot")
 
 func _set_faction(u, faction: String) -> void:
 	if is_instance_valid(u) and "faction" in u:
@@ -97,11 +97,11 @@ func _compose_objectives() -> ObjectiveManager:
 	max_breaches = 12
 	defence_line_y = 200.0
 	var mgr := ObjectiveManager.new()
-	mgr.add(RepelWavesObjective.new("Repel Cao Cao's navy"))
-	mgr.add(HoldLineObjective.new("Hold the ford"))
+	mgr.add(RepelWavesObjective.new("Repel the Saxon landing"))
+	mgr.add(HoldLineObjective.new("Hold the burning ford"))
 	return mgr
 
-# ── waves: Cao Cao's navy, escalating ────────────────────────────────────────
+# ── waves: the Saxon landing, escalating ─────────────────────────────────────
 func _build_wave_spawner() -> WaveSpawner:
 	var ws := WaveSpawner.new()
 	ws.waves = [
@@ -140,8 +140,8 @@ func _mixed_wave(label: String, scenes_in: Array, lane_y: float) -> Wave:
 	w.team = "raiders"
 	return w
 
-# ── theme: stamp the raiders as 魏 Wei (Cao Cao's navy) ───────────────────────
+# ── theme: stamp the raiders as Saxon (the war-fleet's landing force) ─────────
 func _on_wave_spawned(idx: int, units: Array) -> void:
 	for u in units:
-		_set_faction(u, "wei")
+		_set_faction(u, "saxon")
 	super._on_wave_spawned(idx, units)

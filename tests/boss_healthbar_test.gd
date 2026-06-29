@@ -4,7 +4,7 @@ extends Node2D
 ## Stands a single named "general" up ALONE (a TargetDummy with is_general + a finite
 ## health) — no Battlefield, no other units — and drives the self-tracking overlay through
 ## its three states:
-##   1) full health  → the bar becomes VISIBLE, tracks 1 general, name "LU BU", ratio ~1.0;
+##   1) full health  → the bar becomes VISIBLE, tracks 1 general, name "OCTA", ratio ~1.0;
 ##   2) half health   → after a refresh, the tracked ratio is ~0.5;
 ##   3) general freed → the bar tracks 0 generals and HIDES.
 ##
@@ -35,9 +35,9 @@ func _ready() -> void:
 	# are set BEFORE add_child, so its _ready joins the "generals" group.
 	_general = TARGET_DUMMY.instantiate()
 	_general.is_general = true
-	_general.enemy_name = "LU BU"
+	_general.enemy_name = "OCTA"
 	_general.max_health = 300.0
-	_general.faction = "wu"
+	_general.faction = "saxon"
 	add_child(_general)
 	# Enemy._ready sets health = max_health; pin it explicitly so the test owns the value.
 	_general.health = 300.0
@@ -73,7 +73,7 @@ func _physics_process(_delta: float) -> void:
 			_report()
 
 func _report() -> void:
-	var full_ok: bool = _vis_full and _count_full == 1 and _name_full == "LU BU" \
+	var full_ok: bool = _vis_full and _count_full == 1 and _name_full == "OCTA" \
 		and absf(_ratio_full - 1.0) < 0.02
 	var half_ok: bool = absf(_ratio_half - 0.5) < 0.02
 	var gone_ok: bool = (not _vis_gone) and _count_gone == 0

@@ -1,5 +1,5 @@
 extends Node2D
-## MapDecorTest — the Changban (長坂坡) escort map must BOOT and be DRESSED, not an empty grey
+## MapDecorTest — the Long Road escort map must BOOT and be DRESSED, not an empty grey
 ## field. A thin smoke test for the `_build_decor()` placement pass this batch adds:
 ##
 ##   (1) The map instances + boots with NO parse/script error — its base orchestration runs and

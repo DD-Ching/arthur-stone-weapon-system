@@ -12,7 +12,7 @@ extends Node2D
 ## Look for the ART_SHIELD_VERDICT line.
 
 const SHIELD_SCENE := "res://scenes/ShieldSoldier.tscn"
-const FACTIONS := ["neutral", "wei", "shu", "wu"]
+const FACTIONS := ["neutral", "camelot", "briton", "saxon", "rebel"]
 
 var _units: Array = []
 var _broken_unit: Enemy = null
@@ -41,7 +41,7 @@ func _ready() -> void:
 	# One BROKEN shield — forces the shattered branch (e._shield_broken > 0).
 	_broken_unit = scene.instantiate()
 	_broken_unit.ai_enabled = false
-	_broken_unit.faction = "wu"
+	_broken_unit.faction = "rebel"
 	add_child(_broken_unit)
 	_broken_unit.global_position = Vector2(0.0, 160.0)
 	_broken_unit._face = 0.0

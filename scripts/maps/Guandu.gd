@@ -1,15 +1,14 @@
 extends BattleMap
-## Guandu (官渡) — the granary raid. Yuan Shao's 魏 Wei army holds three supply depots
-## (granaries) across the field, each ringed by a partial wooden STOCKADE and held by a
-## garrison of raiders. Arthur and his 蜀 Shu / 吳 Wu allies must storm each depot through
-## its one open gate and clear its garrison to CAPTURE it; take all the granaries and Cao
-## Cao wins the campaign — the historical turning point where burning Yuan Shao's grain
-## decided the war.
+## The Beacon-Forts — the supply raid. A Saxon host holds three supply forts (beacon-forts)
+## across the field, each ringed by a partial wooden STOCKADE and held by a garrison of
+## raiders. Arthur and his Camelot allies must storm each fort through its one open gate and
+## clear its garrison to SEIZE it; take all the beacon-forts and the Saxon stores burn —
+## breaking the invaders' hold on the frontier.
 ##
 ## A THIN BattleMap subclass: it places `Base` instances (the reusable capture mechanic),
 ## rings each with a PARTIAL stockade (placed `Fence` / `GatePost` scenes left OPEN on the
 ## side facing Arthur, so garrison and hero can both reach the capture circle), dresses each
-## depot with banners / drums / crates, and spawns each garrison directly with the shared
+## fort with banners / drums / crates, and spawns each garrison directly with the shared
 ## `Spawner`. It reports `bases_total` / `bases_captured` through `_extra_context` so the
 ## reusable `CaptureBasesObjective` can win, and adds a required `RepelWavesObjective` so the
 ## relief column must also be broken — you can't win by ignoring the fight.
@@ -26,7 +25,7 @@ const BANNER := preload("res://scenes/decor/FactionBanner.tscn")
 const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
 const CRATE := preload("res://scenes/Crate.tscn")
 
-## Centre of each depot (granary). 2–3 bases, spread across the field.
+## Centre of each beacon-fort. 2–3 bases, spread across the field.
 const DEPOTS: Array[Vector2] = [
 	Vector2(-360.0, -140.0),
 	Vector2(360.0, -140.0),
@@ -41,10 +40,10 @@ const STOCKADE_RADIUS := 192.0
 const GATE_HALF := 0.62
 
 func _map_title() -> String:
-	return "GUANDU (官渡)"
+	return "THE BEACON-FORTS"
 
 func _opening_banner() -> String:
-	return "STORM THE GRANARIES!"
+	return "STORM THE BEACON-FORTS!"
 
 func _arthur_start() -> Vector2:
 	return Vector2(0.0, 360.0)
@@ -59,7 +58,7 @@ func _build_walls() -> void:
 	for centre in DEPOTS:
 		_ring_stockade(centre)
 
-## Ring a depot with a PARTIAL palisade: solid fence segments around the arc EXCEPT a gate gap
+## Ring a fort with a PARTIAL palisade: solid fence segments around the arc EXCEPT a gate gap
 ## on the side facing Arthur's approach (downfield / +y). The gap is framed by a pair of stone
 ## GatePosts so it reads as a real gateway. Every segment sits on STOCKADE_RADIUS (> capture
 ## radius), so the capture circle is always reachable through the gate.
@@ -69,7 +68,7 @@ func _ring_stockade(centre: Vector2) -> void:
 	var gate_ang := gate_dir.angle()
 	# Eight tangent slots around the ring; skip any whose centre falls within the gate gap,
 	# AND any that would poke past the world frame (a depot near the edge — e.g. the northern
-	# granary — would otherwise embed its back-arc fences INTO the boundary wall).
+	# fort — would otherwise embed its back-arc fences INTO the boundary wall).
 	var slots := 8
 	for i in slots:
 		var ang := TAU * float(i) / float(slots)
@@ -111,36 +110,36 @@ func _ang_delta(a: float, b: float) -> float:
 		d += TAU
 	return d - PI
 
-# ── allies: a small 蜀/吳 retinue that fights for Arthur ──────────────────────
+# ── allies: a small Camelot retinue that fights for Arthur ──────────────────────
 func _spawn_allies() -> void:
 	# A short allied line just ahead of Arthur — they hunt the nearest garrison raider. The
 	# shared Spawner takes a roster of SCENES (not instances) and lays them along the lane.
 	var roster: Array = [ALLY_SHIELD, ALLY_SPEAR, ALLY, ALLY_SHIELD, ALLY_SPEAR]
 	var line: Array = Spawner.spawn(self, roster, 260.0, -220.0, 220.0, false, true)
-	# Stamp Three-Kingdoms colours so the retinue reads as 蜀 Shu green / 吳 Wu red.
+	# Stamp faction colours so the retinue reads as Camelot royal gold / Briton blue.
 	var i := 0
 	for a in line:
 		if not is_instance_valid(a):
 			continue
-		_tint_faction(a, "shu" if i % 2 == 0 else "wu")
+		_tint_faction(a, "camelot" if i % 2 == 0 else "briton")
 		i += 1
 
-## Tint an Enemy-backed unit with a Three-Kingdoms faction colour (魏/蜀/吳) — used by both the
-## allied retinue and the depot garrisons, so the "set faction → recolour" step lives in one place.
+## Tint an Enemy-backed unit with a faction colour — used by both the allied retinue and the
+## fort garrisons, so the "set faction → recolour" step lives in one place.
 func _tint_faction(unit, name: String) -> void:
 	if not is_instance_valid(unit) or not ("faction" in unit):
 		return
 	unit.faction = name
 	unit.base_color = unit.faction_color()
 
-# ── depots + garrisons ───────────────────────────────────────────────────────
+# ── forts + garrisons ───────────────────────────────────────────────────────
 func _build_decor() -> void:
-	# Place each capturable Base, ring it with a 魏 Wei garrison, and dress the depot with
+	# Place each capturable Base, ring it with a Saxon garrison, and dress the fort with
 	# standards / drums / supply crates. Done in _build_decor so the bases exist before the
 	# first objective evaluation (they're static field furniture).
 	for idx in DEPOTS.size():
 		_place_depot(DEPOTS[idx], idx)
-	_scatter_battlefield_props(2, 2, 1, 1)   # lighter smashable clutter — the depots stay the focus
+	_scatter_battlefield_props(2, 2, 1, 1)   # lighter smashable clutter — the forts stay the focus
 
 func _place_depot(centre: Vector2, idx: int) -> void:
 	var b := BASE.instantiate()
@@ -149,9 +148,9 @@ func _place_depot(centre: Vector2, idx: int) -> void:
 	if "radius" in b:
 		b.radius = DEPOT_RADIUS
 	if "label" in b:
-		b.label = "DEPOT %d" % (idx + 1)
+		b.label = "FORT %d" % (idx + 1)
 	_dress_depot(centre)
-	# A garrison of raiders ringing the granary — they hold the depot until defeated. The
+	# A garrison of raiders ringing the fort — they hold the fort until defeated. The
 	# count scales with the map density dial (web framerate), like every other spawn site.
 	var count: int = _scale(3)
 	for i in count:
@@ -164,10 +163,10 @@ func _place_depot(centre: Vector2, idx: int) -> void:
 		e.global_position = pos
 		if "ai_enabled" in e:
 			e.ai_enabled = true
-		_tint_faction(e, "wei")          # Yuan Shao's depot guards — cosmetic 魏 blue
+		_tint_faction(e, "saxon")        # the Saxon fort guards — cosmetic moss green
 		# team stays "raiders" (the default) → they join "targets", so the Base counts them.
 
-## Dress a depot centre with a 魏 Wei standard + war drum, and a small ring of supply crates
+## Dress a fort centre with a Saxon standard + war drum, and a small ring of supply crates
 ## for cover. Pure placement of existing scenes — the banner/drum are decor, the crates are
 ## physics props (cover Arthur can shove). All kept inside the capture circle (off-centre) so
 ## they never sit on the gate path or the stockade line.
@@ -176,12 +175,12 @@ func _dress_depot(centre: Vector2) -> void:
 	add_child(banner)
 	banner.global_position = centre + Vector2(-22.0, -8.0)
 	if "faction" in banner:
-		banner.faction = "wei"
+		banner.faction = "saxon"
 	var drum := WAR_DRUM.instantiate()
 	add_child(drum)
 	drum.global_position = centre + Vector2(28.0, 14.0)
 	if "faction" in drum:
-		drum.faction = "wei"
+		drum.faction = "saxon"
 	# A small supply pile — crates as cover, set off-centre so they don't seal the gate.
 	var crate_offsets: Array[Vector2] = [
 		Vector2(-60.0, -44.0), Vector2(-44.0, -68.0), Vector2(60.0, -44.0),
@@ -191,12 +190,12 @@ func _dress_depot(centre: Vector2) -> void:
 		add_child(c)
 		c.global_position = centre + off
 
-# ── objectives: capture every depot AND break the relief column ──────────────
+# ── objectives: seize every fort AND break the relief column ──────────────
 func _compose_objectives() -> ObjectiveManager:
 	var mgr := ObjectiveManager.new()
-	mgr.add(CaptureBasesObjective.new("Capture the granaries"))
+	mgr.add(CaptureBasesObjective.new("Seize the beacon-forts"))
 	# A second REQUIRED goal so the field is never empty and you can't win by sneaking captures
-	# while a relief column still stands — the 魏 Wei relief wave must be repelled too.
+	# while a relief column still stands — the Saxon relief wave must be repelled too.
 	mgr.add(RepelWavesObjective.new("Repel the relief"))
 	return mgr
 
@@ -211,11 +210,11 @@ func _build_wave_spawner() -> WaveSpawner:
 	w.x_min = -200.0
 	w.x_max = 200.0
 	w.team = "raiders"
-	w.label = "WEI RELIEF"
+	w.label = "SAXON RELIEF"
 	ws.waves = [w]
 	return ws
 
-# ── report base capture to the objective layer ───────────────────────────────
+# ── report fort capture to the objective layer ───────────────────────────────
 func _extra_context(ctx: Dictionary) -> void:
 	var total := 0
 	var held := 0

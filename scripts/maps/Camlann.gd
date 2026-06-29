@@ -67,7 +67,7 @@ func _build_decor() -> void:
 	_banner(Vector2(-560.0, -300.0), "neutral", 78.0)
 	_banner(Vector2(560.0, -300.0), "neutral", 78.0)
 	# Arthur's Camelot-blue standard at the loyal line's back (our rally point).
-	_banner(Vector2(180.0, 430.0), "wei", 86.0)
+	_banner(Vector2(180.0, 430.0), "camelot", 86.0)
 	# A rail of fencing on each flank — field furniture clear of the lane.
 	_fence(Vector2(-520.0, 60.0))
 	_fence(Vector2(520.0, 60.0))
@@ -81,7 +81,7 @@ func _build_decor() -> void:
 func _drum(at: Vector2) -> void:
 	var d = WAR_DRUM.instantiate()
 	if "faction" in d:
-		d.faction = "wu"          # ring it rebel-red (the traitor host's drum)
+		d.faction = "rebel"          # ring it rebel (the traitor host's drum)
 	d.position = at
 	add_child(d)
 

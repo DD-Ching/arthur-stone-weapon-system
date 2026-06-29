@@ -1,24 +1,28 @@
 class_name WarDrum
 extends Node2D
-## A great war drum (戰鼓) on a frame — the camp standard that beats troops into a charge.
-## Pure code-drawn decor for the Three-Kingdoms field; no physics, no image assets.
+## A great war drum on a frame — the camp standard that beats troops into a charge. Pure
+## code-drawn decor for the Arthurian field; no physics, no image assets.
 ##
 ## The drumhead breathes with a slow sin pulse (a struck-skin shimmer) and the faction studs
-## ring its rim, so a Wei/Shu/Wu camp reads its kingdom even from the drum. Allocation-light.
+## ring its rim, so a camp reads its house even from the drum. Allocation-light.
 
-@export_enum("neutral", "wei", "shu", "wu") var faction := "neutral"
+@export_enum("neutral", "camelot", "briton", "saxon", "rebel", "pict", "fae") var faction := "neutral"
 ## Drum radius in pixels; the stand scales with it.
 @export var drum_radius := 22.0
 
 var _t := 0.0
 
-## The kingdom accent colour (魏 Wei blue / 蜀 Shu green / 吳 Wu red / neutral grey), mirroring
-## Enemy.faction_color so a drum matches the banners and troops of its camp.
+## The house accent colour (Camelot gold / Briton blue / Saxon moss-green / rebel purple / Pict
+## slate / Fae cyan / neutral grey), mirroring Enemy.faction_color so a drum matches the banners
+## and troops of its camp.
 func accent_color() -> Color:
 	match faction:
-		"wei": return Color(0.30, 0.52, 0.95)
-		"shu": return Color(0.36, 0.78, 0.42)
-		"wu": return Color(0.86, 0.36, 0.34)
+		"camelot": return Color(0.92, 0.78, 0.30)
+		"briton": return Color(0.34, 0.56, 0.92)
+		"saxon": return Color(0.40, 0.46, 0.27)
+		"rebel": return Color(0.52, 0.33, 0.60)
+		"pict": return Color(0.46, 0.52, 0.58)
+		"fae": return Color(0.55, 0.80, 0.80)
 		_: return Color(0.70, 0.70, 0.72)
 
 func _ready() -> void:
@@ -40,7 +44,7 @@ func _draw() -> void:
 	var pulse := 1.0 + 0.04 * sin(_t * 6.0)
 	draw_circle(Vector2.ZERO, r * 0.84 * pulse, Color(0.90, 0.82, 0.66))
 	draw_arc(Vector2.ZERO, r * 0.84, 0.0, TAU, 24, Color(0.55, 0.42, 0.28), 3.0)
-	# Faction studs ringing the rim — the kingdom accent.
+	# Faction studs ringing the rim — the house accent.
 	var accent := accent_color()
 	var studs := 8
 	for i in range(studs):

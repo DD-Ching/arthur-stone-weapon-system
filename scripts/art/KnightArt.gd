@@ -5,7 +5,7 @@ extends RefCounted
 ## behind the facing. The sharpest, most striking unit, distinct from the bulky-but-blunt heavy.
 ## Drawn on Enemy `e`. Beautify the knight HERE.
 ##
-## When `e.is_general` (named knight warlords — 呂布 Lu Bu / 關羽 Guan Yu): make it LEGENDARY —
+## When `e.is_general` (named knight warlords — the Black Knight / Octa): make it LEGENDARY —
 ## a grand crest/halo ring, a bigger blade, a richer faction cape — so the warlord stands out.
 ## Allocation-light: cheap `_draw` only, no per-frame arrays beyond the few short polylines below;
 ## every alpha is multiplied by `e._alpha`.

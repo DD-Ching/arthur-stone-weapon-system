@@ -1,7 +1,8 @@
 [gd_scene load_steps=2 format=3]
 
 ; A tall faction standard — pole + waving pennant. Set `faction` to colour it for a
-; kingdom (魏 Wei blue / 蜀 Shu green / 吳 Wu red / neutral grey). Pure decor, no physics.
+; house (Camelot gold / Briton blue / Saxon green / rebel purple / Pict slate / Fae cyan).
+; Pure decor, no physics.
 
 [ext_resource type="Script" path="res://scripts/decor/FactionBanner.gd" id="1_banner"]
 

@@ -626,3 +626,12 @@ jobs:
         run: |
           godot --headless --path . res://tests/FeelTest.tscn --quit-after 600 | tee feel.log
           grep -q "FEEL_VERDICT PASS" feel.log
+
+      - name: Run no-Three-Kingdoms-leak guard (Arthurian theme invariant)
+        # Directive guard: the Three-Kingdoms theme must NOT survive as visible content. Asserts no
+        # CJK/Han glyphs and no TK proper nouns in any Campaign stage title/blurb or section label,
+        # that the section ids are exactly {arthur, trials} (no "bonus"), and that labels carry no
+        # "BONUS"/"KINGDOM"/"DYNASTY" wording.
+        run: |
+          godot --headless --path . res://tests/NoTkLeakTest.tscn --quit-after 600 | tee notkleak.log
+          grep -q "NOTKLEAK_VERDICT PASS" notkleak.log

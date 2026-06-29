@@ -1,20 +1,15 @@
 extends Node2D
-## Headless test for the ARTHURIAN re-theme of the StageSelect boot menu.
+## Headless test for the ARTHURIAN world structure of the StageSelect boot menu.
 ##
 ## Instantiates StageSelect ALONE, steps a frame so it builds its list, and asserts the
-## re-theme + sectioning held up without breaking the menu:
-##   - it resolved a NON-EMPTY selectable entry list — at least the guaranteed-existing
-##     scenes (Battlefield + the four challenge rooms + the five 三國 maps already on dev),
-##     so >= 10 entries;
-##   - every listed entry's `path` passes ResourceLoader.exists (no phantom rows from the
-##     still-missing Arthurian maps, which are guarded + skipped on this branch);
-##   - the new Arthurian TITLE is set (no longer the old 三國無雙 title);
-##   - sections are tagged + ordered: every entry carries a known `section`, the bonus
-##     三國 maps sort AFTER the ford/trials block, and `entries` holds ONLY selectable
-##     battles (never a header row);
-##   - navigation via `_move(1)` advances + WRAPS to 0 at the end, `_move(-1)` from 0 wraps
-##     to the last entry, and every landing spot is a real selectable entry (never a header);
-##   - the real input path (synthetic `move_down` action through `_input`) advances too;
+## connected-legend re-theme held up without breaking the menu:
+##   - it resolved a NON-EMPTY selectable entry list — at least the guaranteed-existing scenes
+##     (Battlefield + the four challenge rooms + the five reskinned war regions), so >= 10 entries;
+##   - every listed entry's `path` passes ResourceLoader.exists (no phantom rows);
+##   - the Arthurian TITLE is set (contains STONE/ARTHUR, never "三國");
+##   - sections are the two Arthurian groups only (legend + training yard); the legend sorts
+##     BEFORE the training yard, and `entries` holds ONLY selectable battles (never a header row);
+##   - navigation via `_move(±1)` advances + WRAPS, and the real `move_down` input path advances;
 ##   - the currently-selected entry's path is a valid, loadable scene.
 ##
 ## It deliberately does NOT call change_scene_to_file (that would tear down the test).
@@ -24,7 +19,8 @@ extends Node2D
 
 const STAGE_SELECT := preload("res://scenes/ui/StageSelect.tscn")
 
-## Scenes that already exist on dev — must all be listed + selectable.
+## Scenes that exist on dev — must all be listed + selectable (the 5 reskinned war regions keep
+## their original file paths per the reskin-in-place strategy; their THEME is now Arthurian).
 const GUARANTEED := [
 	"res://scenes/Battlefield.tscn",
 	"res://scenes/rooms/BowlingRoom.tscn",
@@ -57,7 +53,7 @@ func _report() -> void:
 	# 1) Non-empty, and at least the ten guaranteed scenes resolved.
 	checks["nonempty"] = count >= 10
 
-	# 2) Every listed entry actually exists (no phantom rows from the missing Arthurian maps).
+	# 2) Every listed entry actually exists.
 	var all_exist := true
 	for e in _menu.entries:
 		if not ResourceLoader.exists(e["path"]):
@@ -74,35 +70,35 @@ func _report() -> void:
 			guaranteed_listed = false
 	checks["guaranteed_listed"] = guaranteed_listed
 
-	# 4) The Arthurian re-theme: a new title is set, and it is NOT the old 三國無雙 one.
+	# 4) The Arthurian title: a new title is set, and it is NOT a Three-Kingdoms one.
 	var title: String = _menu.TITLE_TEXT
 	checks["arthur_title"] = title != "" and title.find("三國") < 0 \
 		and (title.to_upper().find("STONE") >= 0 or title.to_upper().find("ARTHUR") >= 0)
 
-	# 5) Every selectable entry carries a known section tag (so headers can group them), and
-	#    NONE of the entries is itself a header (entries are pure battles).
-	var known := [_menu.SEC_ARTHUR, _menu.SEC_TRIALS, _menu.SEC_BONUS]
+	# 5) Every selectable entry carries a known section tag (legend or training yard) — no bonus
+	#    section exists any more — and NONE of the entries is itself a header.
+	var known := [_menu.SEC_ARTHUR, _menu.SEC_TRIALS]
 	var sections_ok := true
 	for e in _menu.entries:
 		if not e.has("section") or not known.has(e["section"]):
 			sections_ok = false
 	checks["sections_tagged"] = sections_ok
 
-	# 6) Ordering: the 三國 BONUS maps come AFTER the ford/trials block. The first bonus
-	#    entry's index must exceed the last trials entry's index.
-	var last_trials := -1
-	var first_bonus := count   # sentinel: larger than any index
+	# 6) Ordering: the legend regions come BEFORE the training-yard block. The last legend entry's
+	#    index must be below the first training-yard entry's index.
+	var last_legend := -1
+	var first_trials := count   # sentinel: larger than any index
 	var idx := 0
 	while idx < count:
 		var sec: String = _menu.entries[idx]["section"]
-		if sec == _menu.SEC_TRIALS:
-			last_trials = idx
-		elif sec == _menu.SEC_BONUS and idx < first_bonus:
-			first_bonus = idx
+		if sec == _menu.SEC_ARTHUR:
+			last_legend = idx
+		elif sec == _menu.SEC_TRIALS and idx < first_trials:
+			first_trials = idx
 		idx += 1
-	checks["bonus_after_trials"] = last_trials >= 0 and first_bonus > last_trials
+	checks["legend_before_trials"] = last_legend >= 0 and first_trials > last_legend
 
-	# 7) Navigation: _move(1) advances the index, and the landing is a real selectable entry.
+	# 7) Navigation: _move(1) advances the index, landing on a real selectable entry.
 	_menu.selected = 0
 	_menu._move(1)
 	checks["advance"] = _menu.selected == 1 and _is_real_entry(_menu.selected)
@@ -117,8 +113,7 @@ func _report() -> void:
 	_menu._move(-1)
 	checks["wrap_back"] = _menu.selected == count - 1
 
-	# 10) Sweep the whole list with _move(1): every landing is a valid selectable entry whose
-	#     path exists — navigation never lands on a header / phantom row.
+	# 10) Sweep the whole list with _move(1): every landing is a valid selectable entry.
 	_menu.selected = 0
 	var sweep_ok := true
 	var step := 0
@@ -132,8 +127,7 @@ func _report() -> void:
 		step += 1
 	checks["sweep_selectable"] = sweep_ok
 
-	# 11) The real input path: a synthetic move_down action advances via _input (the same
-	#     wiring keyboard/gamepad uses in-game). We do NOT synthesise `attack` (would launch).
+	# 11) The real input path: a synthetic move_down action advances via _input.
 	_menu.selected = 0
 	var ev := InputEventAction.new()
 	ev.action = "move_down"

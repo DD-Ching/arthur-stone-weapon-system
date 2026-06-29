@@ -92,7 +92,7 @@ func _build_decor() -> void:
 	_banner(Vector2(-360.0, 95.0), "neutral", 74.0)
 	_banner(Vector2(360.0, 95.0), "neutral", 74.0)
 	# A Briton blue standard at the host's back, below the crest (our rally point).
-	_banner(Vector2(-150.0, 420.0), "wei", 84.0)
+	_banner(Vector2(-150.0, 420.0), "briton", 84.0)
 	# A rail of fencing low on each flank — a bit of field furniture that never blocks the lane.
 	_fence(Vector2(-470.0, 250.0))
 	_fence(Vector2(470.0, 250.0))
@@ -116,7 +116,7 @@ func _build_decor() -> void:
 func _drum(at: Vector2) -> void:
 	var d = WAR_DRUM.instantiate()
 	if "faction" in d:
-		d.faction = "wu"          # ring it Saxon-red (the horde's drum)
+		d.faction = "saxon"          # the Saxon horde's drum
 	d.position = at
 	add_child(d)
 

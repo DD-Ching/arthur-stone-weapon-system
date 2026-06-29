@@ -1,9 +1,9 @@
 extends Node2D
-## Headless test for the named Generals (武將), unit token GENERALS:
-##   scenes/generals/LuBu.tscn      — the strongest, neutral; General.gd war-cry brain
-##   scenes/generals/GuanYu.tscn    — Shu knight; plain Enemy.gd config
-##   scenes/generals/ZhangFei.tscn  — Shu heavy; General.gd war-cry brain
-##   scenes/generals/XiahouDun.tscn — Wei heavy; plain Enemy.gd config
+## Headless test for the named Generals (boss warlords), unit token GENERALS:
+##   scenes/generals/LuBu.tscn      — Octa, a Saxon warlord; General.gd war-cry brain
+##   scenes/generals/GuanYu.tscn    — Colgrin, a Saxon knight; plain Enemy.gd config
+##   scenes/generals/ZhangFei.tscn  — Baldulf, a Saxon heavy; General.gd war-cry brain
+##   scenes/generals/XiahouDun.tscn — Drust, a Pict heavy; plain Enemy.gd config
 ##
 ## Each general is a boss-tier unit built on the shared Enemy base (some via the
 ## General.gd subclass for a signature war-cry). This test proves the boss contract:
@@ -21,10 +21,10 @@ extends Node2D
 # name → scene path. Move expectations are read from each instance's own `moves` export,
 # so this stays correct even if a config is retuned (it asserts moves → _abilities, in order).
 const SPECS := {
-	"LuBu":      "res://scenes/generals/LuBu.tscn",
-	"GuanYu":    "res://scenes/generals/GuanYu.tscn",
-	"ZhangFei":  "res://scenes/generals/ZhangFei.tscn",
-	"XiahouDun": "res://scenes/generals/XiahouDun.tscn",
+	"Octa":    "res://scenes/generals/LuBu.tscn",
+	"Colgrin": "res://scenes/generals/GuanYu.tscn",
+	"Baldulf": "res://scenes/generals/ZhangFei.tscn",
+	"Drust":   "res://scenes/generals/XiahouDun.tscn",
 }
 const MIN_BOSS_HP := 200.0
 

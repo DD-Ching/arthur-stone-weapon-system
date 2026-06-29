@@ -1,5 +1,5 @@
 extends CanvasLayer
-## GeneralHealthbar — a boss-style HP overlay for named generals (武將).
+## GeneralHealthbar — a boss-style HP overlay for named generals (boss warlords).
 ##
 ## A self-contained CanvasLayer that WATCHES the "generals" group (an Enemy joins it via
 ## its `is_general` export) and draws one boss health bar near the top of the screen for

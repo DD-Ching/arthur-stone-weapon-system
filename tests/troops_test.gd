@@ -1,11 +1,11 @@
 extends Node2D
-## Headless test for the five Three-Kingdoms troop configs (token TROOPS). Each troop is a
+## Headless test for the five Saxon/Camelot troop configs (token TROOPS). Each troop is a
 ## PURE .tscn config of scripts/Enemy.gd — no new scripts, no edits to the shared base:
-##   scenes/troops/Halberdier.tscn     — Wei reach line (spear / thrust + bash)
-##   scenes/troops/Crossbow.tscn       — Wei slow long-range single-shot (spear / javelin)
-##   scenes/troops/ShockTrooper.tscn   — Wei heavy breaker (heavy / bash + lunge)
-##   scenes/troops/Drummer.tscn        — Shu war-drum morale support (banner, no attack)
-##   scenes/troops/StandardBearer.tscn — Wu morale support (banner, no attack)
+##   scenes/troops/Halberdier.tscn     — Saxon Housecarl reach line (spear / thrust + bash)
+##   scenes/troops/Crossbow.tscn       — Saxon Bowman slow long-range single-shot (spear / javelin)
+##   scenes/troops/ShockTrooper.tscn   — Saxon Berserker heavy breaker (heavy / bash + lunge)
+##   scenes/troops/Drummer.tscn        — War Drummer morale support (banner, no attack)
+##   scenes/troops/StandardBearer.tscn — Standard Bearer morale support (banner, no attack)
 ##
 ## This proves the contract that lets a troop type be data alone:
 ##   - GROUPS:   every troop joins "raiders" + "targets" on _ready; the SUPPORT troops

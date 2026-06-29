@@ -20,12 +20,12 @@ extends RigidBody2D
 ## "raiders" = the warband attacking across the ford (Arthur's foe). "ally" = a footman
 ## fighting FOR Arthur. The team decides who this unit hunts and who may hit it.
 @export var team := "raiders"
-## Three-Kingdoms allegiance, used only for COLOUR theming (魏 Wei blue / 蜀 Shu green /
-## 吳 Wu red / neutral grey). It does NOT change targeting — `team` ("raiders"/"ally") still
-## decides who hunts whom; faction is pure readability flavour.
-@export_enum("neutral", "camelot", "saxon", "rebel", "wei", "shu", "wu") var faction := "neutral"
-## A named general (武將), a boss-tier unit: joins the "generals" group so the boss-healthbar
-## UI can track it. Otherwise it is an ordinary configurable Enemy.
+## Arthurian house, used only for COLOUR theming (Camelot gold / Briton blue / Saxon green /
+## rebel purple / Pict slate / Fae cyan / neutral grey). It does NOT change targeting — `team`
+## ("raiders"/"ally") still decides who hunts whom; faction is pure readability flavour.
+@export_enum("neutral", "camelot", "briton", "saxon", "rebel", "pict", "fae") var faction := "neutral"
+## A named general (a warlord / champion), a boss-tier unit: joins the "generals" group so the
+## boss-healthbar UI can track it. Otherwise it is an ordinary configurable Enemy.
 @export var is_general := false
 
 @export_group("Defense")
@@ -108,16 +108,17 @@ static var _touch := DisplayServer.is_touchscreen_available()
 var _offscreen := false           ## was off the phone's view last frame (touch only)
 
 ## The faction's banner colour, used by the drawing pass to tint a unit so allegiance reads at a
-## glance (no gameplay effect). Arthurian: Camelot gold / Saxon moss-green / Mordred's rebels
-## black-purple. Three Kingdoms (the bonus maps): Wei blue / Shu green / Wu red. Else neutral grey.
+## glance (no gameplay effect). The Arthurian houses: Camelot gold (Arthur's royal host) / Briton
+## blue (the levies of Logres) / Saxon moss-green (the invaders) / Mordred's rebels purple / Pict
+## cold slate (the Old North) / Fae spectral cyan (Avalon's wraiths). Else neutral grey.
 func faction_color() -> Color:
 	match faction:
 		"camelot": return Color(0.92, 0.78, 0.30)
+		"briton": return Color(0.34, 0.56, 0.92)
 		"saxon": return Color(0.40, 0.46, 0.27)
 		"rebel": return Color(0.52, 0.33, 0.60)
-		"wei": return Color(0.30, 0.52, 0.95)
-		"shu": return Color(0.36, 0.78, 0.42)
-		"wu": return Color(0.86, 0.36, 0.34)
+		"pict": return Color(0.46, 0.52, 0.58)
+		"fae": return Color(0.55, 0.80, 0.80)
 		_: return Color(0.70, 0.70, 0.72)
 
 func _ready() -> void:
@@ -128,7 +129,7 @@ func _ready() -> void:
 	if is_support and team == "raiders":
 		add_to_group("officers")     # the DefeatOfficer objective counts this group
 	if is_general:
-		add_to_group("generals")     # the boss-healthbar UI tracks named generals (武將)
+		add_to_group("generals")     # the boss-healthbar UI tracks named generals (warlords / champions)
 	# Non-shield units pick a side to flank from, so a crowd surrounds rather than stacks.
 	if not shielded:
 		_flank = -1.0 if (randf() < 0.5) else 1.0

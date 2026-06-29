@@ -1,6 +1,6 @@
 class_name BattleMap
 extends Node2D
-## Reusable Three-Kingdoms battle-map base (Dynasty-Warriors / Musou style).
+## Reusable Arthurian Musou battlefield base.
 ##
 ## A concrete map is a THIN subclass that overrides the build hooks below (walls, terrain,
 ## decor, allies, objectives, waves, theme). The base owns the whole orchestration — it
@@ -81,7 +81,7 @@ func _ready() -> void:
 	add_child(VIGNETTE.instantiate())
 	_score_screen = SCORE_SCREEN.instantiate()
 	add_child(_score_screen)
-	# A boss healthbar overlay that auto-tracks any named generals (武將) on the field.
+	# A boss healthbar overlay that auto-tracks any named generals (boss warlords) on the field.
 	add_child(GENERAL_HEALTHBAR.instantiate())
 	# The reusable pause overlay — Esc / mobile MENU → Resume / Restart / Return to Lobby. Every
 	# map and room gets it for free; no per-map wiring (PauseMenu owns its own toggle).

@@ -1,9 +1,9 @@
 extends Node2D
-## Test for the Hu Lao Gate (虎牢關) battle map — a concrete BattleMap subclass (token HULAO).
+## Test for The Marches battle map — a concrete BattleMap subclass (token HULAO).
 ##
-## Asserts the map BOOTS (Arthur + HUD instanced), the Wei raiders SPAWN (group "targets" fills
+## Asserts the map BOOTS (Arthur + HUD instanced), the Saxon raiders SPAWN (group "targets" fills
 ## within a few frames), and that by clearing the field every physics frame the map drives all
-## five waves + the officer down and reaches VICTORY (`_won`) inside ~400 frames — proving the
+## five waves + the warlord down and reaches VICTORY (`_won`) inside ~400 frames — proving the
 ## RepelWaves + DefeatOfficer objectives compose to a win through the shared BattleMap loop.
 ##
 ## Run: godot --headless --path . res://tests/HuLaoGateTest.tscn --quit-after 600 — look for HULAO_VERDICT.

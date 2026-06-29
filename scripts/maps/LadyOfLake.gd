@@ -87,7 +87,7 @@ func _build_decor() -> void:
 ## crates/rocks give the warband something to barge through as it rounds the mere.
 func _place_flank_scenery() -> void:
 	for side in [-1.0, 1.0]:
-		var faction := "wu" if side < 0.0 else "wei"   # decor colour flavour only (existing enum)
+		var faction := "rebel" if side < 0.0 else "camelot"   # decor colour flavour only (Arthurian houses)
 		# Camp standard + war drum just outside the lake on each shore lane.
 		_place_decor(BANNER, Vector2(560.0 * side, -120.0), faction)
 		_place_decor(WAR_DRUM, Vector2(560.0 * side, -40.0), faction)

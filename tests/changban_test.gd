@@ -1,6 +1,6 @@
 extends Node2D
-## Test for the Changban (長坂坡) escort map — a thin BattleMap subclass that protects ONE
-## allied ward against escalating Wei waves. Two paths, each on a FRESH map instance:
+## Test for the Long Road escort map — a thin BattleMap subclass that protects ONE
+## allied ward against escalating Saxon waves. Two paths, each on a FRESH map instance:
 ##
 ##   (a) DEFEAT — the map sets a `_ward`; killing that ward (a huge apply_hit) must fail the
 ##       ProtectBanner constraint and drive the base to `_lost == true`.

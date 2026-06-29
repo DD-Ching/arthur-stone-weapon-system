@@ -1,6 +1,6 @@
 class_name Base
 extends Node2D
-## A capturable supply base — the Guandu (官渡) granary depot mechanic, built once so any
+## A capturable supply base — the Beacon-Forts supply-depot mechanic, built once so any
 ## map can place it. A Base sits in group "bases" with a capture `radius`. It is captured
 ## once it has been ENGAGED (a live raider was ever inside the radius) AND no live raider
 ## (group "targets", not `_dead`) remains inside it. So you take a depot by clearing the
@@ -8,15 +8,15 @@ extends Node2D
 ## scoped to a circle on the field.
 ##
 ## Pure-code art (`_draw`): a granary mound + a banner pole, drawn in the holder's colour;
-## the colour flips from the foe's (魏 Wei) to the captor's (蜀 Shu) once taken, with a
+## the colour flips from the foe's to the captor's once taken, with a
 ## "CAPTURED" popup. Cheap and web-safe — it only re-scans a few times a second and only
 ## redraws when its state changes.
 
 ## How far from the centre a raider counts as "garrisoning" this base.
 @export var radius := 150.0
-## Banner colour BEFORE capture (the enemy holder — 魏 Wei blue by default).
+## Banner colour BEFORE capture (the enemy holder — blue by default).
 @export var enemy_color := Color(0.30, 0.52, 0.95)
-## Banner colour AFTER capture (the captor — 蜀 Shu green by default).
+## Banner colour AFTER capture (the captor — green by default).
 @export var captured_color := Color(0.36, 0.78, 0.42)
 ## A short label drawn under the granary, pure flavour.
 @export var label := "GRANARY"

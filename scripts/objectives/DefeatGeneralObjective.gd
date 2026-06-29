@@ -1,9 +1,9 @@
 class_name DefeatGeneralObjective
 extends Objective
-## Defeat the named boss (武將): complete once every general that has appeared has fallen.
+## Defeat the named boss (a boss warlord): complete once every general that has appeared has fallen.
 ##
 ## This is the fix for "you could win WITHOUT beating the boss". Named bosses (Mordred, Cerdic,
-## the Black Knight, Lü Bu, …) join the "generals" group, which BattleMap surfaces as
+## the Black Knight, Octa, …) join the "generals" group, which BattleMap surfaces as
 ## ctx["generals"]. It mirrors DefeatOfficerObjective exactly — same `_seen` latch so "0 generals"
 ## before the boss spawns isn't an instant win, and the same non-latching recompute so a fresh
 ## general re-opens it — but counts generals instead of officers. Required by default: no number

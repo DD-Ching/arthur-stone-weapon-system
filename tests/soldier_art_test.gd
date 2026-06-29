@@ -4,14 +4,14 @@ extends Node2D
 ## Headless can't screenshot, so this asserts what a script CAN: that a real LightSoldier — the
 ## shipped scene whose `look` is "soldier" — instantiates and draws its enriched silhouette over a
 ## couple of physics frames (headless still calls `_draw`) WITHOUT errors, across several factions
-## so the faction-sash colour path runs for each kingdom. It then checks the unit still exists with
+## so the faction-sash colour path runs for each house. It then checks the unit still exists with
 ## look "soldier", and that the defeat-fade path draws cleanly at a partial `_alpha`.
 ##
 ## Run: godot --headless --path . res://tests/SoldierArtTest.tscn --quit-after 600
 ## Look for the ART_SOLDIER_VERDICT line.
 
 const SoldierScene := preload("res://scenes/LightSoldier.tscn")
-const FACTIONS := ["neutral", "wei", "shu", "wu"]
+const FACTIONS := ["neutral", "camelot", "briton", "saxon", "rebel"]
 
 var _soldiers: Array = []
 var _frame := 0
@@ -35,7 +35,7 @@ func _ready() -> void:
 	# A faded copy (mid defeat-fade) so the `_alpha` multiply path draws at partial opacity.
 	var faded = SoldierScene.instantiate()
 	faded.look = "soldier"
-	faded.faction = "wu"
+	faded.faction = "rebel"
 	faded.ai_enabled = false
 	add_child(faded)
 	faded.global_position = Vector2(-240.0, 140.0)

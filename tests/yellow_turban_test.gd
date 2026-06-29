@@ -1,13 +1,13 @@
 extends Node2D
-## Test for the Yellow Turban Rebellion (黃巾之亂) survival map + the reusable SurviveObjective.
+## Test for the Night-Host survival map + the reusable SurviveObjective.
 ##
 ## (a) SurviveObjective LOGIC — the "endure" objective wins on EITHER bar:
 ##       - survive_seconds=0.5: ctx {time:0.0} → not done; ctx {time:1.0} → done (the clock).
 ##       - ko_target=3:         ctx {kos:3}   → done (the body-count), even at time 0.
 ## (b) The map BOOTS — a thin BattleMap subclass instantiates Arthur + the HUD, and pours its
-##     first rebel wave so the field has live targets (group "targets" > 0 → the mob is here).
+##     first wraith wave so the field has live targets (group "targets" > 0 → the host is here).
 ## (c) The map WINS by survival — its SurviveObjective is set short, and after enough elapsed
-##     time the base resolves to `_won` (no officer, no breach — pure last-stand).
+##     time the base resolves to `_won` (no champion, no breach — pure last-stand until dawn).
 ##
 ## Run: godot --headless --path . res://tests/YellowTurbanTest.tscn --quit-after 600
 ## Look for YELLOWTURBAN_VERDICT.
@@ -58,8 +58,8 @@ func _report() -> void:
 	print("YELLOWTURBAN_VERDICT %s" % ("PASS" if ok else "FAIL"))
 	get_tree().quit(0 if ok else 1)
 
-## The real Yellow Turban map, but with a SHORT survival window so the headless test can watch
-## it reach victory by outlasting the clock (no officer, no breach — pure last-stand).
+## The real Night-Host map, but with a SHORT survival window so the headless test can watch
+## it reach victory by outlasting the clock (no champion, no breach — pure last-stand until dawn).
 class _ShortSurviveYellowTurban extends YellowTurban:
 	func _init() -> void:
 		super()
