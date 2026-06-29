@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://scripts/Enemy.gd" id="1_enemy"]
+[ext_resource type="Script" path="res://scripts/General.gd" id="1_enemy"]
 
 [sub_resource type="CircleShape2D" id="morgan_shape"]
 radius = 22.0
@@ -22,6 +22,7 @@ radius = 22.0
 base_color = Color(0.46, 0.22, 0.52, 1)
 faction = "rebel"
 is_general = true
+cc_resist = 0.4
 is_support = true
 morale_radius = 300.0
 team = "raiders"
@@ -33,8 +34,8 @@ ai_enabled = true
 move_speed = 48.0
 move_accel = 520.0
 sight_range = 280.0
-keep_distance = 200.0
-moves = PackedStringArray("javelin", "pound")
+keep_distance = 240.0
+moves = PackedStringArray("spell_bolt", "hex_nova")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("morgan_shape")

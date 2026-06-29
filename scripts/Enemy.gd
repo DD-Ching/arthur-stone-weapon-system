@@ -27,6 +27,9 @@ extends RigidBody2D
 ## A named general (a warlord / champion), a boss-tier unit: joins the "generals" group so the
 ## boss-healthbar UI can track it. Otherwise it is an ordinary configurable Enemy.
 @export var is_general := false
+## 0..1 — shrinks incoming stun/stagger DURATION (bosses set ~0.5 so the spin + ult can't
+## perma-CC them; a real duel trades blows instead of being a free stun-lock execution).
+@export var cc_resist := 0.0
 
 @export_group("Defense")
 @export var max_health := 1.0e9         ## dummies: effectively a punching bag
@@ -220,7 +223,7 @@ func block_factor(dir: Vector2) -> float:
 	return 1.0
 
 func stun(duration: float) -> void:
-	_stun = maxf(_stun, duration)
+	_stun = maxf(_stun, duration * (1.0 - clampf(cc_resist, 0.0, 0.9)))
 
 func _interrupt() -> void:
 	_ai = AI.APPROACH
