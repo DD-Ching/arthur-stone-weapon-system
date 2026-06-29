@@ -7,16 +7,16 @@ extends Node2D
 ## Headless can't screenshot, so this asserts what a script CAN:
 ##   1. Drawing every (look × faction) combination over a couple of frames runs WITHOUT errors and
 ##      leaves every unit alive (a draw crash would free / error the node).
-##   2. `faction_color()` returns the expected hue per faction (wei≈blue, shu≈green, wu≈red,
-##      neutral≈grey) — checked by which channel dominates.
-##   3. The pure `body_color()` helper reflects allegiance: for wei/shu/wu it shifts AWAY from the
-##      neutral body colour and TOWARD that faction's colour; neutral stays ~unchanged.
+##   2. `faction_color()` returns the expected hue per faction (briton≈blue, saxon≈green,
+##      rebel≈purple, camelot≈gold, neutral≈grey) — checked by which channel dominates.
+##   3. The pure `body_color()` helper reflects allegiance: for briton/saxon/rebel it shifts AWAY
+##      from the neutral body colour and TOWARD that faction's colour; neutral stays ~unchanged.
 ##
 ## Run: godot --headless --path . res://tests/BeautifyTest.tscn --quit-after 600
 ## Look for the BEAUTIFY_VERDICT line.
 
 const LOOKS := ["dummy", "soldier", "shield", "heavy", "spear", "banner", "knight"]
-const FACTIONS := ["neutral", "wei", "shu", "wu"]
+const FACTIONS := ["neutral", "camelot", "briton", "saxon", "rebel"]
 
 var _enemies: Array = []
 var _frame := 0
@@ -42,34 +42,38 @@ func _ready() -> void:
 
 	# Also force a SHIELDED + a BROKEN-shield + a SUPPORT unit so those branches draw alongside a
 	# faction tint (the foundation + this pass must coexist with the v0.15 readability shapes).
-	var shield_wu: Enemy = _make_enemy("shield", "wu", Vector2(-300.0, 320.0))
-	shield_wu.shielded = true
-	var shield_broken: Enemy = _make_enemy("shield", "wei", Vector2(-160.0, 320.0))
+	var shield_rebel: Enemy = _make_enemy("shield", "rebel", Vector2(-300.0, 320.0))
+	shield_rebel.shielded = true
+	var shield_broken: Enemy = _make_enemy("shield", "briton", Vector2(-160.0, 320.0))
 	shield_broken.shielded = true
 	shield_broken._shield_broken = 2.0
-	var support_shu: Enemy = _make_enemy("banner", "shu", Vector2(0.0, 320.0))
-	support_shu.is_support = true
-	support_shu.morale_radius = 190.0
-	_enemies.append(shield_wu)
+	var support_saxon: Enemy = _make_enemy("banner", "saxon", Vector2(0.0, 320.0))
+	support_saxon.is_support = true
+	support_saxon.morale_radius = 190.0
+	_enemies.append(shield_rebel)
 	_enemies.append(shield_broken)
-	_enemies.append(support_shu)
+	_enemies.append(support_saxon)
 
 	# ── faction_color() hue assertions ─────────────────────────────────────────────────────────
 	# Any Enemy instance suffices; faction_color() reads its own `faction` field, so set + read.
 	var probe: Enemy = _enemies[0]
-	probe.faction = "wei"
-	var c_wei: Color = probe.faction_color()
-	probe.faction = "shu"
-	var c_shu: Color = probe.faction_color()
-	probe.faction = "wu"
-	var c_wu: Color = probe.faction_color()
+	probe.faction = "briton"
+	var c_briton: Color = probe.faction_color()
+	probe.faction = "saxon"
+	var c_saxon: Color = probe.faction_color()
+	probe.faction = "rebel"
+	var c_rebel: Color = probe.faction_color()
+	probe.faction = "camelot"
+	var c_camelot: Color = probe.faction_color()
 	probe.faction = "neutral"
 	var c_neu: Color = probe.faction_color()
 	probe.faction = "neutral"
-	# Wei reads blue (blue is the dominant channel), Shu green, Wu red.
-	_checks["wei_is_blue"] = c_wei.b > c_wei.r and c_wei.b > c_wei.g
-	_checks["shu_is_green"] = c_shu.g > c_shu.r and c_shu.g > c_shu.b
-	_checks["wu_is_red"] = c_wu.r > c_wu.g and c_wu.r > c_wu.b
+	# Briton reads blue (blue dominant), Saxon green (green dominant), Rebel purple (red AND blue
+	# both above green), Camelot gold (red and green high, blue low).
+	_checks["briton_is_blue"] = c_briton.b > c_briton.r and c_briton.b > c_briton.g
+	_checks["saxon_is_green"] = c_saxon.g > c_saxon.r and c_saxon.g > c_saxon.b
+	_checks["rebel_is_purple"] = c_rebel.r > c_rebel.g and c_rebel.b > c_rebel.g
+	_checks["camelot_is_gold"] = c_camelot.r > 0.6 and c_camelot.g > 0.6 and c_camelot.b < 0.5
 	# Neutral reads grey: channels roughly equal (max-min spread small) and mid-bright.
 	var neu_spread: float = maxf(c_neu.r, maxf(c_neu.g, c_neu.b)) - minf(c_neu.r, minf(c_neu.g, c_neu.b))
 	_checks["neutral_is_grey"] = neu_spread < 0.1 and c_neu.r > 0.3 and c_neu.r < 0.95
@@ -81,7 +85,7 @@ func _ready() -> void:
 	var base_neu: Color = _body_color_for("neutral")
 	var all_shift_ok := true
 	var all_toward_ok := true
-	for fac in ["wei", "shu", "wu"]:
+	for fac in ["briton", "saxon", "rebel"]:
 		var fc: Color = _faction_color_for(fac)
 		var bc: Color = _body_color_for(fac)
 		if _color_dist(bc, base_neu) <= 0.001:

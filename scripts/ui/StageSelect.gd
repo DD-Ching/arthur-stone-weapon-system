@@ -32,28 +32,25 @@ extends CanvasLayer
 ##   `entries`  — Array of ONLY selectable battles as {title, path, section}, in display order.
 ##   `selected` — index into `entries` of the highlighted battle.
 ##   `_move(dir)`, `selected_path()` — wrapping navigation + the chosen scene path.
-##   `TITLE_TEXT`, `SEC_ARTHUR` / `SEC_TRIALS` / `SEC_BONUS`, `SECTION_LABELS` — re-exposed.
+##   `TITLE_TEXT`, `SEC_ARTHUR` / `SEC_TRIALS`, `SECTION_LABELS` — re-exposed.
 
 const StageCard := preload("res://scripts/ui/StageCard.gd")
 
 ## Section ids re-exposed for the headless tests (they read `_menu.SEC_*`). Mirror Campaign's.
 const SEC_ARTHUR := "arthur"
 const SEC_TRIALS := "trials"
-const SEC_BONUS := "bonus"
 
 ## Human-readable section headers, re-exposed for tests. Resolved from Campaign at build time so
 ## the lobby and the campaign never drift; this const is the fallback if the autoload is absent.
 const SECTION_LABELS := {
 	SEC_ARTHUR: "— THE LEGEND OF KING ARTHUR —",
-	SEC_TRIALS: "— FORD & TRIALS —",
-	SEC_BONUS: "— THREE KINGDOMS (BONUS) —",
+	SEC_TRIALS: "— THE TRAINING YARD —",
 }
 
 ## A short era / kind tag printed under each card's title, by section.
 const SECTION_TAGS := {
 	SEC_ARTHUR: "ARTHURIAN LEGEND",
 	SEC_TRIALS: "TRIAL · PRACTICE",
-	SEC_BONUS: "THREE KINGDOMS · BONUS",
 }
 
 ## Title MUST contain both "STONE" and "ARTHUR" (and never "三國") — asserted by the Arthur test.

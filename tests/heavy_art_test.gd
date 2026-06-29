@@ -13,7 +13,7 @@ extends Node2D
 ## Look for the ART_HEAVY_VERDICT line.
 
 const HEAVY_SCENE := "res://scenes/HeavyGuard.tscn"
-const FACTIONS := ["neutral", "wei", "shu", "wu"]
+const FACTIONS := ["neutral", "camelot", "briton", "saxon", "rebel"]
 
 var _units: Array = []
 var _frame := 0

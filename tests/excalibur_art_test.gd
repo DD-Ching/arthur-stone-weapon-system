@@ -12,7 +12,7 @@ extends Node2D
 ## Look for the ART_EXCALIBUR_VERDICT line.
 
 const CHAMPION_SCENE := "res://scenes/knights/Lancelot.tscn"
-const FACTIONS := ["camelot", "saxon", "rebel", "wei", "shu", "neutral"]
+const FACTIONS := ["camelot", "saxon", "rebel", "briton", "pict", "neutral"]
 
 var _units: Array = []
 var _frame := 0

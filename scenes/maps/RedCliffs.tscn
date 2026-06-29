@@ -1,7 +1,7 @@
 [gd_scene load_steps=2 format=3]
 
-; Red Cliffs (赤壁) — the burning river crossing. A thin BattleMap subclass: all the level
-; orchestration is the base's; this scene just carries the RedCliffs script + its tuning.
+; The Burning Fords — a tidal river crossing where Saxon longships burn. A thin BattleMap
+; subclass: all the level orchestration is the base's; this scene carries the script + tuning.
 
 [ext_resource type="Script" path="res://scripts/maps/RedCliffs.gd" id="1_redcliffs"]
 

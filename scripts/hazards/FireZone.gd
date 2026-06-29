@@ -97,6 +97,9 @@ func _draw() -> void:
 	var rect := Rect2(-half, size)
 	# A dim charred base so the footprint reads even between flame tongues.
 	draw_rect(rect, Color(0.18, 0.06, 0.03, 0.35))
+	# A soft warm glow pooling over the fire (breathes with the flicker) — the firelight.
+	var pulse := 0.7 + 0.3 * sin(_t * 4.0)
+	draw_circle(Vector2.ZERO, maxf(size.x, size.y) * 0.5, Color(1.0, 0.5, 0.2, 0.10 * pulse))
 	# Flame tongues: a row of flickering triangles whose height pulses out of phase, drawn
 	# back-to-front (dark red → orange → yellow core) so they layer into a sheet of fire.
 	var cols := maxi(3, int(size.x / 26.0))

@@ -44,15 +44,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("reset_arena"):
 		get_tree().reload_current_scene()
 
+var _dapple: Array = []   ## cached deterministic ground dapple (built once)
+
 func _draw() -> void:
 	var rect := Rect2(-HALF, HALF * 2.0)
-	draw_rect(rect, Color(0.16, 0.15, 0.18))            # floor
-	# faint reference grid so movement + knockback distance are readable
-	# (derived from HALF so it always lines up with the boundary)
-	for x in range(-int(HALF.x), int(HALF.x) + 1, GRID_STEP):
-		draw_line(Vector2(x, -HALF.y), Vector2(x, HALF.y), Color(1, 1, 1, 0.04), 1.0)
-	for y in range(-int(HALF.y), int(HALF.y) + 1, GRID_STEP):
-		draw_line(Vector2(-HALF.x, y), Vector2(HALF.x, y), Color(1, 1, 1, 0.04), 1.0)
+	if _dapple.is_empty():
+		_dapple = GroundPaint.make_dapple(rect, 13370001)
+	# A code-drawn stone floor (value gradient + dapple) instead of the old debug grid.
+	GroundPaint.draw_floor(self, rect, Color(0.15, 0.14, 0.17), Color(0.19, 0.17, 0.20), _dapple)
 	draw_rect(rect, Color(0.45, 0.40, 0.50), false, 6.0)  # boundary line
 	# interior walls (same Rect2s that became collision)
 	for r in WALLS:

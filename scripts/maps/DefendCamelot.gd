@@ -31,6 +31,11 @@ const CRATE := preload("res://scenes/Crate.tscn")
 const WAR_CART := preload("res://scenes/WarCart.tscn")
 const FACTION_BANNER := preload("res://scenes/decor/FactionBanner.tscn")
 const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
+# Region-identity decor for the castle courtyard (placement + config, no new scenes).
+const CAMELOT_BANNER := preload("res://scenes/decor/CamelotBanner.tscn")
+const TORCH := preload("res://scenes/decor/Torch.tscn")
+const BRAZIER := preload("res://scenes/decor/Brazier.tscn")
+const ROUND_TABLE := preload("res://scenes/decor/RoundTable.tscn")
 
 const GATE_GAP := 160.0          ## width of the castle-gate gap the besiegers pour through
 const WALL_Y_OFFSET := 150.0     ## how far below the top frame the castle wall sits
@@ -41,6 +46,14 @@ const STREET_END_Y := 130.0      ## y where the street walls stop — well short
 const ALLEY_GAP := 120.0         ## width of the side-alley break cut into the right kerb
 
 # ── theme ─────────────────────────────────────────────────────────────────────
+## Castle courtyard at a golden torch-dusk: warm flagstone floor under a gentle gold mood. Runs
+## FIRST in _ready so the floor + tint are themed from frame 0. region_mood is kept SUBTLE (each
+## channel well above 0.6) so unit readability is never hurt.
+func _theme() -> void:
+	ground_top = Color(0.22, 0.21, 0.23)      # flagstone, lit edge
+	ground_bottom = Color(0.17, 0.16, 0.17)   # flagstone, shadowed
+	region_mood = Color(0.98, 0.86, 0.66)     # golden dusk wash
+
 func _map_title() -> String:
 	return "DEFEND CAMELOT"
 
@@ -105,6 +118,45 @@ func _build_decor() -> void:
 	_scatter_battlefield_props()   # smashable barrels/pots/hay + a fire-barrel down the courtyard flanks
 	var wall_y := b.position.y + WALL_Y_OFFSET
 	var half_gap := GATE_GAP * 0.5
+	# ── region identity: a distant castle skyline + faint embers on the dusk air ──
+	var bd := RegionBackdrop.new()
+	bd.kind = "castle"
+	bd.span = b.size.x
+	bd.silhouette = Color(0.10, 0.10, 0.12, 0.95)
+	add_child(bd)
+	bd.position = Vector2((b.position.x + b.end.x) * 0.5, b.position.y)
+	var ad := AmbientDrift.new()
+	ad.kind = "embers"
+	ad.count = 40
+	ad.area = b
+	ad.tint = Color(1.0, 0.7, 0.3, 0.35)      # faint warm embers from the gate fires
+	add_child(ad)
+	# The Round Table — Camelot's court — in a safe corner well off the main lane.
+	var table := ROUND_TABLE.instantiate()
+	table.position = Vector2(-400.0, 300.0)
+	add_child(table)
+	# Camelot's royal standards flanking the gate (gold Pendragon pennants), the defenders' colour.
+	for bx in [-1.0, 1.0]:
+		var cb := CAMELOT_BANNER.instantiate()
+		cb.faction = "camelot"
+		cb.position = Vector2((half_gap + 56.0) * bx, wall_y + 44.0)
+		add_child(cb)
+	# A courtyard standard rallying the garrison (off-centre so the central lane stays clear).
+	var court_banner := CAMELOT_BANNER.instantiate()
+	court_banner.faction = "camelot"
+	court_banner.position = Vector2(-60.0, 372.0)
+	add_child(court_banner)
+	# A row of wall-mounted torches lining the curtain wall, left and right of the gate.
+	for tx in [b.position.x + 120.0, b.position.x + 280.0, -half_gap - 60.0,
+			half_gap + 60.0, b.end.x - 280.0, b.end.x - 120.0]:
+		var torch := TORCH.instantiate()
+		torch.position = Vector2(tx, wall_y - 4.0)
+		add_child(torch)
+	# Braziers at the gate mouth — the fires that light the breach.
+	for brx in [-1.0, 1.0]:
+		var bz := BRAZIER.instantiate()
+		bz.position = Vector2((half_gap - 28.0) * brx, wall_y + 78.0)
+		add_child(bz)
 	# Flank the gate gap with a pair of solid stone gate posts (one per jamb side).
 	for sx in [-1.0, 1.0]:
 		var gp := GATE_POST.instantiate()
@@ -234,6 +286,21 @@ func _on_wave_spawned(idx: int, units: Array) -> void:
 	for u in units:
 		_tint(u, fac)
 
+# ── ground motif: flagstone courtyard seams over the base floor, behind the units ─
+func _paint_region(b: Rect2) -> void:
+	# A subtle grid of warm-grey stone joints turns the floor into a flagged courtyard. Drawn once
+	# (static), kept faint so it reads as paving without fighting unit readability.
+	var seam := Color(0.42, 0.40, 0.38, 0.16)
+	var step := 96.0
+	var x := b.position.x + step
+	while x < b.end.x:
+		draw_line(Vector2(x, b.position.y), Vector2(x, b.end.y), seam, 2.0)
+		x += step
+	var y := b.position.y + step
+	while y < b.end.y:
+		draw_line(Vector2(b.position.x, y), Vector2(b.end.x, y), seam, 2.0)
+		y += step
+
 # ── castle dressing on top of the base grid ───────────────────────────────────
 func _draw() -> void:
 	super._draw()
@@ -259,12 +326,8 @@ func _draw() -> void:
 	var post_w := 18.0
 	draw_rect(Rect2(-half_gap - post_w, wall_y - 20.0, post_w, t + 40.0), post)
 	draw_rect(Rect2(half_gap, wall_y - 20.0, post_w, t + 40.0), post)
-	# The Camelot / Pendragon banner over the gate (gold field), the defenders' colour.
-	var gold := Color(0.92, 0.78, 0.30)
-	draw_line(Vector2(0.0, wall_y - 74.0), Vector2(0.0, wall_y - 20.0), Color(0.5, 0.42, 0.16), 2.0)
-	draw_rect(Rect2(-14.0, wall_y - 70.0, 28.0, 46.0), gold)
-	# A small defenders' standard inside the courtyard too.
-	draw_rect(Rect2(-12.0, 360.0, 24.0, 40.0), gold)
+	# (The Pendragon standards over the gate + the courtyard rally standard are now real
+	#  CamelotBanner decor props placed in _build_decor, not inline gold rects.)
 	# The courtyard defence line, drawn faintly so the held line reads.
 	draw_line(Vector2(b.position.x, defence_line_y), Vector2(b.end.x, defence_line_y),
 		Color(0.85, 0.3, 0.3, 0.18), 2.0)

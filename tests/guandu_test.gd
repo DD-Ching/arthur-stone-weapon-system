@@ -1,13 +1,13 @@
 extends Node2D
-## Headless test for the Guandu (官渡) map + the reusable Base-capture mechanic.
+## Headless test for the Beacon-Forts map + the reusable Base-capture mechanic.
 ##
 ## Three things to prove:
 ##   (a) THE MECHANIC — a Base with live raiders inside its radius is NOT captured; once those
 ##       raiders are defeated (and it was engaged), it flips to is_captured() == true.
 ##   (b) THE WIN RULE — CaptureBasesObjective completes when every base is held (ctx
 ##       bases_total == bases_captured), and not before.
-##   (c) THE MAP — the Guandu scene boots (Arthur + HUD), and after its base garrisons are
-##       all defeated, every depot captures and the map reaches VICTORY (_won).
+##   (c) THE MAP — the Beacon-Forts scene boots (Arthur + HUD), and after its base garrisons
+##       are all defeated, every fort captures and the map reaches VICTORY (_won).
 ##
 ## Run: godot --headless --path . res://tests/GuanduTest.tscn --quit-after 600
 ## Look for GUANDU_VERDICT.
@@ -85,8 +85,8 @@ func _physics_process(_dt: float) -> void:
 		if is_instance_valid(_g2):
 			_g2.apply_hit(Vector2.DOWN, 9000.0, 0.1, 1.0e9, 0.0)
 
-	# (c) Keep defeating every raider on the MAP (the depot garrisons + any relief wave) so
-	# each depot empties and captures, driving the map to victory.
+	# (c) Keep defeating every raider on the MAP (the fort garrisons + any relief wave) so
+	# each fort empties and captures, driving the map to victory.
 	if _frame >= 20 and not _map._won:
 		for e in get_tree().get_nodes_in_group("targets"):
 			if not is_instance_valid(e):

@@ -15,7 +15,7 @@ extends Node2D
 ## Look for the ART_BLACKKNIGHT_VERDICT line.
 
 const BLACK_KNIGHT := "res://scenes/villains/BlackKnight.tscn"
-const FACTIONS := ["camelot", "saxon", "rebel", "wei", "shu", "neutral"]
+const FACTIONS := ["camelot", "saxon", "rebel", "briton", "pict", "neutral"]
 
 var _units: Array = []
 var _frame := 0

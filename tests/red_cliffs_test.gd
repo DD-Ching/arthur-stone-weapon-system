@@ -1,9 +1,9 @@
 extends Node2D
-## Red Cliffs (赤壁) + FireZone test (token CHIBI). Three checks, all headless:
+## The Burning Fords + FireZone test (token CHIBI). Three checks, all headless:
 ##   (a) FIRE DAMAGES — a unit standing INSIDE a FireZone loses health / dies; a unit OUTSIDE
 ##       it (same scene, placed clear of the rect) takes NO burn. This proves the hazard works.
 ##   (b) THE MAP BOOTS — RedCliffs instantiates Arthur + the HUD and spawns its first wave of
-##       raiders, all stamped 魏 Wei.
+##       raiders, all stamped Saxon.
 ##   (c) (optional) LOOPING-KILL → VICTORY — clear every raider each wave and the RepelWaves
 ##       objective drives the base to `_won`.
 ##

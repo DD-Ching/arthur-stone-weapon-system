@@ -1,14 +1,15 @@
 class_name FactionBanner
 extends Node2D
-## A tall faction standard — a pole topped with a waving pennant whose colour reads the
-## kingdom (魏 Wei blue / 蜀 Shu green / 吳 Wu red / neutral grey). Pure code-drawn decor:
-## maps drop one near a gate, a camp, or a spawn to give the field Three-Kingdoms flavour.
+## A tall faction standard — a pole topped with a waving pennant whose colour reads the house
+## (Camelot gold / Briton blue / Saxon moss-green / Mordred's rebels purple / Pict slate / Fae
+## cyan / neutral grey). Pure code-drawn decor: maps drop one near a gate, a camp, or a spawn to
+## give the field its Arthurian allegiance at a glance.
 ##
 ## The wave is two cheap sin offsets in _process so the pennant ripples; no physics, no
 ## image assets, allocation-light. The colour table MIRRORS Enemy.faction_color so a banner
-## and the troops fighting under it read as the same kingdom at a glance.
+## and the troops fighting under it read as the same house.
 
-@export_enum("neutral", "wei", "shu", "wu") var faction := "neutral"
+@export_enum("neutral", "camelot", "briton", "saxon", "rebel", "pict", "fae") var faction := "neutral"
 ## Pole height in pixels (the pennant flies from the top); tune per placement.
 @export var pole_height := 64.0
 ## How vigorously the pennant ripples (purely cosmetic).
@@ -16,13 +17,17 @@ extends Node2D
 
 var _t := 0.0
 
-## The standard's colour, matching Enemy.faction_color (魏 Wei blue / 蜀 Shu green /
-## 吳 Wu red / neutral grey). Kept here too so decor has no dependency on Enemy.
+## The standard's colour, matching Enemy.faction_color (Camelot gold / Briton blue / Saxon
+## moss-green / rebel purple / Pict slate / Fae cyan / neutral grey). Kept here too so decor
+## has no dependency on Enemy.
 func banner_color() -> Color:
 	match faction:
-		"wei": return Color(0.30, 0.52, 0.95)
-		"shu": return Color(0.36, 0.78, 0.42)
-		"wu": return Color(0.86, 0.36, 0.34)
+		"camelot": return Color(0.92, 0.78, 0.30)
+		"briton": return Color(0.34, 0.56, 0.92)
+		"saxon": return Color(0.40, 0.46, 0.27)
+		"rebel": return Color(0.52, 0.33, 0.60)
+		"pict": return Color(0.46, 0.52, 0.58)
+		"fae": return Color(0.55, 0.80, 0.80)
 		_: return Color(0.70, 0.70, 0.72)
 
 func _ready() -> void:

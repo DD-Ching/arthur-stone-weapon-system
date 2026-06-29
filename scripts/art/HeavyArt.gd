@@ -4,7 +4,7 @@ extends RefCounted
 ## and a big maul/club hauled along the facing — a slow TANK that reads as blunt and immovable,
 ## distinct from the knight's sharp blade. Drawn on Enemy `e`. Beautify the heavy HERE.
 ##
-## When `e.is_general` (heavy武將 like 張飛 / 夏侯惇), the unit becomes GRANDER: a wider frame, a
+## When `e.is_general` (heavy warlords like Baldulf / Drust), the unit becomes GRANDER: a wider frame, a
 ## horned + plumed great-helm, a heavier maul, and a faction-coloured war-cloak streaming behind.
 ## All drawing is allocation-light `_draw` (no assets/shaders/threads/per-frame allocs); every
 ## colour multiplies `e._alpha` into its alpha so fades read correctly.
@@ -66,7 +66,7 @@ static func draw(e) -> void:
 	e.draw_line(visor + side * helm_r * 0.7, visor - side * helm_r * 0.7, Color(0.12, 0.10, 0.10, a), 2.5)
 
 	if boss:
-		# General's helm crest: a pair of curved HORNS + a tall plume, the unmistakable武將 mark.
+		# General's helm crest: a pair of curved HORNS + a tall plume, the unmistakable warlord mark.
 		var horn_c: Color = Color(0.85, 0.82, 0.70, a)
 		var horn_sides: Array[float] = [1.0, -1.0]
 		for s in horn_sides:

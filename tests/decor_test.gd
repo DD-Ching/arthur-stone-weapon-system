@@ -4,8 +4,8 @@ extends Node2D
 ## These are pure code-drawn, web-safe atmosphere props maps can place. The test proves each
 ## scene instantiates, joins the tree, draws a couple of frames without error, and configures
 ## correctly:
-##   - FactionBanner: banner_color() reads the kingdom — wei blue-ish, shu green-ish, wu red-ish;
-##     each is on the "decor" group,
+##   - FactionBanner: banner_color() reads the house — briton blue-ish, saxon green-ish, rebel
+##     purple-ish; each is on the "decor" group,
 ##   - Brazier / WarDrum: instantiate and tick cleanly (WarDrum's accent also tracks its faction),
 ##   - GatePost: a StaticBody2D on the "world" layer (collision_layer bit 1) with a CollisionShape2D.
 ##
@@ -19,9 +19,9 @@ const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
 
 const WORLD_LAYER := 1   # bit for 2d_physics/layer_1 "world"
 
-var _wei: FactionBanner
-var _shu: FactionBanner
-var _wu: FactionBanner
+var _briton: FactionBanner
+var _saxon: FactionBanner
+var _rebel: FactionBanner
 var _neutral: FactionBanner
 var _brazier: Brazier
 var _drum: WarDrum
@@ -29,10 +29,10 @@ var _gate: GatePost
 var _frame := 0
 
 func _ready() -> void:
-	# One banner per kingdom so we can check the colour table.
-	_wei = _make_banner("wei", Vector2(-200, 0))
-	_shu = _make_banner("shu", Vector2(-100, 0))
-	_wu = _make_banner("wu", Vector2(0, 0))
+	# One banner per house so we can check the colour table.
+	_briton = _make_banner("briton", Vector2(-200, 0))
+	_saxon = _make_banner("saxon", Vector2(-100, 0))
+	_rebel = _make_banner("rebel", Vector2(0, 0))
 	_neutral = _make_banner("neutral", Vector2(100, 0))
 
 	_brazier = BRAZIER.instantiate()
@@ -40,7 +40,7 @@ func _ready() -> void:
 	add_child(_brazier)
 
 	_drum = WAR_DRUM.instantiate()
-	_drum.faction = "wu"
+	_drum.faction = "rebel"
 	_drum.position = Vector2(-100, 120)
 	add_child(_drum)
 
@@ -63,23 +63,23 @@ func _process(_delta: float) -> void:
 		_report()
 
 func _report() -> void:
-	# Banner colour table: each kingdom's channel should dominate the way Enemy.faction_color does.
-	var wei := _wei.banner_color()
-	var shu := _shu.banner_color()
-	var wu := _wu.banner_color()
+	# Banner colour table: each house's channel should dominate the way Enemy.faction_color does.
+	var briton := _briton.banner_color()
+	var saxon := _saxon.banner_color()
+	var rebel := _rebel.banner_color()
 	var neu := _neutral.banner_color()
-	var wei_ok: bool = wei.b > wei.r and wei.b > wei.g            # blue dominant
-	var shu_ok: bool = shu.g > shu.r and shu.g > shu.b            # green dominant
-	var wu_ok: bool = wu.r > wu.g and wu.r > wu.b                 # red dominant
+	var briton_ok: bool = briton.b > briton.r and briton.b > briton.g     # blue dominant
+	var saxon_ok: bool = saxon.g > saxon.r and saxon.g > saxon.b          # green dominant
+	var rebel_ok: bool = rebel.r > rebel.g and rebel.b > rebel.g          # purple (red+blue > green)
 	var neu_ok: bool = absf(neu.r - neu.g) < 0.1 and absf(neu.g - neu.b) < 0.1   # grey-ish
-	var banners_grouped: bool = _wei.is_in_group("decor") and _shu.is_in_group("decor") \
-		and _wu.is_in_group("decor") and _neutral.is_in_group("decor")
-	var banner_ok: bool = wei_ok and shu_ok and wu_ok and neu_ok and banners_grouped
+	var banners_grouped: bool = _briton.is_in_group("decor") and _saxon.is_in_group("decor") \
+		and _rebel.is_in_group("decor") and _neutral.is_in_group("decor")
+	var banner_ok: bool = briton_ok and saxon_ok and rebel_ok and neu_ok and banners_grouped
 
-	# WarDrum accent mirrors its faction (wu → red dominant) and joins the decor group.
+	# WarDrum accent mirrors its faction (rebel → purple: red+blue dominate green) and joins decor.
 	var drum_accent := _drum.accent_color()
 	var drum_ok: bool = _drum.is_in_group("decor") and drum_accent.r > drum_accent.g \
-		and drum_accent.r > drum_accent.b
+		and drum_accent.b > drum_accent.g
 
 	# Brazier just needs to exist, be decor, and have ticked without error.
 	var brazier_ok: bool = is_instance_valid(_brazier) and _brazier.is_in_group("decor")
@@ -94,8 +94,8 @@ func _report() -> void:
 			break
 	var gate_ok: bool = gate_is_static and gate_on_world and gate_has_shape
 
-	print("DECOR_RESULT wei=%s shu=%s wu=%s neutral=%s grouped=%s | drum_ok=%s brazier_ok=%s | gate_static=%s gate_world=%s gate_shape=%s"
-		% [str(wei_ok), str(shu_ok), str(wu_ok), str(neu_ok), str(banners_grouped),
+	print("DECOR_RESULT briton=%s saxon=%s rebel=%s neutral=%s grouped=%s | drum_ok=%s brazier_ok=%s | gate_static=%s gate_world=%s gate_shape=%s"
+		% [str(briton_ok), str(saxon_ok), str(rebel_ok), str(neu_ok), str(banners_grouped),
 			str(drum_ok), str(brazier_ok),
 			str(gate_is_static), str(gate_on_world), str(gate_has_shape)])
 	var ok: bool = banner_ok and drum_ok and brazier_ok and gate_ok

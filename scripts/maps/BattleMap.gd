@@ -1,6 +1,6 @@
 class_name BattleMap
 extends Node2D
-## Reusable Three-Kingdoms battle-map base (Dynasty-Warriors / Musou style).
+## Reusable Arthurian Musou battlefield base.
 ##
 ## A concrete map is a THIN subclass that overrides the build hooks below (walls, terrain,
 ## decor, allies, objectives, waves, theme). The base owns the whole orchestration — it
@@ -26,6 +26,7 @@ const VIGNETTE := preload("res://scenes/ui/Vignette.tscn")
 @export var active_cap := 130              ## soft cap on concurrent raiders (web-perf safety net)
 @export var ground_top := Color(0.12, 0.13, 0.12)     ## arena floor — value gradient top (re-themable)
 @export var ground_bottom := Color(0.17, 0.15, 0.13)  ## arena floor — value gradient bottom
+@export var region_mood := Color(1.0, 1.0, 1.0, 1.0)  ## CanvasModulate time-of-day tint; white = none
 @export var max_breaches := 0              ## 0 = no defence line; >0 = lose after this many cross
 @export var defence_line_y := 360.0        ## y a raider must pass to count as a breach
 
@@ -52,6 +53,10 @@ var _pause = null                          ## the reusable PauseMenu overlay (re
 
 func _ready() -> void:
 	Impact.reset()
+	# A region paints its own identity FIRST (palette / time-of-day mood / backdrop config), before
+	# anything builds, so the floor + tint are themed from frame 0.
+	_theme()
+	_apply_mood()
 	# On a touchscreen device (a phone), pull the peak-load dials DOWN before anything spawns, so the
 	# single-threaded mobile build stays smooth at peak swarm. Desktop never enters this branch, so its
 	# density / active_cap / debris budget are byte-identical. Each dial only ever drops, never rises.
@@ -81,7 +86,7 @@ func _ready() -> void:
 	add_child(VIGNETTE.instantiate())
 	_score_screen = SCORE_SCREEN.instantiate()
 	add_child(_score_screen)
-	# A boss healthbar overlay that auto-tracks any named generals (武將) on the field.
+	# A boss healthbar overlay that auto-tracks any named generals (boss warlords) on the field.
 	add_child(GENERAL_HEALTHBAR.instantiate())
 	# The reusable pause overlay — Esc / mobile MENU → Resume / Restart / Return to Lobby. Every
 	# map and room gets it for free; no per-map wiring (PauseMenu owns its own toggle).
@@ -116,6 +121,16 @@ func _apply_mobile_profile(force: bool = false) -> void:
 	active_cap = mini(active_cap, 80)   # fewer concurrent raiders alive at once
 	Impact.apply_mobile_profile(true)   # and a smaller death-pop debris budget (already gated above)
 
+## Tint the whole world canvas to the region's time-of-day (dawn gold / dusk red / moonlit blue /
+## misty silver) via a CanvasModulate. The HUD + pause overlays live on their own CanvasLayers so
+## they stay bright. White (the default) adds nothing, so a region with no mood is unchanged.
+func _apply_mood() -> void:
+	if region_mood == Color(1.0, 1.0, 1.0, 1.0):
+		return
+	var cm := CanvasModulate.new()
+	cm.color = region_mood
+	add_child(cm)
+
 # ── subclass hooks (override these to make a map) ────────────────────────────
 func _map_title() -> String: return "BATTLE"
 func _opening_banner() -> String: return "TO ARMS!"
@@ -124,6 +139,13 @@ func _world_bounds() -> Rect2: return Rect2(-640.0, -440.0, 1280.0, 900.0)
 func _build_walls() -> void: _frame_walls(_world_bounds())   ## default: a bounding frame
 func _build_terrain() -> void: pass
 func _build_decor() -> void: pass
+## Set ground_top / ground_bottom / region_mood (and any backdrop config) here. Runs FIRST in
+## _ready, before any build, so a region is themed from frame 0. Pure (just sets fields), so a test
+## can call it on a bare instance to assert the palette without a full _ready.
+func _theme() -> void: pass
+## Draw region-specific ground motifs (flagstones / grass / ripples / ash / mist) over the base
+## floor and behind the units. Called at the END of _draw with the world rect; default empty.
+func _paint_region(_b: Rect2) -> void: pass
 func _spawn_allies() -> void: pass
 ## Pre-place a standing enemy host so the battle OPENS populated (troops from the start), not an
 ## empty arena. Default: drop the first wave onto its lane at t=0 and advance the wave counter, so
@@ -410,34 +432,9 @@ func _scale(n: int) -> int:
 func _draw() -> void:
 	var b := _world_bounds()
 	if _dapple.is_empty():
-		_init_ground(b)
-	# A soft vertical value gradient (darker top → warmer bottom) instead of a flat debug fill —
-	# drawn as a stack of bands. The map redraws once (static), so this costs nothing per frame.
-	var bands := 14
-	for i in bands:
-		var y0 := b.position.y + b.size.y * float(i) / float(bands)
-		draw_rect(Rect2(b.position.x, y0, b.size.x, b.size.y / float(bands) + 1.0),
-			ground_top.lerp(ground_bottom, float(i) / float(bands - 1)))
-	# A seeded DAPPLE — soft dark/light blobs that break up the flat floor so it reads as ground,
-	# not graph paper. Precomputed once (deterministic), so no per-frame randomness or allocation.
-	for j in _dapple.size():
-		var d: Vector3 = _dapple[j]
-		var c := Color(0.0, 0.0, 0.0, 0.06) if (j % 2 == 0) else Color(0.85, 0.8, 0.7, 0.03)
-		draw_circle(Vector2(d.x, d.y), d.z, c)
-	# A faint in-world edge darkening to settle the frame.
-	var edge := Color(0.0, 0.0, 0.0, 0.16)
-	var t := 56.0
-	draw_rect(Rect2(b.position.x, b.position.y, b.size.x, t), edge)
-	draw_rect(Rect2(b.position.x, b.end.y - t, b.size.x, t), edge)
-	draw_rect(Rect2(b.position.x, b.position.y, t, b.size.y), edge)
-	draw_rect(Rect2(b.end.x - t, b.position.y, t, b.size.y), edge)
-
-## Precompute the static ground dapple (seeded → deterministic, same every boot).
-func _init_ground(b: Rect2) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 20260627
-	for _i in 150:
-		_dapple.append(Vector3(
-			rng.randf_range(b.position.x, b.end.x),
-			rng.randf_range(b.position.y, b.end.y),
-			rng.randf_range(7.0, 26.0)))
+		_dapple = GroundPaint.make_dapple(b, 20260627)
+	# The shared value-gradient floor + seeded dapple + edge darkening (one painter for every level,
+	# so nothing falls back to a graph-paper grid). Static — redrawn once, costs nothing per frame.
+	GroundPaint.draw_floor(self, b, ground_top, ground_bottom, _dapple)
+	# Region-specific ground motifs (flagstones / grass / ripples / ash / mist), behind the units.
+	_paint_region(b)

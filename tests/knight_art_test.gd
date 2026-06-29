@@ -36,10 +36,10 @@ func _physics_process(_delta: float) -> void:
 	if not is_instance_valid(_e):
 		return
 	# Frames 1..3: draw the ordinary elite knight. At frame 4: promote to a LEGENDARY general with
-	# a faction (Shu) and keep redrawing so the general-only halo/cape/sunburst code paths run too.
+	# a faction (Saxon) and keep redrawing so the general-only halo/cape/sunburst code paths run too.
 	if _frame == 4:
 		_e.is_general = true
-		_e.faction = "shu"
+		_e.faction = "saxon"
 		_became_general = true
 		_checks["general_look_still_knight"] = (_e.look == "knight")
 	_e._face += 0.2            # rotate so the cape/blade/side maths exercise many angles

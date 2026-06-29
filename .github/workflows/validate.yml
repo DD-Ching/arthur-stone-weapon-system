@@ -626,3 +626,20 @@ jobs:
         run: |
           godot --headless --path . res://tests/FeelTest.tscn --quit-after 600 | tee feel.log
           grep -q "FEEL_VERDICT PASS" feel.log
+
+      - name: Run no-Three-Kingdoms-leak guard (Arthurian theme invariant)
+        # Directive guard: the Three-Kingdoms theme must NOT survive as visible content. Asserts no
+        # CJK/Han glyphs and no TK proper nouns in any Campaign stage title/blurb or section label,
+        # that the section ids are exactly {arthur, trials} (no "bonus"), and that labels carry no
+        # "BONUS"/"KINGDOM"/"DYNASTY" wording.
+        run: |
+          godot --headless --path . res://tests/NoTkLeakTest.tscn --quit-after 600 | tee notkleak.log
+          grep -q "NOTKLEAK_VERDICT PASS" notkleak.log
+
+      - name: Run region-theme guard (Phase B visual identity)
+        # Asserts every legend region overrides its ground palette + sets a time-of-day mood in
+        # _theme(), and that the palettes are varied — so the world reads as many distinct places,
+        # not one re-tinted floor. (Headless can't screenshot; this guards the data behind the look.)
+        run: |
+          godot --headless --path . res://tests/RegionThemeTest.tscn --quit-after 600 | tee regiontheme.log
+          grep -q "REGIONTHEME_VERDICT PASS" regiontheme.log

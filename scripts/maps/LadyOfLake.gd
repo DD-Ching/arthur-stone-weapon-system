@@ -27,6 +27,7 @@ const ROCK := preload("res://scenes/Rock.tscn")
 const FENCE := preload("res://scenes/terrain/Fence.tscn")
 const BANNER := preload("res://scenes/decor/FactionBanner.tscn")
 const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
+const CAMELOT_BANNER := preload("res://scenes/decor/CamelotBanner.tscn")
 
 # Bodies (Arthur + units + props) ride the enemy/arthur/prop layers; mask 14 = those layers,
 # matching RedCliffs' water so the lake's drift/drown acts on the same bodies the river did.
@@ -43,6 +44,15 @@ const SHRINES: Array[Vector2] = [
 	Vector2(440.0, 300.0),
 ]
 const SHRINE_RADIUS := 150.0
+
+# ── theme: Avalon's pale blue-grey shore under a silver mist ──────────────────
+## Set the region palette + mood FIRST in _ready (the base calls this before any build), so the
+## floor reads as a cold, shimmering mere-shore and the whole canvas carries a faint silver haze.
+## Mood stays gentle (every channel >= 0.6) so units never lose readability under the tint.
+func _theme() -> void:
+	ground_top = Color(0.18, 0.22, 0.24)      # pale blue-grey shore (lit edge)
+	ground_bottom = Color(0.14, 0.18, 0.20)   # cooler, damper sand toward the water
+	region_mood = Color(0.82, 0.90, 0.94)     # silver mist over Avalon (subtle)
 
 func _map_title() -> String:
 	return "THE LADY OF THE LAKE"
@@ -80,6 +90,34 @@ func _build_decor() -> void:
 	for idx in SHRINES.size():
 		_place_shrine(SHRINES[idx], idx)
 	_place_flank_scenery()
+	_build_region_scenery()
+
+## Avalon's distant identity: a layered-mist backdrop along the far (north) edge, a slow drift of
+## mist motes filling the field, and Arthur's own Pendragon standard planted on the shore. Pure
+## placement of the shared world modules — nothing here touches gameplay markers or terrain.
+func _build_region_scenery() -> void:
+	var b := _world_bounds()
+	# (1) A distant mist band lost over the far water — the silver horizon of Avalon.
+	var bd := RegionBackdrop.new()
+	bd.kind = "mist"
+	bd.span = b.size.x
+	bd.silhouette = Color(0.16, 0.20, 0.26, 0.7)
+	bd.haze_top = Color(0.70, 0.80, 0.88, 0.40)
+	bd.haze_bottom = Color(0.70, 0.80, 0.88, 0.0)
+	bd.animate = true
+	add_child(bd)
+	bd.position = Vector2((b.position.x + b.end.x) * 0.5, b.position.y)
+	# (2) Slow mist drifting low across the mere, behind the units.
+	var ad := AmbientDrift.new()
+	ad.kind = "mist"
+	ad.count = 30
+	ad.area = b
+	ad.tint = Color(0.8, 0.88, 0.92, 0.3)
+	ad.drift = Vector2(10.0, 4.0)
+	add_child(ad)
+	# (3) Arthur's Pendragon standard on the southern shore — off the central lane and clear of both
+	# shrine capture rings (±440,300 r150), so it dresses the bank without crowding a capture point.
+	_place_decor(CAMELOT_BANNER, Vector2(150.0, 360.0), "camelot")
 
 ## Light interactive scenery on the flank shore lanes (the gaps the crossings funnel through),
 ## keeping the lake + shrine approaches clear. Pure PLACEMENT of existing reusable props — a war
@@ -87,7 +125,7 @@ func _build_decor() -> void:
 ## crates/rocks give the warband something to barge through as it rounds the mere.
 func _place_flank_scenery() -> void:
 	for side in [-1.0, 1.0]:
-		var faction := "wu" if side < 0.0 else "wei"   # decor colour flavour only (existing enum)
+		var faction := "rebel" if side < 0.0 else "camelot"   # decor colour flavour only (Arthurian houses)
 		# Camp standard + war drum just outside the lake on each shore lane.
 		_place_decor(BANNER, Vector2(560.0 * side, -120.0), faction)
 		_place_decor(WAR_DRUM, Vector2(560.0 * side, -40.0), faction)

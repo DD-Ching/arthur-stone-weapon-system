@@ -3,7 +3,7 @@ extends Node2D
 ## Headless can't screenshot, so this asserts what a script CAN: that instantiating the shipped
 ## res://scenes/BannerBearer.tscn (look "banner") and redrawing it over several frames runs the
 ## full BannerArt._draw path WITHOUT errors — for the default (neutral → warm crimson fallback)
-## standard AND for a faction-coloured one (Wei, whose blue pennant exercises the faction branch).
+## standard AND for a faction-coloured one (Briton, whose blue pennant exercises the faction branch).
 ## If any draw call had errored, the engine would have reported it and the unit would be gone.
 ##
 ## Run: godot --headless --path . res://tests/BannerArtTest.tscn --quit-after 600
@@ -16,16 +16,16 @@ var _frame := 0
 var _checks := {}
 
 func _ready() -> void:
-	# The neutral standard (warm-default cloth) and a Wei standard (faction-blue cloth), so both
+	# The neutral standard (warm-default cloth) and a Briton standard (faction-blue cloth), so both
 	# the neutral fallback and the faction_color() pennant branch get drawn.
 	var neutral: Node = _make_banner("neutral", Vector2(-80.0, 0.0))
-	var wei: Node = _make_banner("wei", Vector2(80.0, 0.0))
+	var briton: Node = _make_banner("briton", Vector2(80.0, 0.0))
 	_units.append(neutral)
-	_units.append(wei)
+	_units.append(briton)
 
 	_checks["spawned_two"] = _units.size() == 2
-	_checks["look_is_banner"] = neutral.look == "banner" and wei.look == "banner"
-	_checks["faction_set"] = neutral.faction == "neutral" and wei.faction == "wei"
+	_checks["look_is_banner"] = neutral.look == "banner" and briton.look == "banner"
+	_checks["faction_set"] = neutral.faction == "neutral" and briton.faction == "briton"
 	print("ART_BANNER_READY units=%d" % _units.size())
 
 func _make_banner(faction_name: String, pos: Vector2) -> Node:

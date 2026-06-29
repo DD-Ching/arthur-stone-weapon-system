@@ -6,7 +6,7 @@ extends Node2D
 ##
 ## Headless can't screenshot, so this asserts what a script CAN: that we can instantiate the real
 ## scenes, add them to the tree, force a redraw, step a few physics frames, and find both alive and
-## crash-free. We also spin one of each through the three kingdoms so faction_color() (used by the
+## crash-free. We also spin one of each through the factions so faction_color() (used by the
 ## caparison / banner / pennon) is exercised on every hue.
 ##
 ## Run: godot --headless --path . res://tests/CavalryArtTest.tscn --quit-after 600
@@ -14,7 +14,7 @@ extends Node2D
 
 const CAVALRY := preload("res://scenes/Cavalry.tscn")
 const WARCART := preload("res://scenes/WarCart.tscn")
-const FACTIONS := ["neutral", "wei", "shu", "wu"]
+const FACTIONS := ["neutral", "camelot", "briton", "saxon", "rebel"]
 
 var _units: Array = []
 var _frame := 0

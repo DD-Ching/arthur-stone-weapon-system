@@ -1,6 +1,6 @@
 class_name General
 extends Enemy
-## A named general (武將) — a boss-tier unit. It is, at heart, just a heavily-tuned
+## A named general (a boss warlord) — a boss-tier unit. It is, at heart, just a heavily-tuned
 ## Enemy: it keeps the full base brain (approach, steer, telegraphed moves, defeat,
 ## the KO count) and adds ONE signature flourish on top — a periodic WAR-CRY.
 ##

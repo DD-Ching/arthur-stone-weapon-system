@@ -18,67 +18,84 @@ extends Node
 const SAVE_PATH := "user://campaign.cfg"
 
 ## Section ids (display + lock grouping). Shared with the lobby so the two never drift.
+## The legend is the one connected journey (ten regions, unlocks in order); the Training Yard
+## (Hold the Ford + the challenge rooms) is always-open practice reached from the Camelot node.
 const SEC_ARTHUR := "arthur"
 const SEC_TRIALS := "trials"
-const SEC_BONUS := "bonus"
 
 const SECTION_LABELS := {
 	SEC_ARTHUR: "— THE LEGEND OF KING ARTHUR —",
-	SEC_TRIALS: "— FORD & TRIALS —",
-	SEC_BONUS: "— THREE KINGDOMS (BONUS) —",
+	SEC_TRIALS: "— THE TRAINING YARD —",
 }
 
-## The campaign, in play order. The Arthurian legend is the spine and unlocks IN ORDER (clear a
-## battle to open the next); the Ford & Trials and the Three-Kingdoms maps are bonus and always
-## unlocked. `blurb` is the story beat shown on the result screen as you advance.
+## The campaign, in ONE connected journey across Britain (Logres). The legend is ten regions that
+## unlock IN ORDER (clear a region to open the next); `region`/`map_x`/`map_y` place each on the
+## overworld Map of Britain and `links` draw the road between them. `blurb` is the story beat shown
+## on deploy + the result screen. The Training Yard (Hold the Ford + the rooms) is always-open
+## practice, reached from the Camelot node rather than sitting on the legend road.
 const STAGES := [
+	# ── THE LEGEND OF KING ARTHUR — the connected road, unlocks in order ──
 	{"id": "sword_in_stone", "title": "The Sword in the Stone",
 		"path": "res://scenes/maps/SwordInStone.tscn", "section": SEC_ARTHUR,
+		"region": "churchyard", "map_x": 300.0, "map_y": 610.0, "links": ["the_marches"],
 		"blurb": "No man could draw the blade from the stone. So the boy Arthur lifted the WHOLE STONE — and a kingdom found its king."},
+	{"id": "the_marches", "title": "The Marches",
+		"path": "res://scenes/maps/HuLaoGate.tscn", "section": SEC_ARTHUR,
+		"region": "marches", "map_x": 470.0, "map_y": 520.0, "links": ["the_burning_fords"],
+		"blurb": "The Saxon host tests the frontier. Hold the border fort and break their warlord — let them learn what guards this land."},
+	{"id": "the_burning_fords", "title": "The Burning Fords",
+		"path": "res://scenes/maps/RedCliffs.tscn", "section": SEC_ARTHUR,
+		"region": "fords", "map_x": 650.0, "map_y": 470.0, "links": ["the_long_road"],
+		"blurb": "Saxon longships crowd the crossing. Put them to the torch and hold the ford while the river burns."},
+	{"id": "the_long_road", "title": "The Long Road",
+		"path": "res://scenes/maps/Changban.tscn", "section": SEC_ARTHUR,
+		"region": "road", "map_x": 500.0, "map_y": 395.0, "links": ["the_beacon_forts"],
+		"blurb": "A town lies sacked behind you. Cover its people down the long road to Camelot — let none be taken."},
+	{"id": "the_beacon_forts", "title": "The Beacon-Forts",
+		"path": "res://scenes/maps/Guandu.tscn", "section": SEC_ARTHUR,
+		"region": "beacons", "map_x": 700.0, "map_y": 345.0, "links": ["mount_badon"],
+		"blurb": "The invasion lives on its supply. Seize the beacon-forts and burn the stores; starve the war to win it."},
 	{"id": "mount_badon", "title": "Mount Badon",
 		"path": "res://scenes/maps/MountBadon.tscn", "section": SEC_ARTHUR,
+		"region": "badon", "map_x": 360.0, "map_y": 300.0, "links": ["defend_camelot"],
 		"blurb": "The Saxon host climbs Mount Badon in an endless tide. Hold the hill, and the dream of Britain holds with it."},
 	{"id": "defend_camelot", "title": "Defend Camelot",
 		"path": "res://scenes/maps/DefendCamelot.tscn", "section": SEC_ARTHUR,
+		"region": "camelot", "map_x": 520.0, "map_y": 235.0, "links": ["the_night_host"],
 		"blurb": "Treachery within, a siege without. The Black Knight throws his host at the gate of Camelot. Hold it."},
+	{"id": "the_night_host", "title": "The Night-Host",
+		"path": "res://scenes/maps/YellowTurban.tscn", "section": SEC_ARTHUR,
+		"region": "nighthost", "map_x": 700.0, "map_y": 210.0, "links": ["camlann"],
+		"blurb": "Out of the dark moor comes a host that should not be — Morgan's making. Stand against it until the dawn breaks it."},
 	{"id": "camlann", "title": "Camlann",
 		"path": "res://scenes/maps/Camlann.tscn", "section": SEC_ARTHUR,
+		"region": "camlann", "map_x": 430.0, "map_y": 150.0, "links": ["lady_of_lake"],
 		"blurb": "The last field. Mordred's banner flies and Morgan's magic stirs. Here the legend ends — or is forged anew."},
 	{"id": "lady_of_lake", "title": "The Lady of the Lake",
 		"path": "res://scenes/maps/LadyOfLake.tscn", "section": SEC_ARTHUR,
+		"region": "avalon", "map_x": 250.0, "map_y": 90.0, "links": [],
 		"blurb": "Beyond the water waits Avalon. Carry the stone to the lake, and let the legend rest."},
-	# Ford & Trials — always unlocked practice grounds.
+	# ── THE TRAINING YARD — always-open practice, reached from the Camelot node ──
 	{"id": "hold_ford", "title": "Hold the Ford",
 		"path": "res://scenes/Battlefield.tscn", "section": SEC_TRIALS,
+		"region": "training", "map_x": 0.0, "map_y": 0.0, "links": [],
 		"blurb": "A river crossing, five waves of raiders, one stone."},
 	{"id": "bowling_room", "title": "Bowling Room",
 		"path": "res://scenes/rooms/BowlingRoom.tscn", "section": SEC_TRIALS,
+		"region": "training", "map_x": 0.0, "map_y": 0.0, "links": [],
 		"blurb": "One launched body, a packed formation. Knock them all down."},
 	{"id": "wall_crush_room", "title": "Wall Crush Room",
 		"path": "res://scenes/rooms/WallCrushRoom.tscn", "section": SEC_TRIALS,
+		"region": "training", "map_x": 0.0, "map_y": 0.0, "links": [],
 		"blurb": "Pin them to the stone walls. Crush, don't chase."},
 	{"id": "rock_launcher_room", "title": "Rock Launcher Room",
 		"path": "res://scenes/rooms/RockLauncherRoom.tscn", "section": SEC_TRIALS,
+		"region": "training", "map_x": 0.0, "map_y": 0.0, "links": [],
 		"blurb": "Let the rocks do the work. Launch, ricochet, repeat."},
 	{"id": "combo_trial_room", "title": "Combo Trial Room",
 		"path": "res://scenes/rooms/ComboTrialRoom.tscn", "section": SEC_TRIALS,
+		"region": "training", "map_x": 0.0, "map_y": 0.0, "links": [],
 		"blurb": "Keep the Stone Flow burning. Build the stack before the clock runs out."},
-	# Three-Kingdoms BONUS — always unlocked.
-	{"id": "hu_lao_gate", "title": "Hu Lao Gate",
-		"path": "res://scenes/maps/HuLaoGate.tscn", "section": SEC_BONUS,
-		"blurb": "The allied lords falter at the gate. Only the stone can break Lü Bu."},
-	{"id": "red_cliffs", "title": "Red Cliffs",
-		"path": "res://scenes/maps/RedCliffs.tscn", "section": SEC_BONUS,
-		"blurb": "Fire on the river. Hold the crossing as the fleet burns."},
-	{"id": "guandu", "title": "Guandu",
-		"path": "res://scenes/maps/Guandu.tscn", "section": SEC_BONUS,
-		"blurb": "Burn the granaries and seize the depots. Supply wins this war."},
-	{"id": "changban", "title": "Changban",
-		"path": "res://scenes/maps/Changban.tscn", "section": SEC_BONUS,
-		"blurb": "A long retreat under pressure. Cover the innocents and break clear."},
-	{"id": "yellow_turban", "title": "Yellow Turban Rebellion",
-		"path": "res://scenes/maps/YellowTurban.tscn", "section": SEC_BONUS,
-		"blurb": "The rebellion swarms in numberless waves. Stand, and do not be moved."},
 ]
 
 ## id -> true for every cleared battle. Loaded from disk on boot, written on each win.
@@ -117,6 +134,32 @@ func section_for(path: String) -> String:
 func blurb_for(path: String) -> String:
 	var s := stage_for(path)
 	return String(s.get("blurb", ""))
+
+# ── overworld geography (for the Map of Britain) ──────────────────────────────
+## The Arthurian region id for `path` ("churchyard"/"marches"/…/"avalon"/"training"), or "".
+func region_for(path: String) -> String:
+	var s := stage_for(path)
+	return String(s.get("region", ""))
+
+## The overworld map position for `path` (Vector2(map_x, map_y)); Vector2.ZERO if unplaced.
+func map_pos_for(path: String) -> Vector2:
+	var s := stage_for(path)
+	if s.is_empty():
+		return Vector2.ZERO
+	return Vector2(float(s.get("map_x", 0.0)), float(s.get("map_y", 0.0)))
+
+## The stage ids this region connects to on the journey road (drawn as the overworld line).
+func links_for(path: String) -> Array:
+	var s := stage_for(path)
+	return s.get("links", [])
+
+## The legend stages (SEC_ARTHUR) in play order — the regions the overworld plots as the road.
+func legend_stages() -> Array:
+	var out: Array = []
+	for s in STAGES:
+		if String(s["section"]) == SEC_ARTHUR:
+			out.append(s)
+	return out
 
 # ── progress (cleared / unlocked) ─────────────────────────────────────────────
 func is_cleared(path: String) -> bool:

@@ -1,7 +1,7 @@
 class_name CaptureBasesObjective
 extends Objective
 ## Capture the depots: complete once every supply base on the map has been taken. Reusable
-## for any "seize N points" battle (Guandu's granaries — 官渡 — but also any future map that
+## for any "seize N points" battle (the Beacon-Forts' supply depots, but also any future map that
 ## scatters capturable bases). The map owns the COUNTING (it scans group "bases" and sets the
 ## ctx keys); this objective is the pure win-rule + HUD line on top of those numbers.
 ##
