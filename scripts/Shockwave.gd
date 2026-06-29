@@ -9,6 +9,7 @@ extends Node2D
 @export var impulse := 760.0
 @export var life := 0.55
 @export var stun_time := 0.9
+@export var damage_mult := 1.0   ## 1.0 = a slam; the musou ultimate cranks this so the burst is lethal
 
 var _t := 0.0
 
@@ -37,7 +38,7 @@ func detonate() -> void:
 				# the same way the swing does (no SLAM! label / 0.4x flow when blocked).
 				var pin := Impact.cushion(self, body.global_position, dir)
 				var res: Dictionary = body.apply_hit(dir, strength, stun_time * falloff,
-					Impact.DMG_BASE * Impact.SLAM_DAMAGE_MULT * falloff, pin)
+					Impact.DMG_BASE * Impact.SLAM_DAMAGE_MULT * falloff * damage_mult, pin)
 				var blocked: bool = res["blocked"]
 				Impact.add_flow(Impact.SLAM_FLOW_BASE * falloff * (0.4 if blocked else 1.0))
 				if falloff > 0.2 and not blocked:   # label any enemy that took a meaningful hit

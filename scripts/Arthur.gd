@@ -20,9 +20,15 @@ signal musou_changed(current: float, maximum: float)   ## the musou rage gauge �
 ## The ULTIMATE reuses the slam's Shockwave (the one shared radial-launch path) — just
 ## bigger: a huge radius + impulse + stun centred on Arthur clears the whole screen.
 const SHOCKWAVE := preload("res://scenes/Shockwave.tscn")
-const BEAM := preload("res://scenes/Beam.tscn")
-const MUSOU_CHARGE_MAX := 2.5   ## seconds of beam a full gauge buys (charge longer, spray longer)
+const MUSOU_CHARGE_MAX := 2.5   ## seconds you can build the rage burst (charge longer → wider clear)
 const HAPTIC_HIT_FLOOR := 12.0  ## min hit-shake that buzzes a touch device (a meaty clash/slam, not every light tap)
+## The musou ULTIMATE — a screen-clearing RADIAL burst (the iconic Musou crowd-wipe). Charge scales
+## the radius from a wide circle around Arthur to the whole screen; it launches + fells the horde.
+const MUSOU_RADIUS_MIN := 480.0
+const MUSOU_RADIUS_MAX := 940.0
+const MUSOU_IMPULSE := 1700.0
+const MUSOU_STUN := 1.4
+const MUSOU_DAMAGE_MULT := 4.0
 
 @export_group("Movement")
 @export var max_speed := 158.0
@@ -158,8 +164,8 @@ func _handle_attack(delta: float) -> void:
 			weapon.stop_spin()
 			weapon.set_swinging(false)
 			return
-		elif _musou_charge > 0.0:   # released (or the gauge ran dry) → unleash the beam
-			fire_musou_beam(_musou_charge)
+		elif _musou_charge > 0.0:   # released (or the gauge ran dry) → unleash the burst
+			_unleash_musou(_musou_charge)
 			_musou_charge = 0.0
 			return
 	# Hold to whirl (the musou tornado); takes priority over swing/slam while held.
@@ -262,10 +268,18 @@ func add_musou(amount: float) -> void:
 		musou_changed.emit(musou, max_musou)
 
 ## Each new KO (the shared Impact musou counter) feeds the gauge a little.
-func _on_kills_changed(k: int, _milestone: String) -> void:
+func _on_kills_changed(k: int, milestone: String) -> void:
 	if k > _last_kills:
 		add_musou(musou_kill_gain * float(k - _last_kills))
 	_last_kills = k
+	# A KO MILESTONE (RAMPAGE! / WARLORD! / …) snaps the screen — escalating Musou spectacle on top
+	# of the HUD's gold pulse, so a rising rampage is FELT, not just a number.
+	if milestone != "":
+		if camera and camera.has_method("kick"):
+			camera.call("kick", 30.0)
+		if camera and camera.has_method("add_shake"):
+			camera.call("add_shake", 18.0)
+		Impact.popup(milestone, global_position + Vector2(0.0, -112.0), Color(1.0, 0.8, 0.32), 1.8)
 
 func _on_weapon_hit(shake_strength: float, _count: int) -> void:
 	if camera and camera.has_method("add_shake"):
@@ -315,36 +329,41 @@ func _on_weapon_too_tired() -> void:
 	Impact.note_exhausted()   # running dry mid-combo breaks Stone Flow
 	exhausted.emit()
 
-## The musou ULTIMATE is the CHARGE-BEAM: a sustained light beam fired along Arthur's aim for
-## `charge` seconds (the gauge you spent). It anchors to Arthur and SWEEPS with the cursor like a
-## water gun, heavily damaging + shoving everything in its path. Reuses the shared Beam + Enemy
-## hit path; the punch-zoom + shake sell the unleash.
-func fire_musou_beam(charge: float) -> void:
+## The musou ULTIMATE — a screen-clearing RADIAL burst centred on Arthur (the iconic Musou
+## crowd-wipe, the design the class doc describes). A longer charge widens the clear from a circle
+## around you to the whole screen and snaps the camera harder. Reuses the shared Shockwave radial
+## path + the Enemy hit path; the reserved top-tier kick/shake/announce sell the biggest moment.
+func _unleash_musou(charge: float) -> void:
 	var scene := get_tree().current_scene
 	if scene == null:
 		scene = get_parent()   # headless harnesses often add Arthur straight under the test root
 	if scene == null:
 		return
-	var charged := clampf(charge, 0.4, MUSOU_CHARGE_MAX)
-	var beam = BEAM.instantiate()   # untyped: a Node2D we anchor to Arthur
-	scene.add_child(beam)
-	beam.fire(self, charged)
-	# CHARGE PAYOFF: a longer charge releases a heavier beam, so the unleash kicks the camera
-	# harder too — a full gauge snaps the frame, a flick barely nudges it. (Beam.gd scales its
-	# own reach/width/damage by the same charge.)
-	var power := clampf(charged / MUSOU_CHARGE_MAX, 0.0, 1.0)
+	var power := clampf(charge / MUSOU_CHARGE_MAX, 0.0, 1.0)
+	var sw = SHOCKWAVE.instantiate()   # untyped: a Node2D
+	scene.add_child(sw)
+	sw.global_position = global_position
+	sw.radius = lerpf(MUSOU_RADIUS_MIN, MUSOU_RADIUS_MAX, power)
+	sw.impulse = MUSOU_IMPULSE
+	sw.stun_time = MUSOU_STUN
+	sw.damage_mult = MUSOU_DAMAGE_MULT
+	sw.life = 0.7
+	sw.detonate()
+	# RESERVED top-tier juice — the single biggest moment in the game snaps the frame.
 	if camera and camera.has_method("kick"):
-		camera.call("kick", lerpf(16.0, 40.0, power))
+		camera.call("kick", lerpf(34.0, 64.0, power))
 	if camera and camera.has_method("add_shake"):
-		camera.call("add_shake", lerpf(10.0, 22.0, power), Vector2.RIGHT.rotated(weapon.aim_angle))
+		camera.call("add_shake", lerpf(24.0, 40.0, power))
+	# A bold centre-screen announce (ASCII + gold per the web-font tofu rule).
+	Impact.popup("MUSOU!", global_position + Vector2(0.0, -96.0), Color(1.0, 0.85, 0.3), 2.2)
 	Audio.play("wall_crush", global_position)
 
 ## Back-compat alias (HUD / headless test / a build that calls it directly): empty the gauge and
-## fire a fixed-length beam along the current aim.
+## unleash a full-power radial burst centred on Arthur.
 func trigger_musou_ultimate() -> void:
 	musou = 0.0
 	musou_changed.emit(musou, max_musou)
-	fire_musou_beam(1.4)
+	_unleash_musou(MUSOU_CHARGE_MAX)
 
 func _state_name(state: int) -> String:
 	match state:
