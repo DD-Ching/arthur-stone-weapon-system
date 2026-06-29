@@ -23,6 +23,11 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	# A soft light pool around the brazier (the fire's glow), breathing gently — drawn FIRST so it
+	# sits behind the bowl + flames. Cheap translucent circle; sells night-time camps.
+	var breathe := 0.5 + 0.5 * sin(_t * 5.0 + _seed)
+	draw_circle(Vector2(0.0, -bowl_radius * 0.2), bowl_radius * 3.8,
+		Color(1.0, 0.6, 0.25, (0.06 + 0.05 * breathe) * clampf(flicker, 0.0, 2.0)))
 	# The stone bowl: a dark filled half-disc with a lighter rim, sitting at the origin.
 	draw_circle(Vector2(0.0, 2.0), bowl_radius, Color(0.26, 0.24, 0.23))
 	draw_arc(Vector2(0.0, 2.0), bowl_radius, 0.0, TAU, 18, Color(0.42, 0.39, 0.36), 2.0)

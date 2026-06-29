@@ -60,6 +60,11 @@ func _inspect() -> void:
 	for n in placed:
 		if not (is_instance_valid(n) and n is Node2D):
 			continue
+		# Full-field BACKGROUND decor (the region backdrop band + ambient drift) legitimately
+		# spans/centres the field and blocks nothing — it is visual-only, behind the units. Only
+		# discrete placed clutter (banners / drums / crates / rocks) must stay off the retreat lane.
+		if n is RegionBackdrop or n is AmbientDrift:
+			continue
 		if absf((n as Node2D).global_position.x) < lane_half:
 			_lane_clear = false
 

@@ -399,13 +399,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # ── drawing (the terrain VISUALS; the rules are the TerrainZones above) ──────
 
+var _dapple: Array = []   ## cached deterministic ground dapple (built once)
+
 func _draw() -> void:
 	var rect := Rect2(-HALF, HALF * 2.0)
-	draw_rect(rect, Color(0.17, 0.16, 0.14))            # riverbank ground
-	for x in range(-int(HALF.x), int(HALF.x) + 1, GRID_STEP):
-		draw_line(Vector2(x, -HALF.y), Vector2(x, HALF.y), Color(1, 1, 1, 0.03), 1.0)
-	for y in range(-int(HALF.y), int(HALF.y) + 1, GRID_STEP):
-		draw_line(Vector2(-HALF.x, y), Vector2(HALF.x, y), Color(1, 1, 1, 0.03), 1.0)
+	if _dapple.is_empty():
+		_dapple = GroundPaint.make_dapple(rect, 19940715)
+	# A damp riverbank floor (value gradient + dapple) — no more graph-paper grid.
+	GroundPaint.draw_floor(self, rect, Color(0.15, 0.19, 0.16), Color(0.19, 0.18, 0.13), _dapple)
 	for r in RIVER:
 		_draw_water(r)
 	if _bridge_down:

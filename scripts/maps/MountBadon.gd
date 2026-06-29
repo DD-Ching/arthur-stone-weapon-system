@@ -28,6 +28,7 @@ const CRATE := preload("res://scenes/Crate.tscn")
 const ROCK := preload("res://scenes/Rock.tscn")
 const FENCE := preload("res://scenes/terrain/Fence.tscn")
 const FACTION_BANNER := preload("res://scenes/decor/FactionBanner.tscn")
+const CAMELOT_BANNER := preload("res://scenes/decor/CamelotBanner.tscn")
 const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
 const SAXON_ARCHER := preload("res://scenes/villains/SaxonArcher.tscn")  # lobs javelins — the stone can deflect them
 const BARREL := preload("res://scenes/props/Barrel.tscn")
@@ -51,6 +52,14 @@ func _init() -> void:
 	defence_line_y = 300.0      # the crest: a Saxon past this has broken over the top
 
 # ── theme ─────────────────────────────────────────────────────────────────────
+## Mount Badon — the great victory, fought on a bright green hillside at noon. Set the floor to a
+## sunlit grass gradient and a near-white warm "noon" mood (subtle; channels stay high so the units
+## read cleanly). Runs FIRST in _ready, before any build, so the hill is themed from frame 0.
+func _theme() -> void:
+	ground_top = Color(0.18, 0.24, 0.15)        # green hill crown
+	ground_bottom = Color(0.14, 0.19, 0.12)     # the slope below
+	region_mood = Color(1.0, 0.98, 0.90)        # bright warm noon (near white)
+
 func _map_title() -> String:
 	return "MOUNT BADON"
 
@@ -85,13 +94,35 @@ func _build_decor() -> void:
 	## Everything sits out on the wings (|x| large) so the centre push-lane onto the crest stays
 	## open and the boss duel reads clean.
 	super._build_decor()
+	var b := _world_bounds()
+	# (1) Distant scenery: a ring of standing stones crowning the far crest, so the hilltop reads as
+	# a place. Placed at the world's top-centre, spanning the full width (drawn behind the units).
+	var bd := RegionBackdrop.new()
+	bd.kind = "stones"
+	bd.span = b.size.x
+	bd.silhouette = Color(0.12, 0.13, 0.13, 0.9)
+	bd.haze_top = Color(0.42, 0.46, 0.38, 0.40)     # warm green-grey noon haze
+	bd.haze_bottom = Color(0.42, 0.46, 0.38, 0.0)
+	add_child(bd)
+	bd.position = Vector2((b.position.x + b.end.x) * 0.5, b.position.y)
+	# (2) Sun motes drifting on the bright noon air across the whole hill.
+	var ad := AmbientDrift.new()
+	ad.kind = "dust"
+	ad.count = 40
+	ad.area = b
+	ad.tint = Color(0.9, 0.85, 0.6, 0.25)
+	ad.drift = Vector2(16.0, 6.0)
+	ad.size_px = 2.4
+	add_child(ad)
 	# Saxon war-drums driving the horde, high on each flank above the crest (their side).
 	_drum(Vector2(-470.0, 120.0))
 	_drum(Vector2(470.0, 120.0))
-	# Saxon standards planted on the upper slopes, neutral-grey (the foe's muster markers).
-	_banner(Vector2(-360.0, 95.0), "neutral", 74.0)
-	_banner(Vector2(360.0, 95.0), "neutral", 74.0)
-	# A Briton blue standard at the host's back, below the crest (our rally point).
+	# Saxon standards planted on the upper slopes — the Cerdic host's muster markers.
+	_banner(Vector2(-360.0, 95.0), "saxon", 74.0)
+	_banner(Vector2(360.0, 95.0), "saxon", 74.0)
+	# The Briton muster at the host's back, below the crest (our rally point): a Camelot Pendragon
+	# pennant flanked by a briton standard.
+	_camelot_banner(Vector2(150.0, 420.0))
 	_banner(Vector2(-150.0, 420.0), "briton", 84.0)
 	# A rail of fencing low on each flank — a bit of field furniture that never blocks the lane.
 	_fence(Vector2(-470.0, 250.0))
@@ -126,6 +157,13 @@ func _banner(at: Vector2, fac: String, h: float) -> void:
 		bn.faction = fac
 	if "pole_height" in bn:
 		bn.pole_height = h
+	bn.position = at
+	add_child(bn)
+
+func _camelot_banner(at: Vector2) -> void:
+	var bn = CAMELOT_BANNER.instantiate()
+	if "faction" in bn:
+		bn.faction = "camelot"
 	bn.position = at
 	add_child(bn)
 
@@ -246,20 +284,38 @@ func _on_wave_spawned(idx: int, units: Array) -> void:
 		if is_instance_valid(u) and "faction" in u:
 			u.faction = "saxon"
 
-# ── hill dressing on top of the base grid ─────────────────────────────────────
-func _draw() -> void:
-	super._draw()
-	var b := _world_bounds()
+# ── hill ground motifs (drawn over the shared floor, behind the units) ─────────
+## Region ground identity for Mount Badon: a faint slope shade (darker upslope, where the Saxons
+## climb), grass-blade flecks scattered across the hillside, a lighter grassy crown the Britons
+## hold, the crest line they must not be broken over, and a faint Briton muster-ring on the crown.
+## All static + deterministic (no per-frame randomness); the crude inline banner rects are gone —
+## proper banner/drum decor scenes stand in their place (see `_build_decor`).
+func _paint_region(b: Rect2) -> void:
+	# A faint slope shade: darkest at the very top of the hill, fading to nothing at the crest, so
+	# the slope reads as rising ground the horde toils up.
+	var bands := 8
+	for i in range(bands):
+		var f0 := float(i) / float(bands)
+		var f1 := float(i + 1) / float(bands)
+		var y0 := lerpf(b.position.y, defence_line_y, f0)
+		var y1 := lerpf(b.position.y, defence_line_y, f1)
+		draw_rect(Rect2(b.position.x, y0, b.size.x, y1 - y0),
+			Color(0.05, 0.06, 0.04, 0.14 * (1.0 - f0)))
 	# A grassy hill crown under the crest — a lighter band the Britons hold.
 	draw_rect(Rect2(b.position.x, defence_line_y, b.size.x, b.end.y - defence_line_y),
 		Color(0.16, 0.22, 0.13, 0.55))
+	# Grass-blade flecks scattered across the whole hillside (deterministic seed → static texture).
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 20260629
+	var grass := Color(0.34, 0.46, 0.22, 0.5)
+	for _i in range(220):
+		var gx := rng.randf_range(b.position.x, b.end.x)
+		var gy := rng.randf_range(b.position.y, b.end.y)
+		var hgt := rng.randf_range(3.0, 7.0)
+		var lean := rng.randf_range(-1.6, 1.6)
+		draw_line(Vector2(gx, gy), Vector2(gx + lean, gy - hgt), grass, 1.0)
 	# The hill crest line — the top the Saxons must not break over.
-	var crest := Color(0.55, 0.66, 0.42, 0.9)
-	draw_line(Vector2(b.position.x, defence_line_y), Vector2(b.end.x, defence_line_y), crest, 3.0)
+	draw_line(Vector2(b.position.x, defence_line_y), Vector2(b.end.x, defence_line_y),
+		Color(0.55, 0.66, 0.42, 0.9), 3.0)
 	# A faint Briton muster-ring around Arthur's stand on the crown.
 	draw_arc(_arthur_start(), 120.0, 0.0, TAU, 48, Color(0.40, 0.62, 0.95, 0.18), 3.0)
-	# Banners: a Saxon horde banner above the crest (their side), a Briton banner below (ours).
-	var saxon := Color(0.78, 0.32, 0.30)        # Saxon red
-	var briton := Color(0.34, 0.56, 0.92)       # Camelot/Briton blue
-	draw_rect(Rect2(-12.0, defence_line_y - 150.0, 24.0, 44.0), saxon)
-	draw_rect(Rect2(-12.0, defence_line_y + 60.0, 24.0, 44.0), briton)

@@ -24,6 +24,8 @@ const GATE_POST := preload("res://scenes/decor/GatePost.tscn")
 const BANNER := preload("res://scenes/decor/FactionBanner.tscn")
 const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
 const CRATE := preload("res://scenes/Crate.tscn")
+const BRAZIER := preload("res://scenes/decor/Brazier.tscn")
+const CAMELOT_BANNER := preload("res://scenes/decor/CamelotBanner.tscn")
 
 ## Centre of each beacon-fort. 2–3 bases, spread across the field.
 const DEPOTS: Array[Vector2] = [
@@ -38,6 +40,15 @@ const DEPOT_RADIUS := 150.0
 const STOCKADE_RADIUS := 192.0
 ## Half-width of the OPEN gate gap, in radians of the ring — wide enough for bodies to file in.
 const GATE_HALF := 0.62
+
+# ── region identity: bleak hill turf under a flat overcast sky ────────────────
+## Set the floor palette + mood FIRST in _ready (the base calls this before any build), so the
+## Beacon-Forts read as a dry, wind-scoured ridge of supply hills rather than the flat prototype
+## floor. The mood is a gentle desaturating overcast (each channel >= 0.6 so units stay readable).
+func _theme() -> void:
+	ground_top = Color(0.17, 0.20, 0.14)      # hill turf, lit crest
+	ground_bottom = Color(0.14, 0.16, 0.11)   # turf in the hollows
+	region_mood = Color(0.86, 0.86, 0.80)     # flat overcast, faintly cold
 
 func _map_title() -> String:
 	return "THE BEACON-FORTS"
@@ -140,6 +151,53 @@ func _build_decor() -> void:
 	for idx in DEPOTS.size():
 		_place_depot(DEPOTS[idx], idx)
 	_scatter_battlefield_props(2, 2, 1, 1)   # lighter smashable clutter — the forts stay the focus
+	_dress_region()
+
+## Region scenery: a distant ridge of supply hills along the north edge, a dry dust-drift across
+## the field, and a pair of Camelot standards framing Arthur's muster (the central lane stays
+## clear). Pure placement of the shared scenery modules — no new mechanic.
+func _dress_region() -> void:
+	var b := _world_bounds()
+	# (1) A far hill ridge silhouette along the world's top (the Saxon supply uplands beyond).
+	var bd := RegionBackdrop.new()
+	bd.kind = "hills"
+	bd.span = b.size.x
+	bd.silhouette = Color(0.12, 0.14, 0.11, 0.85)
+	bd.haze_top = Color(0.18, 0.20, 0.16, 0.5)
+	bd.haze_bottom = Color(0.18, 0.20, 0.16, 0.0)
+	add_child(bd)
+	bd.position = Vector2((b.position.x + b.end.x) * 0.5, b.position.y)
+	# (2) Dry dust drifting on the hill wind, low and pale so it never muddies unit reads.
+	var ad := AmbientDrift.new()
+	ad.kind = "dust"
+	ad.count = 40
+	ad.area = b
+	ad.tint = Color(0.6, 0.6, 0.5, 0.3)
+	ad.drift = Vector2(20.0, -6.0)
+	add_child(ad)
+	# (3) Camelot royal standards flanking Arthur's muster line (off the central lane).
+	for sx: float in [-150.0, 150.0]:
+		var banner := _spawn_prop(CAMELOT_BANNER, _arthur_start() + Vector2(sx, 6.0))
+		if banner != null and "faction" in banner:
+			banner.faction = "camelot"
+
+## Turf texture: a scatter of tiny green-grey blades / flecks over the floor so the hill turf
+## reads as living ground rather than a flat fill. Deterministic (seeded RNG) so the static floor
+## doesn't flicker between redraws; low alpha so it never competes with units. Drawn behind units.
+func _paint_region(b: Rect2) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 0x6EAC04   # fixed → identical every redraw (the floor is static)
+	var blade := Color(0.30, 0.36, 0.24, 0.20)
+	var fleck := Color(0.22, 0.27, 0.18, 0.16)
+	for _i in 420:
+		var p := Vector2(b.position.x + rng.randf() * b.size.x, b.position.y + rng.randf() * b.size.y)
+		if rng.randf() < 0.6:
+			# a short blade leaning slightly with the wind
+			var tilt := (rng.randf() - 0.5) * 1.4
+			var h := 3.0 + rng.randf() * 3.5
+			draw_line(p, p + Vector2(tilt, -h), blade, 1.0)
+		else:
+			draw_circle(p, 1.0 + rng.randf() * 0.8, fleck)
 
 func _place_depot(centre: Vector2, idx: int) -> void:
 	var b := BASE.instantiate()
@@ -181,6 +239,13 @@ func _dress_depot(centre: Vector2) -> void:
 	drum.global_position = centre + Vector2(28.0, 14.0)
 	if "faction" in drum:
 		drum.faction = "saxon"
+	# The beacon itself — a lit signal-fire brazier on the fort's back rise (away from the +y gate
+	# path so it never blocks the garrison/hero crossing), marking the supply fort to be burned.
+	var beacon := BRAZIER.instantiate()
+	add_child(beacon)
+	beacon.global_position = centre + Vector2(0.0, -56.0)
+	if "bowl_radius" in beacon:
+		beacon.bowl_radius = 15.0
 	# A small supply pile — crates as cover, set off-centre so they don't seal the gate.
 	var crate_offsets: Array[Vector2] = [
 		Vector2(-60.0, -44.0), Vector2(-44.0, -68.0), Vector2(60.0, -44.0),

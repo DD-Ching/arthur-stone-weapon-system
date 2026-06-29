@@ -36,8 +36,17 @@ const ROCK := preload("res://scenes/Rock.tscn")
 const FENCE := preload("res://scenes/terrain/Fence.tscn")
 const FACTION_BANNER := preload("res://scenes/decor/FactionBanner.tscn")
 const WAR_DRUM := preload("res://scenes/decor/WarDrum.tscn")
+const CAMELOT_BANNER := preload("res://scenes/decor/CamelotBanner.tscn")
 
 # ── theme ──────────────────────────────────────────────────────────────────────
+## Paint Camlann's identity FIRST (runs before any build): an ashen mauve-grey floor under a
+## blood-red dusk tint — the bleak light of the legend's final, doom-laden day. The mood stays
+## gentle (each channel >= 0.66) so the rebel/loyal hosts still read clearly across the field.
+func _theme() -> void:
+	ground_top = Color(0.17, 0.15, 0.16)        # ashen mauve-grey, top
+	ground_bottom = Color(0.13, 0.11, 0.12)     # darker ashen, toward the loyal line
+	region_mood = Color(0.92, 0.70, 0.66)       # blood-red dusk (subtle CanvasModulate tint)
+
 func _map_title() -> String:
 	return "THE BATTLE OF CAMLANN"
 
@@ -59,6 +68,7 @@ func _build_decor() -> void:
 	## crate. All sit out on the wings (|x| large) so the centre lane the bosses march down stays
 	## open and the final duel reads clean (the toppled banner in _draw stays at centre-north).
 	super._build_decor()
+	_dress_region()                # distant blasted treeline + drifting embers (sense of place)
 	_scatter_battlefield_props()   # smashable battlefield clutter on the flanks (clear of the duel lane)
 	# Rebel war-drums on the northern wings, driving Mordred's host down the field.
 	_drum(Vector2(-500.0, -360.0))
@@ -66,7 +76,13 @@ func _build_decor() -> void:
 	# Rebel standards planted on the wings (neutral-grey muster markers for the foe).
 	_banner(Vector2(-560.0, -300.0), "neutral", 78.0)
 	_banner(Vector2(560.0, -300.0), "neutral", 78.0)
-	# Arthur's Camelot-blue standard at the loyal line's back (our rally point).
+	# Mordred's blazoned rebel standard, TOPPLED low in the dirt at the north field (the proper decor
+	# scene at a short pole, in place of the old inline draw_rect fallen-banner).
+	_camelot_banner(Vector2(-300.0, _world_bounds().position.y + 160.0), "rebel", 30.0)
+	# Arthur's Camelot standard, blazoned with the Pendragon dragon, still flying tall behind the loyal
+	# line — the rally point (the proper decor scene in place of the old inline gold banner block).
+	_camelot_banner(Vector2(0.0, 430.0), "camelot", 86.0)
+	# Arthur's Camelot-blue muster standard alongside it (rally cluster, off the central duel lane).
 	_banner(Vector2(180.0, 430.0), "camelot", 86.0)
 	# A rail of fencing on each flank — field furniture clear of the lane.
 	_fence(Vector2(-520.0, 60.0))
@@ -77,6 +93,37 @@ func _build_decor() -> void:
 		_prop(ROCK, p)
 	_prop(CRATE, Vector2(-560.0, 20.0))
 	_prop(CRATE, Vector2(560.0, 20.0))
+
+## Distant scenery + ambient particles that give the doomed field a sense of place: a blasted-oak
+## treeline silhouette along the north edge, and ash-grey embers drifting up over the whole field.
+func _dress_region() -> void:
+	var b := _world_bounds()
+	var bd := RegionBackdrop.new()
+	bd.kind = "treeline"                                   # the blasted oaks ringing the last field
+	bd.span = b.size.x
+	bd.band_h = 160.0
+	bd.silhouette = Color(0.09, 0.08, 0.09, 0.92)          # near-black, dead trees
+	bd.haze_top = Color(0.34, 0.18, 0.18, 0.42)            # a blood-dusk haze fading into the field
+	bd.haze_bottom = Color(0.34, 0.18, 0.18, 0.0)
+	add_child(bd)
+	bd.position = Vector2((b.position.x + b.end.x) * 0.5, b.position.y)
+	var ad := AmbientDrift.new()
+	ad.kind = "embers"
+	ad.count = 40
+	ad.area = b
+	ad.tint = Color(0.7, 0.4, 0.35, 0.4)                   # ash grey-red embers
+	ad.drift = Vector2(10.0, -24.0)                        # drifting gently up the field
+	ad.size_px = 2.4
+	add_child(ad)
+
+func _camelot_banner(at: Vector2, fac: String, h: float) -> void:
+	var bn = CAMELOT_BANNER.instantiate()
+	if "faction" in bn:
+		bn.faction = fac
+	if "pole_height" in bn:
+		bn.pole_height = h
+	bn.position = at
+	add_child(bn)
 
 func _drum(at: Vector2) -> void:
 	var d = WAR_DRUM.instantiate()
@@ -203,34 +250,25 @@ func _on_wave_spawned(idx: int, units: Array) -> void:
 		if is_instance_valid(u) and "faction" in u:
 			u.faction = "rebel"
 
-# ── bleak Camlann field: a doom-laden ground, a fallen banner, dramatic theming ─
-func _draw() -> void:
-	super._draw()
-	var b := _world_bounds()
-	# A bleak, ashen overlay across the field — the grey light of the legend's final day.
-	draw_rect(b, Color(0.10, 0.09, 0.12, 0.55))
+# ── bleak Camlann ground motifs (static, behind the units) ──────────────────────
+## The doom-laden floor dressing, painted over the shared region floor and BEHIND the units (so it
+## never darkens a fighter): a thin ashen film, the blood-dark seam of the great clash, a toppled
+## flag splayed in the dirt at the north field, and scattered fallen-spear debris across the field.
+## All static — the standing banners are now proper decor scenes; nothing here animates, so there is
+## no per-frame draw override (this runs once via the base's _draw).
+func _paint_region(b: Rect2) -> void:
+	# A thin ashen film across the field — the grey light of the legend's final day (kept light so
+	# the floor still reads under the blood-dusk mood tint).
+	draw_rect(b, Color(0.10, 0.09, 0.12, 0.28))
 	# A blood-dark seam running across the centre of the field, the line of the great clash.
 	var mid_y := b.position.y + b.size.y * 0.42
 	draw_line(Vector2(b.position.x, mid_y), Vector2(b.end.x, mid_y),
 		Color(0.45, 0.12, 0.14, 0.30), 4.0)
-	# A FALLEN banner — Mordred's standard, toppled and lying in the dirt at the north field.
-	_draw_fallen_banner(Vector2(-300.0, b.position.y + 160.0))
-	# Arthur's Camelot banner still standing tall behind his line (the loyal host's rally point).
-	var pole := Vector2(0.0, 430.0)
-	draw_line(pole, pole + Vector2(0.0, -78.0), Color(0.30, 0.24, 0.16), 4.0)
-	draw_rect(Rect2(pole.x, pole.y - 78.0, 30.0, 26.0), Color(0.92, 0.78, 0.30))   # Camelot gold
+	# A splayed flag-cloth lying flat in the dirt at the foot of the toppled rebel standard.
+	var rebel := Color(0.52, 0.33, 0.60, 0.55)
+	draw_rect(Rect2(-238.0, b.position.y + 172.0, 30.0, 18.0), rebel)
 	# Scattered fallen spears/debris dotting the doomed field.
 	var debris := Color(0.20, 0.18, 0.18, 0.5)
 	for p in [Vector2(220.0, -120.0), Vector2(-180.0, 40.0), Vector2(360.0, 180.0),
 			Vector2(-380.0, -240.0), Vector2(120.0, 300.0)]:
 		draw_line(p, p + Vector2(34.0, 10.0), debris, 3.0)
-
-## A toppled enemy standard lying in the dirt — pole askew, the rebel flag fallen flat. Cheap:
-## one slanted pole line + a small drooping flag rect, drawn directly so the bleak field reads.
-func _draw_fallen_banner(at: Vector2) -> void:
-	var pole_end := at + Vector2(70.0, 22.0)
-	draw_line(at, pole_end, Color(0.22, 0.18, 0.16), 5.0)               # the toppled pole
-	# Mordred's black-purple flag, splayed flat on the ground at the pole's head.
-	var rebel := Color(0.52, 0.33, 0.60, 0.85)
-	draw_rect(Rect2(pole_end.x - 4.0, pole_end.y - 2.0, 30.0, 18.0), rebel)
-	draw_line(pole_end, pole_end + Vector2(26.0, 16.0), rebel, 2.0)

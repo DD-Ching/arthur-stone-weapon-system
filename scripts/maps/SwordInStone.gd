@@ -25,9 +25,19 @@ const HEAVY_GUARD := preload("res://scenes/HeavyGuard.tscn")
 const ALLY_KNIGHT := preload("res://scenes/AllyKnight.tscn")
 const ALLY := preload("res://scenes/Ally.tscn")
 
-const ANVIL_R := 64.0          ## radius of the round stone anvil at centre
+const SWORD_EMBLEM := preload("res://scenes/decor/SwordInStone.tscn")
+const CAMELOT_BANNER := preload("res://scenes/decor/CamelotBanner.tscn")
+const TORCH := preload("res://scenes/decor/Torch.tscn")
+const BRAZIER := preload("res://scenes/decor/Brazier.tscn")
 
 # ── theme ─────────────────────────────────────────────────────────────────────
+## The Churchyard at grey dawn: cold flagstone underfoot, a cool dawn light over the courtyard.
+## Set FIRST in _ready so the floor + mood are themed from frame 0 (pure — just sets fields).
+func _theme() -> void:
+	ground_top = Color(0.20, 0.20, 0.23)        # grey stone, lit edge
+	ground_bottom = Color(0.16, 0.16, 0.18)     # grey stone, shadowed
+	region_mood = Color(0.82, 0.84, 0.95)       # a subtle cool dawn tint (channels stay >= 0.6)
+
 func _map_title() -> String:
 	return "THE SWORD IN THE STONE"
 
@@ -125,38 +135,70 @@ func _on_wave_spawned(idx: int, units: Array) -> void:
 		if is_instance_valid(u) and "faction" in u:
 			u.faction = "rebel"
 
-# ── decor: the stone anvil + sword hilt at centre, low churchyard dressing ────
-func _draw() -> void:
-	super._draw()
+# ── decor: the stone-and-sword emblem at centre + churchyard dressing ─────────
+## Distant chapel skyline + drifting dawn mist + the legend's stone-and-sword and a Camelot
+## standard, plus a little torch/brazier light. Static motifs (flagstone seams, headstones,
+## the ruined chapel-wall stubs) are painted by _paint_region behind the units.
+func _build_decor() -> void:
+	super._build_decor()
 	var b := _world_bounds()
-	# The round stone anvil at the very centre of the courtyard.
-	var c := Vector2.ZERO
-	draw_circle(c, ANVIL_R + 8.0, Color(0.10, 0.10, 0.12))             # shadow base
-	draw_circle(c, ANVIL_R, Color(0.46, 0.45, 0.48))                  # stone face
-	draw_circle(c, ANVIL_R, Color(0.30, 0.30, 0.33), false, 5.0)      # rim
-	draw_circle(c, ANVIL_R * 0.6, Color(0.38, 0.37, 0.40))            # inner anvil block
-	# The famous SWORD jutting from the stone: a blade rising up, crossguard, pommel.
-	var blade_top := c + Vector2(0.0, -ANVIL_R - 96.0)
-	var blade_into := c + Vector2(0.0, -6.0)                          # sunk into the stone
-	draw_line(blade_into, blade_top, Color(0.20, 0.18, 0.16), 11.0)   # blade outline
-	draw_line(blade_into, blade_top, Color(0.82, 0.86, 0.92), 7.0)    # bright steel
-	draw_line(blade_into, blade_top, Color(0.96, 0.98, 1.0), 2.0)     # highlight
-	var guard_y := c.y - ANVIL_R - 30.0                              # crossguard above the stone
-	draw_line(Vector2(-26.0, guard_y), Vector2(26.0, guard_y), Color(0.86, 0.72, 0.34), 8.0)
-	var grip_top := Vector2(0.0, guard_y - 26.0)
-	draw_line(Vector2(0.0, guard_y), grip_top, Color(0.30, 0.22, 0.16), 7.0)  # grip
-	draw_circle(grip_top, 8.0, Color(0.90, 0.76, 0.36))              # pommel
-	# A faint inscription ring on the stone (the legend: who draws it is king).
-	draw_arc(c, ANVIL_R + 18.0, 0.0, TAU, 48, Color(0.85, 0.78, 0.45, 0.18), 2.0)
-	# Low churchyard / chapel dressing: a ruined back wall outline + a Camelot gold banner over
-	# the doorway (our side) and faint flagstone seams across the courtyard.
+	# (1) A distant CHAPEL skyline along the world's top edge — cool slate against a cool haze, so
+	# the churchyard reads as having a chapel beyond the back wall the knights file through.
+	var bd := RegionBackdrop.new()
+	bd.kind = "chapel"
+	bd.span = b.size.x
+	bd.silhouette = Color(0.13, 0.14, 0.18, 0.9)
+	bd.haze_top = Color(0.62, 0.66, 0.78, 0.45)
+	bd.haze_bottom = Color(0.62, 0.66, 0.78, 0.0)
+	add_child(bd)
+	bd.position = Vector2((b.position.x + b.end.x) * 0.5, b.position.y)
+	# (2) Gentle grey-dawn MIST drifting across the courtyard.
+	var ad := AmbientDrift.new()
+	ad.kind = "mist"
+	ad.count = 30
+	ad.area = b
+	ad.tint = Color(0.7, 0.75, 0.85, 0.35)
+	ad.drift = Vector2(10.0, -4.0)
+	ad.size_px = 3.0
+	add_child(ad)
+	# (3) The legend itself: the stone-and-sword emblem at the very centre of the courtyard (the
+	# centre stone spot), scaled up to read as the duelling-ground centrepiece.
+	var emblem := _spawn_prop(SWORD_EMBLEM, Vector2.ZERO)
+	if emblem and "stone_size" in emblem:
+		emblem.stone_size = 58.0
+	# (4) A Camelot standard planted beside the stone (our side).
+	var banner = _spawn_prop(CAMELOT_BANNER, Vector2(96.0, 18.0))
+	if banner and "faction" in banner:
+		banner.faction = "camelot"
+	if banner and "pole_height" in banner:
+		banner.pole_height = 86.0
+	# (5) A little light around the shrine: braziers flank the stone, torches mark the side columns.
+	_spawn_prop(BRAZIER, Vector2(-110.0, -30.0))
+	_spawn_prop(BRAZIER, Vector2(110.0, -30.0))
+	_spawn_prop(TORCH, Vector2(b.position.x + 150.0, -50.0))
+	_spawn_prop(TORCH, Vector2(b.end.x - 150.0, -50.0))
+
+## Static churchyard ground motifs, painted over the floor and behind the units: large flagstone
+## slabs (faint warm-grey seams), the ruined chapel back-wall stubs by the doorway, and a few
+## headstones flanking the duelling ground.
+func _paint_region(b: Rect2) -> void:
+	# Faint flagstone seams — a coarse grid of large slabs across the courtyard floor.
+	var seam := Color(0.55, 0.53, 0.50, 0.10)
+	var slab := 168.0
+	var x := b.position.x + slab
+	while x < b.end.x:
+		draw_line(Vector2(x, b.position.y), Vector2(x, b.end.y), seam, 2.0)
+		x += slab
+	var y := b.position.y + slab
+	while y < b.end.y:
+		draw_line(Vector2(b.position.x, y), Vector2(b.end.x, y), seam, 2.0)
+		y += slab
+	# Ruined chapel back-wall stubs framing the doorway the knights file through.
 	var chapel_y := b.position.y + 130.0
 	var stone := Color(0.24, 0.22, 0.22)
 	draw_rect(Rect2(b.position.x + 20.0, chapel_y - 26.0, 60.0, 26.0), stone)
 	draw_rect(Rect2(b.end.x - 80.0, chapel_y - 26.0, 60.0, 26.0), stone)
-	var gold := Color(0.92, 0.78, 0.30)
-	draw_rect(Rect2(-14.0, chapel_y - 60.0, 28.0, 42.0), gold)        # Camelot banner over the door
-	# A couple of churchyard headstones flanking the duelling ground.
-	for hx in [-260.0, 240.0]:
-		draw_rect(Rect2(hx - 12.0, 60.0, 24.0, 40.0), Color(0.30, 0.30, 0.33))
-		draw_rect(Rect2(hx - 16.0, 96.0, 32.0, 8.0), Color(0.22, 0.22, 0.24))
+	# Churchyard headstones flanking the duelling ground (small dark rects).
+	for hx in [-300.0, -240.0, 240.0, 300.0]:
+		draw_rect(Rect2(hx - 11.0, 70.0, 22.0, 38.0), Color(0.27, 0.27, 0.30))
+		draw_rect(Rect2(hx - 15.0, 104.0, 30.0, 7.0), Color(0.20, 0.20, 0.22))

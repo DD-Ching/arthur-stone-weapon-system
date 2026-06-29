@@ -14,6 +14,10 @@ const ALLY_SHIELD := preload("res://scenes/AllyShield.tscn")
 const ALLY_SPEAR := preload("res://scenes/AllySpear.tscn")
 const ALLY_KNIGHT := preload("res://scenes/AllyKnight.tscn")
 const FIRE_ZONE := preload("res://scenes/hazards/FireZone.tscn")
+# Bank dressing: a Camelot standard + beacon braziers on the defended south shore (placement +
+# config of existing code-drawn decor — no new art, no gameplay).
+const CAMELOT_BANNER := preload("res://scenes/decor/CamelotBanner.tscn")
+const BRAZIER := preload("res://scenes/decor/Brazier.tscn")
 const LIGHT := preload("res://scenes/LightSoldier.tscn")
 const SHIELD := preload("res://scenes/ShieldSoldier.tscn")
 const SPEAR := preload("res://scenes/Spearman.tscn")
@@ -34,6 +38,70 @@ func _arthur_start() -> Vector2:
 
 func _world_bounds() -> Rect2:
 	return Rect2(-640.0, -440.0, 1280.0, 900.0)
+
+# ── region identity: a tidal ford lit by a burning fleet ─────────────────────
+## Wet slate at the water line giving way to firelit sand on the south bank, the whole crossing
+## washed in the smoke-red glow of the longships ablaze upstream. Runs FIRST in _ready so the
+## floor + mood are themed from frame 0. Pure (just sets fields) — VISUAL ONLY.
+func _theme() -> void:
+	ground_top = Color(0.16, 0.17, 0.19)      # wet slate at the water line
+	ground_bottom = Color(0.20, 0.16, 0.13)   # firelit sand on the defended bank
+	region_mood = Color(0.96, 0.80, 0.68)     # subtle smoke-red firelight wash over the whole field
+
+# ── decor: the burning fleet beyond the shore + embers on the wind ───────────
+## ADD a distant burning-fleet backdrop, drifting embers, and bank dressing (a Camelot standard +
+## beacon braziers) on the defended south shore. Pure placement/config of shared code-drawn decor —
+## no new art, no gameplay. The central ford lane is kept clear; dressing clusters on the banks.
+func _build_decor() -> void:
+	super._build_decor()
+	var b := _world_bounds()
+	# The Saxon war-fleet ablaze beyond the far shore — a longship silhouette band with a breathing
+	# fire-glow pool, placed at the world's top-centre (behind everything via its low z_index).
+	var bd := RegionBackdrop.new()
+	bd.kind = "ships"
+	bd.span = b.size.x
+	bd.silhouette = Color(0.10, 0.09, 0.10, 0.95)
+	bd.glow = Color(1.0, 0.45, 0.18, 0.5)
+	bd.animate = true
+	add_child(bd)
+	bd.position = Vector2((b.position.x + b.end.x) * 0.5, b.position.y)
+	# Embers carried off the burning hulls, drifting up the field on the wind (up-left).
+	var ad := AmbientDrift.new()
+	ad.kind = "embers"
+	ad.count = 44
+	ad.area = b
+	ad.tint = Color(1.0, 0.55, 0.2, 0.5)
+	ad.drift = Vector2(-22.0, -30.0)
+	ad.size_px = 2.6
+	add_child(ad)
+	# A Camelot standard planted on the defended south bank (off the central crossing lane).
+	var banner = _spawn_prop(CAMELOT_BANNER, Vector2(-120.0, 360.0))
+	if banner and "faction" in banner:
+		banner.faction = "camelot"
+	if banner and "pole_height" in banner:
+		banner.pole_height = 88.0
+	# Beacon braziers flanking the bank — warning fires lit against the landing (clear of the lane).
+	_spawn_prop(BRAZIER, Vector2(-360.0, 330.0))
+	_spawn_prop(BRAZIER, Vector2(360.0, 330.0))
+
+# ── ground motif: wet sheen on the tidal ford ────────────────────────────────
+## Faint warm light arcs riding the water line — the burning fleet reflected as ripples on the wet
+## slate of the ford. Drawn once with the floor (static) and BEHIND the units. VISUAL ONLY.
+func _paint_region(b: Rect2) -> void:
+	var sheen := Color(1.0, 0.58, 0.30, 0.10)   # firelight caught on the wet crossing
+	var rows := [-100.0, -60.0, -20.0, 20.0, 64.0]
+	var i := 0
+	for yy in rows:
+		var amp: float = 8.0 + 4.0 * float(i % 3)
+		var pts := PackedVector2Array()
+		var segs := 56
+		for s in range(segs + 1):
+			var f := float(s) / float(segs)
+			var x := lerpf(b.position.x + 50.0, b.end.x - 50.0, f)
+			var y: float = yy + sin(f * PI * 6.0 + float(i) * 1.3) * amp
+			pts.append(Vector2(x, y))
+		draw_polyline(pts, sheen, 2.0)
+		i += 1
 
 # ── terrain: a flaming river crossing ────────────────────────────────────────
 func _build_terrain() -> void:
