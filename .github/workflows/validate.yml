@@ -643,3 +643,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/RegionThemeTest.tscn --quit-after 600 | tee regiontheme.log
           grep -q "REGIONTHEME_VERDICT PASS" regiontheme.log
+
+      - name: Run worldmap test (the connected Map of Britain overworld)
+        # Asserts the overworld boot scene resolves the ten legend regions in Campaign road order,
+        # the title is Arthurian, navigation wraps, the selected region is loadable, and the journey
+        # GATES (first region open, a later one sealed) — a real progression, not a flat list.
+        run: |
+          godot --headless --path . res://tests/WorldmapTest.tscn --quit-after 600 | tee worldmap.log
+          grep -q "WORLDMAP_VERDICT PASS" worldmap.log

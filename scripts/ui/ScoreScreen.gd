@@ -10,7 +10,7 @@ extends CanvasLayer
 ## level passes the next battle's path + blurb (from the Campaign autoload) into show_result; this
 ## node owns no game state and never reaches into gameplay nodes.
 
-const STAGE_SELECT := "res://scenes/ui/StageSelect.tscn"
+const STAGE_SELECT := "res://scenes/ui/Worldmap.tscn"   # the Map of Britain (lobby + journey hub)
 const PANEL_SIZE := Vector2(620.0, 480.0)
 const VICTORY_COL := Color(0.5, 0.95, 0.55)
 const DEFEAT_COL := Color(0.95, 0.45, 0.4)
@@ -79,10 +79,10 @@ func show_result(victory: bool, kos: int, seconds: float, next_path := "", blurb
 	if victory:
 		if next_path != "" and not last_was_finale:
 			items.append({"id": "next", "label": "Next Battle"})
-		items.append({"id": "lobby", "label": "Return to Lobby"})
+		items.append({"id": "lobby", "label": "Return to Map"})
 	else:
 		items.append({"id": "retry", "label": "Retry Battle"})
-		items.append({"id": "lobby", "label": "Return to Lobby"})
+		items.append({"id": "lobby", "label": "Return to Map"})
 	_list.accent = accent
 	_list.set_items(items)
 	_list.set_enabled(true)

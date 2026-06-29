@@ -72,7 +72,7 @@ const SPIN_R := 48.0
 const RESET_R := 42.0            ## bumped up for thumbs (was 28) — top-right, clear of the HUD
 const MUSOU_R := 50.0
 const MENU_R := 42.0             ## bumped up for thumbs (was 30) — top-right beside RESET, off the HUD
-const STAGE_SELECT := "res://scenes/ui/StageSelect.tscn"
+const STAGE_SELECT := "res://scenes/ui/Worldmap.tscn"   # the Map of Britain (lobby + journey hub)
 ## The top-left HUD column (HEALTH/STAMINA/… bars + labels) lives here; the MENU/RESET buttons
 ## are kept OUT of this box so they never sit on the readouts. Matches Hud.gd's BAR_X/BAR_W/BAR_TOP.
 const HUD_BAR_RIGHT := 342.0     ## BAR_X(30) + BAR_W(312)

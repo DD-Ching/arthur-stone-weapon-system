@@ -10,7 +10,7 @@ extends CanvasLayer
 ## with its own Next/Retry/Lobby, takes over then). Found by other nodes via the "pause_menu"
 ## group (TouchControls' MENU button opens it through that group).
 
-const STAGE_SELECT := "res://scenes/ui/StageSelect.tscn"
+const STAGE_SELECT := "res://scenes/ui/Worldmap.tscn"   # the Map of Britain (lobby + journey hub)
 
 var _root: Control
 var _list: MenuList
@@ -53,7 +53,7 @@ func _build() -> void:
 	_list.set_items([
 		{"id": "resume", "label": "Resume"},
 		{"id": "restart", "label": "Restart Battle"},
-		{"id": "lobby", "label": "Return to Lobby"},
+		{"id": "lobby", "label": "Return to Map"},
 	])
 	_list.set_enabled(false)
 
