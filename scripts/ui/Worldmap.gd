@@ -53,6 +53,10 @@ func _ready() -> void:
 	selected = _current_index()
 	set_process(true)
 	set_process_input(true)
+	# The calm overworld music bed (the Music autoload; guarded for headless / standalone).
+	var m = get_node_or_null("/root/Music")
+	if m:
+		m.play_scene("map")
 	queue_redraw()
 
 # --- data (from Campaign) ----------------------------------------------------

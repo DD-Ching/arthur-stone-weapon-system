@@ -21,6 +21,7 @@ boot_splash/show_image=false
 Impact="*res://scripts/Impact.gd"
 Audio="*res://scripts/Audio.gd"
 SoundBank="*res://scripts/SoundBank.gd"
+Music="*res://scripts/Music.gd"
 Campaign="*res://scripts/Campaign.gd"
 Transition="*res://scripts/Transition.gd"
 
