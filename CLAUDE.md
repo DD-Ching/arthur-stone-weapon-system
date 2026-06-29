@@ -10,8 +10,18 @@ memory) and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (how the code is wire
 (authored against 4.3; CI runs 4.3.0). Arthur failed to pull the sword from the stone,
 so he lifted the **whole stone** — a heavy, absurd physics weapon. He is overwhelmingly
 strong; the challenge is *battlefield pressure*: formations, terrain, objectives,
-stamina, timing, and protecting allies. The current playable level is **Hold the Ford**,
-a river crossing defended against five waves of raiders.
+stamina, timing, and protecting allies.
+
+The game boots into a **connected Map of Britain** (`scenes/ui/Worldmap.tscn`): the legend is ten
+Arthurian regions on a journey road (Sword in the Stone → the Marches → Burning Fords → Long Road →
+Beacon-Forts → Mount Badon → Camelot → Night-Host → Camlann → Avalon), each a distinct atmospheric
+`BattleMap`; "Hold the Ford" + the challenge rooms are the Training Yard. It plays Musou-style: one
+juggernaut shredding hordes that rout when you fell their officers, named-general bosses, a
+screen-clearing rage ultimate, all to a procedural score. The 2026 Arthurian rebuild (theme purge →
+visual identity → world map → Musou combat → music) is documented in
+[`docs/final_world_rebuild_report.md`](docs/final_world_rebuild_report.md); strict direction in
+[`docs/creative_direction.md`](docs/creative_direction.md). Theme is **King Arthur only** (no Three
+Kingdoms); the `no_tk_leak` test enforces it.
 
 Live demo: <https://dd-ching.github.io/arthur-stone-weapon-system/>
 
