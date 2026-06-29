@@ -651,3 +651,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/WorldmapTest.tscn --quit-after 600 | tee worldmap.log
           grep -q "WORLDMAP_VERDICT PASS" worldmap.log
+
+      - name: Run formation-morale test (officer falls -> the ranks rout)
+        # Asserts the core Musou loop: felling a formation's commander routs the surviving ranks
+        # (they panic-stun + scatter), and the formation's one-shot rout flag fires.
+        run: |
+          godot --headless --path . res://tests/FormationMoraleTest.tscn --quit-after 600 | tee formmorale.log
+          grep -q "FORMMORALE_VERDICT PASS" formmorale.log
