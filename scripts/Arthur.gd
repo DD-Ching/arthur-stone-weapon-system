@@ -31,16 +31,16 @@ const MUSOU_STUN := 1.4
 const MUSOU_DAMAGE_MULT := 4.0
 
 @export_group("Movement")
-@export var max_speed := 158.0
-@export var accel := 620.0     ## low → slow to reach top speed (he is hauling a rock)
+@export var max_speed := 210.0
+@export var accel := 820.0     ## a juggernaut who can actually CLOSE on the horde (still heavy, not a rocket)
 @export var friction := 480.0  ## modest → he keeps drifting when you stop steering
 @export var dash_friction := 520.0   ## how fast a swing-lunge bleeds off
 @export var max_dash_speed := 340.0  ## cap on stacked lunges — heavy, not a rocket
 
 @export_group("Stamina")
 @export var max_stamina := 100.0
-@export var stamina_regen := 24.0
-@export var regen_delay := 0.65  ## pause before stamina starts coming back after a swing
+@export var stamina_regen := 30.0
+@export var regen_delay := 0.4   ## short pause before stamina recovers — sustained Musou pressure, not a stop-start choke
 @export var low_stamina_threshold := 25.0  ## below this, a readable SOFT slowdown tapers in (not a hard stop) — running dry should sap you, not cliff
 
 @export_group("Health")
@@ -217,15 +217,15 @@ func _speed_multiplier() -> float:
 func _weapon_speed_multiplier() -> float:
 	match weapon.state:
 		StoneWeapon.State.SPIN:
-			return 0.7    # a moving tornado — slower, but you're not rooted
+			return 0.82   # a moving tornado — you carve through the crowd, not rooted
 		StoneWeapon.State.SLAM_RAISE:
-			return 0.24   # heaving the stone overhead
+			return 0.42   # heaving the stone overhead, but still advancing
 		StoneWeapon.State.SLAM_HOLD:
-			return 0.14   # frozen at the top of the lift
+			return 0.32   # braced at the top of the lift
 		StoneWeapon.State.SLAM_DROP:
-			return 0.3
+			return 0.45
 		StoneWeapon.State.SLAM_RECOVER:
-			return 0.2    # planted, wide open
+			return 0.4    # planted, but recovering quicker than before
 		_:
 			return 1.0   # IDLE
 
