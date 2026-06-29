@@ -1,5 +1,5 @@
 extends Node2D
-## Headless test for the play-feel pass: SWING WEIGHT + BEAM CHARGE PAYOFF.
+## Headless test for the play-feel pass: SWING WEIGHT + ULTIMATE CHARGE PAYOFF.
 ##
 ## Two independent assertions, run in sequence:
 ##
@@ -9,9 +9,9 @@ extends Node2D
 ##     swing direction (a heavy hit moves the heavy man). Arthur's own _physics_process is
 ##     off so his steering can't pollute the measurement — we read the lunge burst directly.
 ##
-##  2. BEAM CHARGE PAYOFF — fires the charge-beam at a LONG charge (2.0s) vs a SHORT one
-##     (0.5s) and asserts the long-charge beam is strictly wider AND longer (the charge you
-##     held earns a bigger beam). Reads the beam's effective reach/width straight off it.
+##  2. ULTIMATE CHARGE PAYOFF — unleashes the radial musou burst at a LONG charge (2.0s) vs a
+##     SHORT one (0.5s) and asserts the long-charge burst clears a strictly WIDER radius (the
+##     charge you held earns a bigger screen-clear). Reads the spawned Shockwave's radius.
 ##
 ## Run:  godot --headless --path . res://tests/FeelTest.tscn --quit-after 600
 ## Look for the FEEL_VERDICT line.
@@ -22,10 +22,8 @@ var _frame := 0
 var _aim := -1.6
 var _dash_after := Vector2.ZERO
 var _swing_dir := Vector2.RIGHT       ## the +X direction toward the dummy — the swing should carry Arthur this way
-var _short_len := 0.0
-var _short_width := 0.0
-var _long_len := 0.0
-var _long_width := 0.0
+var _short_radius := 0.0
+var _long_radius := 0.0
 
 func _ready() -> void:
 	Impact.reset()
@@ -54,31 +52,27 @@ func _physics_process(_delta: float) -> void:
 		arthur.weapon.set_swinging(false)
 		# Capture Arthur's lunge burst right after the swing connected — the swing-weight nudge.
 		_dash_after = arthur._dash_vel
-	# --- Phase 2: fire the two beams and read their scaled reach/width ---
+	# --- Phase 2: unleash the two bursts and read their scaled radius ---
 	elif _frame == 40:
-		arthur.weapon.aim_angle = 0.0
-		arthur.weapon.set_aim_target(0.0)
-		var b_short = _fire_and_grab(0.5)
-		if b_short:
-			_short_len = b_short._len
-			_short_width = b_short._width
-			b_short.queue_free()   # clear it so the next beam is unambiguous
+		var sw_short = _fire_and_grab(0.5)
+		if sw_short:
+			_short_radius = sw_short.radius
+			sw_short.queue_free()   # clear it so the next burst is unambiguous
 	elif _frame == 42:
-		var b_long = _fire_and_grab(2.0)
-		if b_long:
-			_long_len = b_long._len
-			_long_width = b_long._width
-			b_long.queue_free()
+		var sw_long = _fire_and_grab(2.0)
+		if sw_long:
+			_long_radius = sw_long.radius
+			sw_long.queue_free()
 	elif _frame >= 60:
 		_report()
 
-## Fire a beam at the given charge and return the Beam node just spawned (the newest child).
+## Unleash the ultimate at the given charge and return the Shockwave node just spawned (newest).
 func _fire_and_grab(charge: float):
-	arthur.fire_musou_beam(charge)
+	arthur._unleash_musou(charge)
 	var newest = null
 	for c in get_children():
-		if c.get_script() == load("res://scripts/Beam.gd"):
-			newest = c   # the beam is added under us (the current scene); take the latest
+		if c.is_in_group("shockwave"):
+			newest = c   # the burst is added under us (the current scene); take the latest
 	return newest
 
 func _report() -> void:
@@ -86,13 +80,11 @@ func _report() -> void:
 	# The lunge should carry Arthur roughly toward the dummy (+X) — a positive dot along the swing dir.
 	var dash_along: float = _dash_after.dot(_swing_dir)
 	var swing_weight_ok: bool = dash_len > 5.0 and dash_along > 0.0
-	var beam_longer: bool = _long_len > _short_len + 1.0
-	var beam_wider: bool = _long_width > _short_width + 1.0
-	var beam_ok: bool = beam_longer and beam_wider and _short_len > 0.0
-	var ok: bool = swing_weight_ok and beam_ok
-	print("FEEL_RESULT dash_len=%.1f dash_along=%.1f | short(len=%.0f w=%.1f) long(len=%.0f w=%.1f)"
-		% [dash_len, dash_along, _short_len, _short_width, _long_len, _long_width])
-	print("FEEL_RESULT swing_weight=%s beam_longer=%s beam_wider=%s"
-		% [str(swing_weight_ok), str(beam_longer), str(beam_wider)])
+	var burst_bigger: bool = _long_radius > _short_radius + 1.0
+	var ult_ok: bool = burst_bigger and _short_radius > 0.0
+	var ok: bool = swing_weight_ok and ult_ok
+	print("FEEL_RESULT dash_len=%.1f dash_along=%.1f | short_radius=%.0f long_radius=%.0f"
+		% [dash_len, dash_along, _short_radius, _long_radius])
+	print("FEEL_RESULT swing_weight=%s burst_bigger=%s" % [str(swing_weight_ok), str(burst_bigger)])
 	print("FEEL_VERDICT %s" % ("PASS" if ok else "FAIL"))
 	get_tree().quit(0 if ok else 1)
