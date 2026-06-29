@@ -37,13 +37,13 @@ const ROCK := preload("res://scenes/Rock.tscn")
 @export var inertia_gain := 1.1        ## how much Arthur's movement sloshes the head around
 @export var max_avel := 28.0           ## cap on angular speed (rad/s)
 @export var drag_gain := 5.2           ## mouse-DRAG torque while swinging — how hard a whip builds speed
-@export var swing_stamina_rate := 26.0 ## stamina drained per second while actively dragging a swing (just above regen, so held swinging isn't effectively free)
+@export var swing_stamina_rate := 14.0 ## stamina drained per second while dragging a swing (below regen → sustained Musou swinging flows instead of choking)
 @export var swing_weight_gain := 0.06  ## a SCORED swing hit nudges Arthur along the swing dir, this much per px/s of head speed (landing a heavy hit moves the heavy man)
 @export var swing_weight_max := 150.0  ## clamp on that lunge so a heavy hit shoves him a step, never flings him across the map
 @export var touch_assist_avel := 7.0   ## angular speed (rad/s) a HELD-steady touch aim ramps the head toward, so a thumb that barely circles still builds a real swing
 @export var touch_assist_gain := 9.0   ## how fast the touch assist winds _avel up toward touch_assist_avel
-@export var hit_speed_min := 420.0     ## head speed below which contact only PUSHES (no scored hit)
-@export var solid_off_speed := 400.0   ## above this the solid stone steps aside so the impulse hits
+@export var hit_speed_min := 190.0     ## head speed below which contact only PUSHES — LOW so even a casual drag SCORES (the Musou juggernaut always shreds; damage still scales with speed)
+@export var solid_off_speed := 170.0   ## above this the solid stone steps aside so the scored impulse lands cleanly (kept just below hit_speed_min)
 @export var hit_interval := 0.3        ## a fast head re-hits the same target this often (seconds)
 
 @export_group("Facing")
@@ -65,11 +65,11 @@ const ROCK := preload("res://scenes/Rock.tscn")
 @export_group("Spin (musou whirlwind)")
 @export var spin_rate := 17.0          ## angular speed of the whirl (rad/s) — a few turns a second
 @export var spin_accel := 42.0         ## how fast it winds up to spin_rate
-@export var spin_cost := 28.0          ## stamina drained PER SECOND while spinning (a full whirl lasts ~3.6s — a taper, not an abrupt cliff)
+@export var spin_cost := 20.0          ## stamina drained PER SECOND while spinning (cheaper still while Stone Flow is maxed — see _process_spin)
 @export var spin_min_stamina := 30.0   ## won't start below this — the real brake on spin-spam: you can't instantly re-enter spin after running dry
-@export var spin_hit_interval := 0.5   ## how often each enemy can be re-hit by the whirl (slower ticks)
+@export var spin_hit_interval := 0.35  ## how often each enemy can be re-hit by the whirl (faster ticks → a real horde-mulcher)
 @export var spin_stretch := 12.0       ## extra head reach while spinning
-@export var spin_speed_ref := 620.0    ## relative_speed fed to the impact formula during spin — a spin tick scores like a medium swing, not a free screen-clear
+@export var spin_speed_ref := 760.0    ## relative_speed fed to the impact formula during spin — a spin tick now bites like a strong swing (the whirl IS the crowd-clear)
 
 @export_group("Cost")
 # Knockback / shake magnitudes live in Impact.gd (the one tuning hub). What stays
@@ -349,8 +349,10 @@ func _apply_swing_hits(delta: float) -> void:
 # --- spin / tornado ---------------------------------------------------------
 
 func _process_spin(delta: float) -> void:
-	# Bleed stamina; the whirl ends the moment you run dry.
-	if not _arthur.try_spend_stamina(spin_cost * delta):
+	# Bleed stamina; the whirl ends the moment you run dry. A maxed Stone Flow makes the whirl
+	# cheaper — building a rampage unlocks an extended "flow-state" tornado (Musou momentum).
+	var cost := spin_cost * (0.6 if Impact.flow_mode else 1.0)
+	if not _arthur.try_spend_stamina(cost * delta):
 		too_tired.emit()
 		_change_state(State.IDLE)
 		return

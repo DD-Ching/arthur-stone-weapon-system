@@ -183,12 +183,12 @@ func charge_speed_mult() -> float:    # stack 1+: wind up a touch faster
 	return 1.0 + 0.07 * stacks
 func move_mult() -> float:            # stack 2+: a little more mobile
 	return 1.0 + 0.04 * maxi(0, stacks - 1)
-func force_mult() -> float:           # the combo factor in the formula; stack 4 + mode add punch
-	var m := 1.0 + 0.08 * stacks
-	if stacks >= 4:
-		m += 0.12
+func force_mult() -> float:           # the combo factor; the crescendo is meant to be FELT now —
+	var m := 1.0 + 0.11 * stacks      # a maxed rampage hits ~2.2x vs a cold start (was ~1.8x), so
+	if stacks >= 4:                   # building a streak visibly ramps your power (Musou flow-state),
+		m += 0.18                     # while a single cold hit stays 1.0 (still hauling a rock).
 	if flow_mode:
-		m += 0.25
+		m += 0.5
 	return m
 
 # ── The scoring formula ─────────────────────────────────────────────────────
