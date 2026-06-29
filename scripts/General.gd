@@ -26,6 +26,7 @@ extends Enemy
 @export var warcry_spares_generals := true
 
 var _warcry_cd := 2.0     ## a short initial delay so a freshly-spawned boss doesn't open with it
+var _announced := false   ## one-shot: the entrance name-card fires once, when a foe first closes in
 
 
 func _physics_process(delta: float) -> void:
@@ -37,6 +38,11 @@ func _physics_process(delta: float) -> void:
 	# Staggered / launched generals can't shout (they're reeling, same as they can't act).
 	if _stun > 0.0:
 		return
+	# ENTRANCE: the first time a foe closes to engagement range, the warlord ANNOUNCES himself with a
+	# gold name-card — a named general arrives as an EVENT, not just a mob with a big bar. Once only.
+	if not _announced and is_instance_valid(_player) \
+			and global_position.distance_to(_player.global_position) <= warcry_radius * 1.6:
+		_announce_entrance()
 	_warcry_cd = maxf(0.0, _warcry_cd - delta)
 	if _warcry_cd > 0.0:
 		return
@@ -47,6 +53,17 @@ func _physics_process(delta: float) -> void:
 	if global_position.distance_to(_player.global_position) > warcry_radius:
 		return
 	_war_cry()
+
+
+## The entrance flourish — a gold name-card when the player first meets this warlord, so a named
+## general reads as an event. Reuses an existing Audio event (no new sound asset) + Impact.popup.
+func _announce_entrance() -> void:
+	_announced = true
+	var nm := "A WARLORD"
+	if "enemy_name" in self and String(enemy_name) != "":
+		nm = String(enemy_name)
+	Impact.popup(nm.to_upper(), global_position + Vector2(0.0, -64.0), Color(0.98, 0.84, 0.42), 2.0)
+	Audio.play("cavalry_charge", global_position)
 
 
 ## The signature move: rattle the lesser units on the FOE's side within reach.
