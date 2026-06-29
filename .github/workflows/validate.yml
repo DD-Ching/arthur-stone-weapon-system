@@ -658,3 +658,10 @@ jobs:
         run: |
           godot --headless --path . res://tests/FormationMoraleTest.tscn --quit-after 600 | tee formmorale.log
           grep -q "FORMMORALE_VERDICT PASS" formmorale.log
+
+      - name: Run music test (procedural looping battle/map beds)
+        # Asserts the Music autoload builds + assigns a looping bed per scene, swells volume with
+        # intensity, switches beds, and is idempotent on the same bed — the "silent battlefield" fix.
+        run: |
+          godot --headless --path . res://tests/MusicTest.tscn --quit-after 600 | tee music.log
+          grep -q "MUSIC_VERDICT PASS" music.log

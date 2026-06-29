@@ -280,6 +280,7 @@ func _on_kills_changed(k: int, milestone: String) -> void:
 		if camera and camera.has_method("add_shake"):
 			camera.call("add_shake", 18.0)
 		Impact.popup(milestone, global_position + Vector2(0.0, -112.0), Color(1.0, 0.8, 0.32), 1.8)
+		Audio.play("ko_milestone", global_position)   # a rising stinger so the rampage is HEARD too
 
 func _on_weapon_hit(shake_strength: float, _count: int) -> void:
 	if camera and camera.has_method("add_shake"):
@@ -354,9 +355,9 @@ func _unleash_musou(charge: float) -> void:
 		camera.call("kick", lerpf(34.0, 64.0, power))
 	if camera and camera.has_method("add_shake"):
 		camera.call("add_shake", lerpf(24.0, 40.0, power))
-	# A bold centre-screen announce (ASCII + gold per the web-font tofu rule).
+	# A bold centre-screen announce (ASCII + gold per the web-font tofu rule) + a dedicated ROAR.
 	Impact.popup("MUSOU!", global_position + Vector2(0.0, -96.0), Color(1.0, 0.85, 0.3), 2.2)
-	Audio.play("wall_crush", global_position)
+	Audio.play("musou_roar", global_position)
 
 ## Back-compat alias (HUD / headless test / a build that calls it directly): empty the gauge and
 ## unleash a full-power radial burst centred on Arthur.

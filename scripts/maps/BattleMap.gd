@@ -100,6 +100,7 @@ func _ready() -> void:
 	_spawn_standing_host()
 	Impact.popup(_opening_banner(), arthur.global_position + Vector2(0.0, -130.0),
 		Color(0.95, 0.86, 0.5), 1.6)
+	_start_music()
 	_evaluate()
 	queue_redraw()
 
@@ -130,6 +131,19 @@ func _apply_mood() -> void:
 	var cm := CanvasModulate.new()
 	cm.color = region_mood
 	add_child(cm)
+
+## Drive the looping battle music (the Music autoload). Guarded so a headless / standalone run
+## (no autoload) is a clean no-op. Intensity swells with the number of live raiders on the field.
+func _start_music() -> void:
+	var m = get_node_or_null("/root/Music")
+	if m:
+		m.play_scene("battle")
+
+func _update_music() -> void:
+	var m = get_node_or_null("/root/Music")
+	if m:
+		var alive := get_tree().get_nodes_in_group("targets").size()
+		m.set_intensity(clampf(float(alive) / 40.0, 0.15, 1.0))
 
 # ── subclass hooks (override these to make a map) ────────────────────────────
 func _map_title() -> String: return "BATTLE"
@@ -182,6 +196,7 @@ func _physics_process(delta: float) -> void:
 		if max_breaches > 0:
 			_check_breaches()
 		_recover_strays()
+		_update_music()
 		_evaluate()
 
 func _wave_count() -> int:

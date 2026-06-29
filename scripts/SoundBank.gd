@@ -46,6 +46,10 @@ func _ready() -> void:
 	_bank["slam"]              = _slam_voice()
 	_bank["big_swing"]         = _tone(95.0, 0.30, 0.50, 5.5, 0.70, 240.0)
 	_bank["combo_tier"]        = _tone(660.0, 0.20, 0.42, 8.0, 0.06, 540.0)
+	# Phase E voices: the musou ULTIMATE finally has its own ROAR (a low rising growl + crunch) instead
+	# of a recycled wall_crush, and a KO MILESTONE stinger (a bright rising blip) punctuates RAMPAGE! etc.
+	_bank["musou_roar"]        = _tone(80.0, 0.85, 0.95, 1.7, 0.28, 240.0)
+	_bank["ko_milestone"]      = _tone(500.0, 0.34, 0.55, 5.0, 0.05, 540.0)
 	Audio.sfx.connect(_on_sfx)
 
 func _on_sfx(event: StringName, _world_pos: Vector2) -> void:
@@ -55,6 +59,9 @@ func _on_sfx(event: StringName, _world_pos: Vector2) -> void:
 	var p: AudioStreamPlayer = _players[_next]
 	_next = (_next + 1) % _players.size()
 	p.stream = stream
+	# A touch of per-playback pitch variation so a swing through a crowd is a chaotic crunch, not a
+	# machine-gun "bonk-bonk-bonk" of the identical WAV. randf() is fine in game runtime.
+	p.pitch_scale = randf_range(0.93, 1.08)
 	p.play()
 
 ## Synthesise a short mono 16-bit PCM tone: a sine whose frequency glides by `glide` Hz
