@@ -37,8 +37,15 @@ func detonate() -> void:
 				# shield (the brief's wall-crush rule), and honour the block result
 				# the same way the swing does (no SLAM! label / 0.4x flow when blocked).
 				var pin := Impact.cushion(self, body.global_position, dir)
-				var res: Dictionary = body.apply_hit(dir, strength, stun_time * falloff,
-					Impact.DMG_BASE * Impact.SLAM_DAMAGE_MULT * falloff * damage_mult, pin)
+				# Named generals RESIST the burst — it's a crowd-wipe, not a boss-melter. Reduced
+				# damage + a capped stun so a maxed ult can't delete or stun-lock a boss.
+				var dm := damage_mult
+				var st := stun_time * falloff
+				if "is_general" in body and body.is_general:
+					dm *= 0.4
+					st = minf(st, 0.6)
+				var res: Dictionary = body.apply_hit(dir, strength, st,
+					Impact.DMG_BASE * Impact.SLAM_DAMAGE_MULT * falloff * dm, pin)
 				var blocked: bool = res["blocked"]
 				Impact.add_flow(Impact.SLAM_FLOW_BASE * falloff * (0.4 if blocked else 1.0))
 				if falloff > 0.2 and not blocked:   # label any enemy that took a meaningful hit

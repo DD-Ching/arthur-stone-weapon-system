@@ -24,40 +24,42 @@ const MUSOU_CHARGE_MAX := 2.5   ## seconds you can build the rage burst (charge 
 const HAPTIC_HIT_FLOOR := 12.0  ## min hit-shake that buzzes a touch device (a meaty clash/slam, not every light tap)
 ## The musou ULTIMATE — a screen-clearing RADIAL burst (the iconic Musou crowd-wipe). Charge scales
 ## the radius from a wide circle around Arthur to the whole screen; it launches + fells the horde.
-const MUSOU_RADIUS_MIN := 480.0
-const MUSOU_RADIUS_MAX := 940.0
+const MUSOU_RADIUS_MIN := 340.0
+const MUSOU_RADIUS_MAX := 640.0   ## clears a CLUSTER you position, not the whole screen
 const MUSOU_IMPULSE := 1700.0
 const MUSOU_STUN := 1.4
-const MUSOU_DAMAGE_MULT := 4.0
+const MUSOU_DAMAGE_MULT := 2.5    ## wipes chaff, leaves elites/bosses standing (a reset, not an "I win")
+const MUSOU_COOLDOWN := 12.0      ## hard floor between ults — an earned panic button, not a rotation filler
 
 @export_group("Movement")
-@export var max_speed := 210.0
-@export var accel := 820.0     ## a juggernaut who can actually CLOSE on the horde (still heavy, not a rocket)
+@export var max_speed := 185.0
+@export var accel := 740.0     ## a juggernaut who closes on the horde — but can't freely kite the whole map
 @export var friction := 480.0  ## modest → he keeps drifting when you stop steering
 @export var dash_friction := 520.0   ## how fast a swing-lunge bleeds off
-@export var max_dash_speed := 340.0  ## cap on stacked lunges — heavy, not a rocket
+@export var max_dash_speed := 310.0  ## cap on stacked lunges — heavy, not a rocket
 
 @export_group("Stamina")
 @export var max_stamina := 100.0
-@export var stamina_regen := 30.0
-@export var regen_delay := 0.4   ## short pause before stamina recovers — sustained Musou pressure, not a stop-start choke
+@export var stamina_regen := 22.0
+@export var regen_delay := 0.7   ## a real recover gate: sustained offense drains you, forcing burst-and-reposition
 @export var low_stamina_threshold := 25.0  ## below this, a readable SOFT slowdown tapers in (not a hard stop) — running dry should sap you, not cliff
 
 @export_group("Health")
 @export var max_health := 140.0
-@export var invuln_time := 0.45  ## i-frames after a hit so a crowd can't chain-melt you (short enough that a shield/spear wall can land the spin interrupt)
+@export var invuln_time := 0.26  ## i-frames after a hit: short, so a CROWD can punish bad positioning (a single duelist still can't chain-melt) — the master difficulty lever
 
 @export_group("Musou")
 ## The rage gauge. Fills from landing hits, scoring KOs, and taking damage; at full
 ## it powers a screen-clearing ULTIMATE (a huge radial launch centred on Arthur).
-@export var max_musou := 200.0
-@export var musou_kill_gain := 14.0   ## gauge added per enemy you fell (the musou KO counter)
-@export var musou_hurt_gain := 18.0   ## gauge added when an enemy lands a hit on you (suffering feeds rage)
+@export var max_musou := 300.0
+@export var musou_kill_gain := 8.0    ## gauge added per enemy you fell — the ult is earned by FIGHTING WELL
+@export var musou_hurt_gain := 5.0    ## small: suffering no longer charges your win button (was the "tank-then-nuke" exploit)
 
 var stamina := 0.0
 var health := 0.0
 var musou := 0.0               ## current rage charge, 0..max_musou
-var _musou_charge := 0.0       ## seconds the Q beam has been charged (held), 0..MUSOU_CHARGE_MAX
+var _musou_charge := 0.0       ## seconds the Q ult has been charged (held), 0..MUSOU_CHARGE_MAX
+var _ult_cd := 0.0             ## cooldown remaining before the ult can be charged/fired again
 var _regen_cooldown := 0.0
 var _hitstop_token := 0
 var _hurt := 0.0               ## red hit-flash, seconds remaining
@@ -91,6 +93,8 @@ func _physics_process(delta: float) -> void:
 		_hurt = maxf(0.0, _hurt - delta)
 	if _invuln > 0.0:
 		_invuln = maxf(0.0, _invuln - delta)
+	if _ult_cd > 0.0:
+		_ult_cd = maxf(0.0, _ult_cd - delta)
 	_handle_aim()
 	# Lead the camera a touch toward where the stone is aimed (musou look-ahead).
 	if camera and camera.has_method("set_focus"):
@@ -122,7 +126,7 @@ func take_damage(amount: float, from_pos: Vector2 = Vector2.ZERO) -> bool:
 	if camera and camera.has_method("add_shake"):
 		camera.call("add_shake", 12.0)
 	if from_pos != Vector2.ZERO:
-		lunge((global_position - from_pos).normalized() * 90.0)   # shoved off the hit
+		lunge((global_position - from_pos).normalized() * 45.0)   # a small shove — no longer a free escape from the crowd
 	health_changed.emit(health, max_health)
 	if health <= 0.0:
 		died.emit()
@@ -158,7 +162,7 @@ func _handle_attack(delta: float) -> void:
 	# "charge however long, spray that long"). The early return is load-bearing: a held/charging Q
 	# must not also swing/slam. Guarded so a build without the `musou` action is a clean no-op.
 	if InputMap.has_action("musou"):
-		if Input.is_action_pressed("musou") and musou > 0.0:
+		if Input.is_action_pressed("musou") and musou > 0.0 and _ult_cd <= 0.0:
 			_musou_charge = minf(_musou_charge + delta, MUSOU_CHARGE_MAX)
 			add_musou(-(max_musou / MUSOU_CHARGE_MAX) * delta)   # holding drains the gauge into charge
 			weapon.stop_spin()
@@ -285,8 +289,9 @@ func _on_kills_changed(k: int, milestone: String) -> void:
 func _on_weapon_hit(shake_strength: float, _count: int) -> void:
 	if camera and camera.has_method("add_shake"):
 		camera.call("add_shake", shake_strength)
-	# Landing a heavy hit feeds the musou gauge — bigger hits charge it faster.
-	add_musou(shake_strength * 0.5)
+	# Landing a heavy hit feeds the musou gauge — bigger hits charge it faster (modest, so the ult
+	# is built by sustained good play, not a couple of swings).
+	add_musou(shake_strength * 0.2)
 	# The whirlwind hits constantly — a freeze per hit would stutter it to a crawl,
 	# so spin gets only the rumble, not the hit-stop.
 	if weapon.state != StoneWeapon.State.SPIN:
@@ -358,6 +363,7 @@ func _unleash_musou(charge: float) -> void:
 	# A bold centre-screen announce (ASCII + gold per the web-font tofu rule) + a dedicated ROAR.
 	Impact.popup("MUSOU!", global_position + Vector2(0.0, -96.0), Color(1.0, 0.85, 0.3), 2.2)
 	Audio.play("musou_roar", global_position)
+	_ult_cd = MUSOU_COOLDOWN   # block back-to-back ults regardless of gauge — the ult is earned
 
 ## Back-compat alias (HUD / headless test / a build that calls it directly): empty the gauge and
 ## unleash a full-power radial burst centred on Arthur.

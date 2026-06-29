@@ -22,24 +22,24 @@ const TABLE := {
 	"slash": {
 		"kind": "slash", "min_range": 0.0, "max_range": 30.0,
 		"windup": 0.4, "strike": 0.1, "recover": 0.45, "cooldown": 1.0,
-		"damage": 6.0, "knockback": 130.0, "stun": 0.12,
+		"damage": 8.0, "knockback": 130.0, "stun": 0.12,
 	},
 	"thrust": {
 		"kind": "thrust", "min_range": 40.0, "max_range": 120.0,
-		"windup": 0.55, "strike": 0.14, "recover": 0.5, "cooldown": 1.0,
-		"damage": 9.0, "knockback": 150.0, "stun": 0.12, "lunge_impulse": 70.0,
+		"windup": 0.45, "strike": 0.14, "recover": 0.5, "cooldown": 0.8,
+		"damage": 13.0, "knockback": 150.0, "stun": 0.12, "lunge_impulse": 70.0,
 	},
 	"bash": {
 		"kind": "bash", "min_range": 0.0, "max_range": 34.0,
 		"windup": 0.5, "strike": 0.12, "recover": 0.55, "cooldown": 1.0,
-		"damage": 10.0, "knockback": 260.0, "stun": 0.2, "lunge_impulse": 70.0,
+		"damage": 14.0, "knockback": 260.0, "stun": 0.2, "lunge_impulse": 70.0,
 	},
-	# ── new gap-closers / ranged / AoE ──
+	# ── new gap-closers / ranged / AoE (buffed so a CROWD genuinely threatens the hero) ──
 	"lunge": {
 		# A foot gap-closer: commits forward HARD then lands a melee at the lunge's end.
 		"kind": "lunge", "min_range": 60.0, "max_range": 150.0,
 		"windup": 0.5, "strike": 0.12, "recover": 0.55, "cooldown": 1.6,
-		"damage": 8.0, "knockback": 200.0, "stun": 0.15, "lunge_impulse": 320.0,
+		"damage": 11.0, "knockback": 200.0, "stun": 0.15, "lunge_impulse": 320.0,
 	},
 	"leap": {
 		# Jump to the foe + a small landing burst. Slower to recover (it commits).
@@ -49,19 +49,53 @@ const TABLE := {
 		"aoe_radius": 70.0, "aoe_damage": 6.0, "aoe_knockback": 300.0,
 	},
 	"javelin": {
-		# Ranged opener: thrown from afar, no melee contact. Long cooldown so a
-		# skirmisher still has to close eventually.
+		# Ranged pressure: thrown from afar so camping the melee blob gets chipped.
 		"kind": "javelin", "min_range": 160.0, "max_range": 420.0,
-		"windup": 0.55, "strike": 0.1, "recover": 0.45, "cooldown": 2.2,
-		"damage": 8.0, "projectile_speed": 540.0,
+		"windup": 0.55, "strike": 0.1, "recover": 0.45, "cooldown": 1.6,
+		"damage": 12.0, "projectile_speed": 660.0,
 	},
 	"pound": {
-		# Ground slam: radial AoE around the user, no single foe needed. The heavy's
-		# crowd-control move.
+		# Ground slam: radial AoE around the user — the heavy's "don't stand here" enforcer.
 		"kind": "pound", "min_range": 0.0, "max_range": 60.0,
-		"windup": 0.7, "strike": 0.16, "recover": 0.7, "cooldown": 2.6,
-		"damage": 0.0, "aoe_radius": 110.0, "aoe_damage": 12.0, "aoe_knockback": 420.0,
+		"windup": 0.7, "strike": 0.16, "recover": 0.7, "cooldown": 2.2,
+		"damage": 0.0, "aoe_radius": 150.0, "aoe_damage": 20.0, "aoe_knockback": 420.0,
 		"stun": 0.25,
+	},
+	# ── BOSS SIGNATURE moves: one telegraphed, HIGH-damage move per general — the differentiation.
+	# Reuse the existing kinds (lunge/pound/javelin) so no new execute code; they just hit hard
+	# enough (~22-34) to actually threaten the hero, and read via the existing telegraphs.
+	"charge": {
+		# A committed line-charge gap-closer (Mordred): covers the field, hits like a truck.
+		"kind": "lunge", "min_range": 120.0, "max_range": 500.0,
+		"windup": 0.7, "strike": 0.14, "recover": 0.7, "cooldown": 5.5,
+		"damage": 30.0, "knockback": 600.0, "stun": 0.35, "lunge_impulse": 1100.0,
+	},
+	"whirlwind": {
+		# A spinning sweep (Saxon warlords): a wide melee AoE you must back out of.
+		"kind": "pound", "min_range": 0.0, "max_range": 70.0,
+		"windup": 0.8, "strike": 0.2, "recover": 0.8, "cooldown": 4.5,
+		"damage": 0.0, "aoe_radius": 150.0, "aoe_damage": 28.0, "aoe_knockback": 520.0,
+		"stun": 0.4,
+	},
+	"ground_quake": {
+		# A slow, huge slam (Black Knight): a big telegraphed ring — punishes greed.
+		"kind": "pound", "min_range": 0.0, "max_range": 90.0,
+		"windup": 1.1, "strike": 0.22, "recover": 0.9, "cooldown": 7.0,
+		"damage": 0.0, "aoe_radius": 230.0, "aoe_damage": 34.0, "aoe_knockback": 700.0,
+		"stun": 0.7,
+	},
+	"spell_bolt": {
+		# A ranged hex (Morgan): a slower, heavier bolt she kites with.
+		"kind": "javelin", "min_range": 120.0, "max_range": 640.0,
+		"windup": 0.6, "strike": 0.1, "recover": 0.5, "cooldown": 2.2,
+		"damage": 22.0, "projectile_speed": 380.0,
+	},
+	"hex_nova": {
+		# A delayed dark nova (Morgan): a large telegraphed ring when cornered.
+		"kind": "pound", "min_range": 0.0, "max_range": 120.0,
+		"windup": 1.3, "strike": 0.2, "recover": 1.0, "cooldown": 8.0,
+		"damage": 0.0, "aoe_radius": 260.0, "aoe_damage": 30.0, "aoe_knockback": 480.0,
+		"stun": 0.9,
 	},
 }
 

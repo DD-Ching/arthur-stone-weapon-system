@@ -665,3 +665,11 @@ jobs:
         run: |
           godot --headless --path . res://tests/MusicTest.tscn --quit-after 600 | tee music.log
           grep -q "MUSIC_VERDICT PASS" music.log
+
+      - name: Run difficulty probe (the horde must be a real threat)
+        # Regression guard for the difficulty rebalance: an IDLE Arthur ringed by raiders must take
+        # meaningful damage (tighter i-frames + buffed enemy damage). Fails if the crowd is ever
+        # re-trivialised, so "battlefield pressure" can't silently regress back to too-easy.
+        run: |
+          godot --headless --path . res://tests/DifficultyProbeTest.tscn --quit-after 600 | tee diffprobe.log
+          grep -q "DIFFPROBE_VERDICT PASS" diffprobe.log

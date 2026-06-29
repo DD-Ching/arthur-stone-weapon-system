@@ -226,6 +226,11 @@ func _check_breaches() -> void:
 			continue
 		if "_dead" in e and e._dead:
 			continue
+		# Bosses + officers must be DEFEATED, never walked off the map as a free kill: the breach
+		# loop frees the unit, which would empty the generals/officers group and silently auto-
+		# complete the DefeatGeneral / DefeatOfficer climax objective without a single hit landed.
+		if ("is_general" in e and e.is_general) or ("is_support" in e and e.is_support):
+			continue
 		if e.global_position.y <= defence_line_y:
 			continue
 		var id := e.get_instance_id()
